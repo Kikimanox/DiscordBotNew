@@ -177,7 +177,8 @@ async def on_command_error(ctx, error):
         print(trace_str)
         print("Other exception in command '{}', {}".format(ctx.command.qualified_name, error.original))
         bot.logger.error(
-            f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} | Message: {ctx.message.content} | "
+            f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} (id: {str(ctx.author.id)}) "
+            f"| Message: {ctx.message.content} | "
             f"Error: {trace_str}")
 
 
@@ -196,6 +197,11 @@ async def on_error(event, *args, **kwargs):
         trace = traceback.format_exc()
         bot.logger.error(f"---------- ERROR ----------: {trace}")
         print(trace)
+
+@bot.before_invoke
+async def before_any_command(ctx):
+    bot.logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
+                    f"| Message: {ctx.message.content}")
 
 
 def load_extensions(cogs):
