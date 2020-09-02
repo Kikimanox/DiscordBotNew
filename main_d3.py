@@ -171,7 +171,7 @@ async def on_command_error(ctx, error):
         await ctx.send(f"This command has reached the max number of concurrent jobs: "
                        f"`{error.number}`. Please wait for the running commands to finish before requesting again.")
     else:
-        await ctx.send("An error occurred with the `{}` command.".format(ctx.command.name))
+        await ctx.send("An unknown error occurred with the `{}` command.".format(ctx.command.name))
         trace = traceback.format_exception(type(error), error, error.__traceback__)
         trace_str = "".join(trace)
         print(trace_str)
