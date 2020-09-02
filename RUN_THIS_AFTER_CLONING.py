@@ -25,6 +25,9 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     m_d = input('Enter the new name for the main_d3.py file (example: "othermain.py"): ')
     with fileinput.FileInput('scripts/stop.sh', inplace=True, backup='.bak') as file:
         for line in file:
+            print(line.replace('[m]ain_d3.py', f'[{m_d[:1]}]{m_d[1:]}'), end='')
+    with fileinput.FileInput('scripts/stop.sh', inplace=True, backup='.bak') as file:
+        for line in file:
             print(line.replace('[b]ot_loop3.py', f'[{b_l[:1]}]{b_l[1:]}'), end='')
     with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
         for line in file:
