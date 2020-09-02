@@ -26,7 +26,6 @@ class Store(commands.Cog):
     @commands.check(checks.owner_check)
     async def sell(self, ctx, item, amount, payment):
         """Sell an x amount of items and get payed"""
-        self.bot.logger.error("lul")
         await ctx.send("Selling lol")
 
 

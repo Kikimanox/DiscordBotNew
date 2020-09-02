@@ -205,7 +205,7 @@ async def on_error(event, *args, **kwargs):
 async def before_any_command(ctx):
     if not bot.is_ready():
         await bot.wait_until_ready()
-    if bot.hasattr('logger'):
+    if hasattr(bot, 'logger'):
         bot.logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
                         f"| Message: {ctx.message.content}")
 
