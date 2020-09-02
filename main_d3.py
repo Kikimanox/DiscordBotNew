@@ -60,7 +60,8 @@ async def on_ready():
     bot.logger.addHandler(errorLogHandler)
     bot.help_command = Help()
     bot.logger.info("bot logged in and ready")
-    print('logged in')
+    print('---Logged in---')
+    print(discord.utils.oauth_url(bot.user.id) + '&permissions=8')
     if os.path.isfile("restart.json"):
         restartData = dataIOa.load_json("restart.json")
         try:
