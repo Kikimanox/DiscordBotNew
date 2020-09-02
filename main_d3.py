@@ -30,6 +30,7 @@ from utils.dataIOa import dataIOa
 
 bot = commands.Bot(command_prefix=env.BOT_PREFIX)
 
+
 @bot.event
 async def on_ready():
     bot.help_command = Help()
@@ -76,6 +77,7 @@ async def on_ready():
         finally:
             os.remove("restart.json")
 
+
 def exit_bot(self):
     # if os.name != 'nt': In case you need to kill some other tasks
     #     try:
@@ -87,6 +89,7 @@ def exit_bot(self):
     #         bot.logger.error(trace)
     #         print(trace)
     os._exit(0)
+
 
 @commands.check(owner_check)
 @bot.command()
@@ -128,6 +131,7 @@ async def restart(ctx, options: str = ""):
     dataIOa.save_json("restart.json", restart)
     exit_bot(0)
 
+
 @commands.check(owner_check)
 @bot.command(aliases=["shutdown", "exit", "terminate"])
 async def quit(ctx):
@@ -139,11 +143,21 @@ async def quit(ctx):
     exit_bot(0)
 
 
-# def receiveSignal(sigNum, frame):
-#     print('Received signal: ' + str(sigNum))
-#     for t in bot.my_globals['current_tasks']: t.cancel()
-#     print('shutting down')
-#     sys.exit(0)
+@bot.event
+async def on_error(event, *args, **kwargs):
+    exc_type, _, _ = sys.exc_info()
+    print(exc_type)
+    if isinstance(exc_type, discord.errors.ConnectionClosed) or isinstance(exc_type, discord.ConnectionClosed) or \
+            issubclass(exc_type, discord.errors.ConnectionClosed) or issubclass(exc_type, discord.ConnectionClosed) or \
+            issubclass(exc_type, ConnectionResetError):
+        bot.logger.error(f"---------- CRASHED ----------: {exc_type}")
+        print("exception occurred, restarting...")
+        bot.logger.error("exception occurred, restarting bot")
+        exit_bot(0)
+    else:
+        trace = traceback.format_exc()
+        bot.logger.error(f"---------- ERROR ----------: {trace}")
+        print(trace)
 
 
 def load_extensions(cogs):
@@ -152,6 +166,7 @@ def load_extensions(cogs):
             pass
     except Exception as e:
         traceback.print_exc()
+
 
 if __name__ == '__main__':
     while True:
