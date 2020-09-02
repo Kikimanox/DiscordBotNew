@@ -99,6 +99,7 @@ async def test(ctx):
     a = int('aa')
 
 
+@commands.max_concurrency(1)
 @commands.check(owner_check)
 @bot.command()
 async def restart(ctx, options: str = ""):
@@ -132,6 +133,7 @@ async def restart(ctx, options: str = ""):
     exit_bot(0)
 
 
+@commands.max_concurrency(1)
 @commands.check(owner_check)
 @bot.command(aliases=["quit", "terminate"])
 async def shutdown(ctx):
@@ -197,6 +199,7 @@ async def on_error(event, *args, **kwargs):
         trace = traceback.format_exc()
         bot.logger.error(f"---------- ERROR ----------: {trace}")
         print(trace)
+
 
 @bot.before_invoke
 async def before_any_command(ctx):
