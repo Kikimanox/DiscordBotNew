@@ -32,6 +32,9 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('main_d3.py', m_d), end='')
+    with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
+        for line in file:
+            print(line.replace('[m]ain_d3.py', f'[{m_d[:1]}]{m_d[1:]}'), end='')
     with fileinput.FileInput('scripts/start.sh', inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('bot_loop3.py', b_l), end='')
