@@ -133,8 +133,8 @@ async def restart(ctx, options: str = ""):
 
 
 @commands.check(owner_check)
-@bot.command(aliases=["shutdown", "exit", "terminate"])
-async def quit(ctx):
+@bot.command(aliases=["quit", "terminate"])
+async def shutdown(ctx):
     """Shut down the bot."""
     with open('quit.txt', 'w', encoding="utf8") as q:
         q.write('.')
