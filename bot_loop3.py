@@ -15,6 +15,6 @@ while True:
     #params.extend(sys.argv[1:])
     #subprocess.call(params)
     if str(os.system("$(ps aux | grep -w '[m]ain_d3.py' | awk '{print $2}') 2> /dev/null")) == "0":
-        os.system('nohup python3.7 -u main_d3.py >> tmp/output.log &')
+        os.system('nohup python3.7 -u main_d3.py >> tmp/output.log 2>&1 &')
     else:
         time.sleep(0.5)

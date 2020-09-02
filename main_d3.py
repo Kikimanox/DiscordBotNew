@@ -93,6 +93,8 @@ def exit_bot(self):
 async def test(ctx):
     print("Test")
     await ctx.send("Test")
+    a = int('aa')
+
 
 @commands.check(owner_check)
 @bot.command()
