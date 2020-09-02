@@ -54,7 +54,8 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
         f.write('#!/bin/bash\n')
         f.write(f'out={os.path.abspath(".")}/tmp/bot_loop.log\n')
         f.write('echo "-----Started at: "$(date \'+%Y-%m-%d_%H:%M:%S\')"-----" >> ${out}\n')
-        f.write(f'nohup python3.7 -u {os.path.abspath(b_l)} >> ' + '${out} &\n')
+        f.write(f'nohup python3.7 -u {os.path.abspath(b_l)} >> ' + '${out} 2>&1 &\n')
+        f.write(f'echo "Bot started"')
 
 
 # serverDataFile = 'data/servers_data_ids.json'
