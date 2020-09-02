@@ -29,12 +29,12 @@ import logging.handlers as handlers
 from utils.dataIOa import dataIOa
 
 bot = commands.Bot(command_prefix=env.BOT_PREFIX)
+bot.running_tasks = []
 
 
 @bot.event
 async def on_ready():
     bot.help_command = Help()
-    bot.my_globals = {'current_tasks': []}
     bot.logger = logging.getLogger('my_app')
     bot.logger.setLevel(logging.INFO)
 
@@ -161,14 +161,14 @@ async def on_command_error(ctx, error):
         formatter = Help()
         help_msg = await formatter.format_help_for(ctx, ctx.command)
         await ctx.send(content="Missing required arguments. Command info:", embed=help_msg[0])
-        bot.logger.error('CMD ERROR', 'MissingArgs',
-                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}', ctx)
+        bot.logger.error('CMD ERROR MissingArgs '
+                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
     elif isinstance(error, commands.errors.BadArgument):
         formatter = Help()
         help_msg = await formatter.format_help_for(ctx, ctx.command)
         await ctx.send(content="⚠ You have provided an invalid argument. Command info:", embed=help_msg[0])
-        bot.logger.error('CMD ERROR', 'BadArg',
-                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}', ctx)
+        bot.logger.error('CMD ERROR BadArg '
+                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
     elif isinstance(error, commands.errors.MaxConcurrencyReached):
         await ctx.send(f"This command has reached the max number of concurrent jobs: "
                        f"`{error.number}`. Please wait for the running commands to finish before requesting again.")
@@ -205,8 +205,9 @@ async def on_error(event, *args, **kwargs):
 async def before_any_command(ctx):
     if not bot.is_ready():
         await bot.wait_until_ready()
-    bot.logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
-                    f"| Message: {ctx.message.content}")
+    if bot.hasattr('logger'):
+        bot.logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
+                        f"| Message: {ctx.message.content}")
 
 
 def load_extensions(cogs):
@@ -220,10 +221,9 @@ def load_extensions(cogs):
 if __name__ == '__main__':
     while True:
         try:
-            # load_extensions(['aa', 'aaa'])
+            load_extensions(['store'])
             if os.name != 'nt':
                 os.setpgrp()
-            # signal.signal(signal.SIGTERM, receiveSignal)
             loop = asyncio.get_event_loop()
             loop.run_until_complete(bot.login(env.BOT_TOKEN))
             print(f'Connected: ---{datetime.datetime.now().strftime("%c")}---')
