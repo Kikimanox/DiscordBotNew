@@ -47,9 +47,9 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
                 newfile.write(line)
         newfile.write(f"NEW_MAIN_D = '{m_d}'\nNEW_BOT_LOOP = '{b_l}'")
 
-    with open('scripts/newstart.sh', 'w') as f:
+    with open('scripts/start.sh', 'w') as f:
         f.write('#!/bin/bash\n')
-        f.write(f'out={os.path.abspath(".")}/tmp/bot_nohup.log\n')
+        f.write(f'out={os.path.abspath(".")}/tmp/bot_loop.log\n')
         f.write('echo "-----Started at: "$(date \'+%Y-%m-%d_%H:%M:%S\')"-----" >> ${out}\n')
         f.write(f'nohup python3.7 -u {os.path.abspath(b_l)} >> ' + '${out} &\n')
 
