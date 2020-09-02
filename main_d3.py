@@ -201,7 +201,7 @@ async def on_error(event, *args, **kwargs):
 def load_extensions(cogs):
     try:
         for c in cogs:
-            pass
+            bot.load_extension(f'cogs.{c}')
     except Exception as e:
         traceback.print_exc()
 
