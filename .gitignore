@@ -1,0 +1,8 @@
+env.py
+venv/
+.idea
+__pycache__
+data/
+tmp/
+_scripts/
+logs/
