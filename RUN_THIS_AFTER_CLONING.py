@@ -25,16 +25,10 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     m_d = input('Enter the new name for the main_d3.py file (example: "othermain.py"): ')
     with fileinput.FileInput('scripts/stop.sh', inplace=True, backup='.bak') as file:
         for line in file:
-            print(line.replace('[m]ain_d3.py', f'[{m_d[:1]}]{m_d[1:]}'), end='')
-    with fileinput.FileInput('scripts/stop.sh', inplace=True, backup='.bak') as file:
-        for line in file:
             print(line.replace('[b]ot_loop3.py', f'[{b_l[:1]}]{b_l[1:]}'), end='')
     with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('main_d3.py', m_d), end='')
-    with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
-        for line in file:
-            print(line.replace('[m]ain_d3.py', f'[{m_d[:1]}]{m_d[1:]}'), end='')
     with fileinput.FileInput('scripts/start.sh', inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('bot_loop3.py', b_l), end='')
@@ -53,10 +47,7 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     with open('scripts/newstart.sh', 'w') as f:
         f.write('#!/bin/bash\n')
         f.write(f'out={os.path.abspath(".")}/tmp/bot_nohup.log\n')
-        f.write(f'out2={os.path.abspath(".")}/tmp/loop_log.log\n')
         f.write('echo "-----Started at: "$(date \'+%Y-%m-%d_%H:%M:%S\')"-----" >> ${out}\n')
-        f.write(f'nohup python3.7 -u {os.path.abspath(m_d)} >> ' + '${out} &\n')
-        f.write('echo "-----Started at: "$(date \'+%Y-%m-%d_%H:%M:%S\')"-----" >> ${out2}\n')
         f.write(f'nohup python3.7 -u {os.path.abspath(b_l)} >> ' + '${out} &\n')
 
 
@@ -80,7 +71,7 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
 
 
 print('\nCheck in case you don\'t or can\'t use the "python3.7" command for '
-      'running programs, change that in "bot_loop3.py" and "start.sh"')
+      'running programs, change that in "bot_loop3.py" and "newstart.sh"')
 print('\nEverything else seems okay, the setup has been complete')
 
 test = os.listdir('.')
