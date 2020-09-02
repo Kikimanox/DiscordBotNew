@@ -6,7 +6,8 @@ import re
 import datetime
 import aiohttp
 import random
-import discord
+from discord import File
+
 
 async def getChannel(ctx, arg):
     channels = []
@@ -70,14 +71,26 @@ async def getHasteBinLink(ctx, result):
                 haste_out = await resp.json()
                 url = "https://hastebin.com/" + haste_out["key"]
             else:
+                result = 'see txt file' # todo don't print here but post the result right away
                 with open("tmp/py_output.txt", "w") as f:
                     f.write(str(result))
                 with open("tmp/py_output.txt", "rb") as f:
-                    py_output = discord.File(f, "py_output.txt")
+                    py_output = File(f, "py_output.txt")
                     await ctx.send(
                         content="Error posting to hastebin. Uploaded output to file instead.",
                         file=py_output)
                     os.remove("tmp/py_output.txt")
                     return ''
     result = url
-    return result
+    return result  # todo don't print here but post the result right away
+
+async def result_printer(ctx, result):
+    if len(str(result)) > 2000:
+        with open(f"tmp/{ctx.message.id}.txt", "w") as f:
+            f.write(str(result.strip("```")))
+        with open(f"tmp/{ctx.message.id}.txt", "rb") as f:
+            py_output = File(f, "output.txt")
+            await ctx.send(content="uploaded output to file since output was too long.", file=py_output)
+            os.remove(f"tmp/{ctx.message.id}.txt")
+    else:
+        await ctx.send(result)
