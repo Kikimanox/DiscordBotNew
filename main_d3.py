@@ -137,8 +137,6 @@ async def quit(ctx):
 #     sys.exit(0)
 
 
-
-
 def load_extensions(cogs):
     try:
         for c in cogs:

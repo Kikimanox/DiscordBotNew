@@ -4,7 +4,7 @@ import shutil
 import fileinput
 # from utils.dataIOa import dataIOa
 
-for d in ['data', '_scripts', 'tmp', 'logs']:
+for d in ['data', '_scripts', 'tmp', 'logs', 'logs/error', 'logs/info', 'logs/workers']:
     try:
         os.makedirs(d)
     except FileExistsError:
