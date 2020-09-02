@@ -90,6 +90,12 @@ def exit_bot(self):
 
 @commands.check(owner_check)
 @bot.command()
+async def test(ctx):
+    print("Test")
+    await ctx.send("Test")
+
+@commands.check(owner_check)
+@bot.command()
 async def restart(ctx, options: str = ""):
     """Restart the bot and git pull changes.
 
