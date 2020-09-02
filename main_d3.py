@@ -144,6 +144,44 @@ async def quit(ctx):
 
 
 @bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.errors.CommandNotFound):
+        pass
+    elif isinstance(error, commands.CommandInvokeError):
+        print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, error.original))
+    elif isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(f"⏲ Command on cooldown, try again in {error.args[0].split(' in ')[-1]}", delete_after=5)
+    elif isinstance(error, commands.errors.CheckFailure):
+        await ctx.send("⚠ You don't have permissions to use that command.")
+        bot.logger.error('CMD ERROR', 'NoPerms',
+                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}', ctx)
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        formatter = Help()
+        help_msg = await formatter.format_help_for(ctx, ctx.command)
+        await ctx.send(content="Missing required arguments. Command info:", embed=help_msg[0])
+        bot.logger.error('CMD ERROR', 'MissingArgs',
+                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}', ctx)
+    elif isinstance(error, commands.errors.BadArgument):
+        formatter = Help()
+        help_msg = await formatter.format_help_for(ctx, ctx.command)
+        await ctx.send(content="⚠ You have provided an invalid argument. Command info:", embed=help_msg[0])
+        bot.logger.error('CMD ERROR', 'BadArg',
+                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}', ctx)
+    elif isinstance(error, commands.errors.MaxConcurrencyReached):
+        await ctx.send(f"This command has reached the max number of concurrent jobs: "
+                       f"`{error.number}`. Please wait for the running commands to finish before requesting again.")
+    else:
+        await ctx.send("An error occurred with the `{}` command.".format(ctx.command.name))
+        trace = traceback.format_exception(type(error), error, error.__traceback__)
+        trace_str = "".join(trace)
+        print(trace_str)
+        print("Other exception in command '{}', {}".format(ctx.command.qualified_name, error.original))
+        bot.logger.error(
+            f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} | Message: {ctx.message.content} | "
+            f"Error: {trace_str}")
+
+
+@bot.event
 async def on_error(event, *args, **kwargs):
     exc_type, _, _ = sys.exc_info()
     print(exc_type)
