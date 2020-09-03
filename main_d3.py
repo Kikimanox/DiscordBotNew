@@ -30,10 +30,13 @@ from utils.dataIOa import dataIOa
 
 bot = commands.Bot(command_prefix=env.BOT_PREFIX)
 bot.running_tasks = []
+bot.all_cmds = {}
 
 
 @bot.event
 async def on_ready():
+    bot.uptime = datetime.datetime.utcnow()
+    bot.ranCommands = 0
     bot.help_command = Help()
     bot.logger = logging.getLogger('my_app')
     bot.logger.setLevel(logging.INFO)
@@ -97,6 +100,34 @@ async def test(ctx):
     print("Test")
     await ctx.send("Test")
     a = int('aa')
+
+
+@bot.event
+async def on_message(message):
+    if not message.guild and message.author.id != env.CLIENT_ID:
+        print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
+
+    if message.content.startswith(env.BOT_PREFIX) or message.content.split(' ')[0] == f'<@!{env.CLIENT_ID}>':
+        pfx_len = len(env.BOT_PREFIX) if message.content.startswith(env.BOT_PREFIX) else len(f'<@!{env.CLIENT_ID}>') + 1
+        possible_cmd = message.content[pfx_len:].split(' ')[0]
+        if possible_cmd in bot.all_commands:
+            if hasattr(bot, 'ranCommands'): bot.ranCommands += 1
+            return await bot.process_commands(message)
+        if message.guild and message.guild.id in bot.all_cmds:
+            if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list'] or \
+                    message.content[pfx_len:] in bot.all_cmds[message.guild.id]['cmds_name_list']:
+                c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
+                if bool(c['raw']): return await message.channel.send(c['content'])
+                if bool(c['image']):
+                    em = Embed(color=int(f'0x{c["color"][-6:]}', 16))
+                    em.set_image(url=c['content'])
+                else:
+                    em = Embed(color=int(f'0x{c["color"][-6:]}', 16), description=c['content'])
+                    pic = str(c['content']).find('http')
+                    if pic > -1:
+                        urls = re.findall(r'https?:[/.\w\s-]*\.(?:jpg|gif|png|jpeg)', str(c['content']))
+                        if len(urls) > 0: em.set_image(url=urls[0])
+                return await message.channel.send(embed=em)
 
 
 @commands.max_concurrency(1)

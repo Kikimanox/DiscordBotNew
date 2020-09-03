@@ -1,3 +1,6 @@
+import asyncio
+import datetime
+
 import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
@@ -12,7 +15,10 @@ from models.cmds import (db, Guild, Command, CommandsToGuild, CmdsManager)
 class Cmds(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.command_list = []
+        self.set_commands()
+
+    def set_commands(self):
+        self.bot.all_cmds = CmdsManager.get_commands_formatted()
 
     @commands.check(checks.admin_check)
     @commands.group()
@@ -37,6 +43,7 @@ class Cmds(commands.Cog):
             c = ctx.command.all_commands[first_arg]
             return await ctx.invoke(c, args)  # unsafe, becareful where you use this
         await self.add_cmd_fun(ctx, args)
+        self.set_commands()
 
     @commands.check(checks.admin_check)
     @add.command()
@@ -46,6 +53,7 @@ class Cmds(commands.Cog):
         """
         d = 0
         await self.add_cmd_fun(ctx, args, raw=True)
+        self.set_commands()
 
     @commands.check(checks.admin_check)
     @commands.command()
@@ -60,9 +68,10 @@ class Cmds(commands.Cog):
                 raise Exception("Didn't find that command here")
         except:
             await ctx.send("The command with that name doens't exist on this server")
+        self.set_commands()
 
     async def add_cmd_fun(self, ctx, args, raw=False):
-        db_guild = CmdsManager.create_and_get_guild_if_not_exists(ctx.guild.id, ctx.guild.name)
+        db_guild = CmdsManager.get_or_create_and_get_guild(ctx.guild.id, ctx.guild.name)
         args = str(args).replace('\n', ' \n').split(' ')
         if raw: args = args[1:]
         if len(args) <= 1: raise commands.errors.MissingRequiredArgument(ctx.command)
@@ -87,16 +96,131 @@ class Cmds(commands.Cog):
         if args[0] in self.bot.all_commands: return await ctx.send("Custom command name can not have the same "
                                                                    "name as an already existing bot command.")
 
-        # todo: check if command already exists on the guild
+        cmd = CmdsManager.get_cmd_based_on_guld(ctx.guild.id, args[0])
+        replacing = False
+        if cmd:
+            await ctx.send('Custom command with that name is already in use, would you like to override it? (y/n)')
 
-        if raw:
+            def check(m):
+                return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
+                       m.author == ctx.author and m.channel == ctx.channel
+
+            try:
+                reply = await self.bot.wait_for("message", check=check, timeout=20)
+            except asyncio.TimeoutError:
+                return await ctx.send("Cancelled overriding.")
+            if not reply or reply.content.lower().strip() == 'n':
+                return await ctx.send("Cancelled overriding.")
+            else:
+                replacing = True
+
+        cmdName = args[0]
+        cnt = args[1]
+        image = True
+        color = '0x4f545c'
+        if not raw:
+            if len(args) > 1 and str(args[1]).startswith('`'):
+                if not (str(args[1]).startswith('`') and str(args[-1]).endswith('`')):
+                    return await ctx.send('Invalid command usage, please use `.help add` to see the correct usage')
+                txt = ' '.join(args[1:])
+                cnt = txt[1:-1]
+                image = False
+
+                if replacing:
+                    cmd.content = cnt
+                    cmd.image = image
+                    cmd.color = color
+                    cmd.author = ctx.message.author.id
+                    cmd.save()
+                else:
+                    cmd = Command.create(author=ctx.author.id,
+                                         name=cmdName,
+                                         content=cnt,
+                                         image=image,
+                                         color=color,
+                                         raw=False)
+                    CommandsToGuild.create(guild=db_guild, command=cmd, )
+
+                return await ctx.send(
+                    f'{"Added" if not replacing else "Overrided"} custom{"" if not replacing else ""} '
+                    f'**embedded text** command')
+
+            if not str(args[1]).startswith('http'):
+                return await ctx.send(
+                    '- When adding an **image** custom command please provide a direct link to the image\n'
+                    '- When adding a **text** command please start and end your text with \`\n'
+                    '- For examples check help (`.add` or `.help add`)')
+
+            if len(args) == 3:
+                color = args[2]
+            image = True
+            if replacing:
+                cmd.content = args[1]
+                cmd.image = image
+                cmd.color = color
+                cmd.author = ctx.message.author.id
+                cmd.save()
+            else:
+                cmd = Command.create(author=ctx.author.id,
+                                     name=cmdName,
+                                     content=args[1],
+                                     image=image,
+                                     color=color,
+                                     raw=False)
+                CommandsToGuild.create(guild=db_guild, command=cmd, )
+
+            return await ctx.send(
+                f'{"Added" if not replacing else "Overrided"} custom{"" if not replacing else ""} '
+                f'**image** command')
+
+        else:
             txt = ' '.join(args[1:])
-            cmd = Command.create(author=ctx.author.id,
-                                 name=args[0],
-                                 content=txt,
-                                 raw=True)
-            CommandsToGuild.create(guild=db_guild, command=cmd, )
-            
+            if not replacing:
+                cmd = Command.create(author=ctx.author.id,
+                                     name=args[0],
+                                     content=txt,
+                                     raw=True)
+                CommandsToGuild.create(guild=db_guild, command=cmd, )
+            else:
+                cmd.content = txt
+                cmd.save()
+            return await ctx.send(
+                f'{"Added" if not replacing else "Overrided"} custom{"" if not replacing else ""} '
+                f'**raw** command')
+
+    @commands.check(checks.admin_check)
+    @commands.command(aliases=["icmds"])
+    async def inheritcmds(self, ctx, *, servers):
+        """Inherits custom commands from another server.
+
+        `[p]inheritcmd serverID`
+        `[p]inheritcmd serverID1$serverID2 $ serverID3` (can inherit multiple servers)
+        """
+        if '@' in servers: return await ctx.send("Invalid argument (servers)")
+        srvs = [s.strip() for s in servers.split("$")]
+        db_guild = CmdsManager.get_or_create_and_get_guild(ctx.guild.id, ctx.guild.name)
+
+        for s in srvs:
+            try:
+                g = self.bot.get_guild(int(s))
+                if not g: raise Exception('aaa')
+                if g.id == ctx.guild.id: return await ctx.send('You can not inherit from the same server as this one.')
+                if CommandsToGuild.select().where(CommandsToGuild.guild == g.id).count() < 1:
+                    return await ctx.send(f'The server `{s}` has no custom commands')
+            except:
+                return await ctx.send(f'Server with the id `{s}` not found.')
+        try:
+            db_guild.inherits_from = ' '.join(srvs)
+            db_guild.save()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return await ctx.send("Something went wrong.")
+        self.set_commands()
+        return await ctx.send("Done.")
+
+    # @commands.Cog.listener()
+    # async def on_message(self, message):
 
 
 def setup(bot):
