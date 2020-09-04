@@ -33,13 +33,13 @@ prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
 bot = commands.Bot(command_prefix=prefix)
 bot.all_cmds = {}
 bot.config = dataIOa.load_json('config.json')
-bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR'][-6:]}", 16)
+bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
 
 @bot.event
 async def on_ready():
     bot.running_tasks = []
     bot.config = dataIOa.load_json('config.json')
-    bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR'][-6:]}", 16)
+    bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
     bot.uptime = datetime.datetime.utcnow()
     bot.ranCommands = 0
     bot.help_command = Help()
@@ -108,10 +108,9 @@ async def prefix(ctx, new_prefix=""):
     if bot.config['BOT_PREFIX'] == new_prefix: return await ctx.send(
         "Why are you trying to make the new prefix the same "
         "as the previous one?")
-    old_prefix = bot.config['BOT_PREFIX']
     bot.config['BOT_PREFIX'] = new_prefix
-    # todo rest
-
+    dataIOa.save_json("config.json", bot.config)
+    await ctx.send("Prefix changed.")
 
 @bot.event
 async def on_message(message):
