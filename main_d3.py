@@ -29,11 +29,13 @@ from utils.dataIOa import dataIOa
 import fileinput
 import importlib
 
-prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
-bot = commands.Bot(command_prefix=prefix)
+Prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
+def get_pre(_bot, _message): return Prefix
+bot = commands.Bot(command_prefix=get_pre)
 bot.all_cmds = {}
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
+bot.help_command = Help()
 
 @bot.event
 async def on_ready():
@@ -110,6 +112,8 @@ async def prefix(ctx, new_prefix=""):
         "as the previous one?")
     bot.config['BOT_PREFIX'] = new_prefix
     dataIOa.save_json("config.json", bot.config)
+    global Prefix
+    Prefix = new_prefix
     await ctx.send("Prefix changed.")
 
 @bot.event
