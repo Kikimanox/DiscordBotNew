@@ -10,7 +10,6 @@ from platform import uname, python_version
 from json import decoder, dump, load
 from utils.dataIOa import dataIOa as dataIO
 from utils.checks import owner_check
-import env
 
 try:
     from subprocess import DEVNULL  # Python 3
@@ -141,7 +140,8 @@ class Terminal(commands.Cog):
         if add_or_remove == "add":
             if not text:
                 return await ctx.send(
-                    f"Error. Missing command to alias. Ex: `{env.BOT_PREFIX}cmdsettings alias add \"test\" \"cat log.txt\"")
+                    f"Error. Missing command to alias. Ex: `{ctx.bot.config['BOT_PREFIX']}cmdsettings "
+                    f"alias add \"test\" \"cat log.txt\"")
             else:
                 self.alias[alias] = {os: text}
         elif add_or_remove in ["remove", "delete", "rm"]:
@@ -213,7 +213,8 @@ class Terminal(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):  # This is where the magic starts
 
-        if message.channel.id in self.sessions and self.enabled and message.author.id == env.OWNER_ID:  # DO NOT DEL
+        if message.channel.id in self.sessions and self.enabled and message.author.id == self.bot.config['OWNER_ID']:
+            # DO NOT DEL
 
             # TODO:
             #  Whitelist & Blacklists that cant be modified by the bot

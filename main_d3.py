@@ -1,6 +1,5 @@
 import time
 
-import env
 import discord
 import pyimgur
 from discord.ext import commands
@@ -22,19 +21,25 @@ import signal
 import subprocess
 import git
 import re
-from utils.checks import owner_check
+from utils.checks import owner_check, admin_check
 from utils.help import Help
 import logging
 import logging.handlers as handlers
 from utils.dataIOa import dataIOa
+import fileinput
+import importlib
 
-bot = commands.Bot(command_prefix=env.BOT_PREFIX)
-bot.running_tasks = []
+prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
+bot = commands.Bot(command_prefix=prefix)
 bot.all_cmds = {}
-
+bot.config = dataIOa.load_json('config.json')
+bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR'][-6:]}", 16)
 
 @bot.event
 async def on_ready():
+    bot.running_tasks = []
+    bot.config = dataIOa.load_json('config.json')
+    bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR'][-6:]}", 16)
     bot.uptime = datetime.datetime.utcnow()
     bot.ranCommands = 0
     bot.help_command = Help()
@@ -94,21 +99,36 @@ def exit_bot(self):
     os._exit(0)
 
 
-@commands.check(owner_check)
+@commands.check(admin_check)
 @bot.command()
-async def test(ctx):
-    print("Test")
-    await ctx.send("Test")
-    a = int('aa')
+async def prefix(ctx, new_prefix=""):
+    """Check or change the prefix"""
+    if not new_prefix:
+        return await ctx.send(embed=Embed(title='My prefix is', description=bot.config['BOT_PREFIX']))
+    if bot.config['BOT_PREFIX'] == new_prefix: return await ctx.send(
+        "Why are you trying to make the new prefix the same "
+        "as the previous one?")
+    old_prefix = bot.config['BOT_PREFIX']
+    bot.config['BOT_PREFIX'] = new_prefix
+    # todo rest
 
 
 @bot.event
 async def on_message(message):
-    if not message.guild and message.author.id != env.CLIENT_ID:
+    if not bot.is_ready():
+        await bot.wait_until_ready()
+    if not message.guild and message.author.id != bot.config['CLIENT_ID']:
         print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
 
-    if message.content.startswith(env.BOT_PREFIX) or message.content.split(' ')[0] == f'<@!{env.CLIENT_ID}>':
-        pfx_len = len(env.BOT_PREFIX) if message.content.startswith(env.BOT_PREFIX) else len(f'<@!{env.CLIENT_ID}>') + 1
+    if message.content == f'<@!{bot.config["CLIENT_ID"]}>': return await message.channel.send(
+        embed=(
+            Embed(title='My prefix is', description=bot.config['BOT_PREFIX']).set_footer(text='You can change it with '
+                                                                                              f'{bot.config["BOT_PREFIX"]}prefix')))
+
+    if message.content.startswith(bot.config['BOT_PREFIX']) or message.content.split(' ')[
+        0] == f'<@!{bot.config["CLIENT_ID"]}>':
+        pfx_len = len(bot.config['BOT_PREFIX']) if message.content.startswith(bot.config['BOT_PREFIX']) else len(
+            f'<@!{bot.config["CLIENT_ID"]}>') + 1
         possible_cmd = message.content[pfx_len:].split(' ')[0]
         if possible_cmd in bot.all_commands:
             if hasattr(bot, 'ranCommands'): bot.ranCommands += 1
@@ -159,10 +179,10 @@ async def restart(ctx, options: str = ""):
     Use "u" for update
     Use "vu"/"uv" for both """
     if "u" in options:
-        if env.NEW_MAIN_D:
-            os.rename(env.NEW_MAIN_D, 'main_d3.py')
-        if env.NEW_BOT_LOOP:
-            os.rename(env.NEW_BOT_LOOP, 'bot_loop3.py')
+        if bot.config['NEW_MAIN_D']:
+            os.rename(bot.config['NEW_MAIN_D'], 'main_d3.py')
+        if bot.config['NEW_BOT_LOOP']:
+            os.rename(bot.config['NEW_BOT_LOOP'], 'bot_loop3.py')
         await ctx.send("Running `git pull`...")
         loop = asyncio.get_event_loop()
         process = subprocess.Popen(["git", "pull"], stdout=subprocess.PIPE)
@@ -173,13 +193,13 @@ async def restart(ctx, options: str = ""):
             await ctx.send(f"```{a}```")
         else:
             await ctx.send("Git pulled.")
-        if env.NEW_MAIN_D:
-            os.rename('main_d3.py', env.NEW_MAIN_D)
-        if env.NEW_BOT_LOOP:
-            os.rename('bot_loop3.py', env.NEW_BOT_LOOP)
+        if bot.config['NEW_MAIN_D']:
+            os.rename('main_d3.py', bot.config['NEW_MAIN_D'])
+        if bot.config['NEW_BOT_LOOP']:
+            os.rename('bot_loop3.py', bot.config['NEW_BOT_LOOP'])
     await ctx.send("Restarting...")
-    restart = {"guild": ctx.guild.id, "channel": ctx.channel.id}
-    dataIOa.save_json("restart.json", restart)
+    restarT = {"guild": ctx.guild.id, "channel": ctx.channel.id}
+    dataIOa.save_json("restart.json", restarT)
     exit_bot(0)
 
 
@@ -197,10 +217,13 @@ async def shutdown(ctx):
 
 @bot.event
 async def on_command_error(ctx, error):
+    if not bot.is_ready():
+        await bot.wait_until_ready()
+    error = getattr(error, "original", error)
     if isinstance(error, commands.errors.CommandNotFound):
         pass
     elif isinstance(error, commands.CommandInvokeError):
-        print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, error.original))
+        print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
     elif isinstance(error, commands.CommandOnCooldown):
         await ctx.send(f"⏲ Command on cooldown, try again in {error.args[0].split(' in ')[-1]}", delete_after=5)
     elif isinstance(error, commands.errors.CheckFailure):
@@ -227,7 +250,7 @@ async def on_command_error(ctx, error):
         trace = traceback.format_exception(type(error), error, error.__traceback__)
         trace_str = "".join(trace)
         print(trace_str)
-        print("Other exception in command '{}', {}".format(ctx.command.qualified_name, error.original))
+        print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
         bot.logger.error(
             f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} (id: {str(ctx.author.id)}) "
             f"| Message: {ctx.message.content} | "
@@ -236,6 +259,8 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_error(event, *args, **kwargs):
+    if not bot.is_ready():
+        await bot.wait_until_ready()
     exc_type, _, _ = sys.exc_info()
     print(exc_type)
     if isinstance(exc_type, discord.errors.ConnectionClosed) or isinstance(exc_type, discord.ConnectionClosed) or \
@@ -275,7 +300,8 @@ if __name__ == '__main__':
             if os.name != 'nt':
                 os.setpgrp()
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(bot.login(env.BOT_TOKEN))
+            config = dataIOa.load_json("config.json")
+            loop.run_until_complete(bot.login(config['BOT_TOKEN']))
             print(f'Connected: ---{datetime.datetime.now().strftime("%c")}---')
             loop.run_until_complete(bot.connect())
             print(f'Disconected: ---{datetime.datetime.now().strftime("%c")}---')

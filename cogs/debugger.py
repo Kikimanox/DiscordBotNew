@@ -10,7 +10,6 @@ import math
 import aiohttp
 from discord.ext import commands
 from contextlib import redirect_stdout
-import env as envv
 
 # Common imports that can be used by the debugger.
 import json
@@ -28,7 +27,7 @@ import utils.discordUtils as dutils
 interpreter. '''
 
 def owner_check(ctx):
-    return ctx.author.id == envv.OWNER_ID
+    return ctx.author.id == ctx.bot.config['OWNER_ID']
 
 class Debugger(commands.Cog):
 

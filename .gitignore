@@ -1,4 +1,6 @@
-env.py
+config.json
+config.json*
+config.json.bak
 venv/
 .idea
 __pycache__

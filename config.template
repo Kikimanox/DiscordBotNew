@@ -1,0 +1,15 @@
+{
+    "OWNER_ID": ,
+    "CLIENT_ID": ,
+    "CLIENT_SECRET": "",
+    "BOT_TOKEN": "",
+    "OWNER_TOKEN": "",
+    "BOT_PREFIX": "",
+    "BOT_DEFAULT_EMBED_COLOR": "",
+    "IMGUR_ID": "",
+    "IMGUR_SECRET": "",
+    "IMGUR_ACCESS_TOKEN": "",
+    "IMGUR_REFRESH_TOKEN": "",
+    "NEW_MAIN_D": "",
+    "NEW_BOT_LOOP": ""
+}

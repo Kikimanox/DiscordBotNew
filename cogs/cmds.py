@@ -5,7 +5,6 @@ import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
 import os
-import env
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 import utils.checks as checks
@@ -272,7 +271,7 @@ class Cmds(commands.Cog):
         for c in cmds:
             embeds.append(Embed(title=f'Custom cmds for **{guild_name}**\n'
                                       f'Page {len(embeds) + 1}/[MAX]', description=c,
-                                color=env.BOT_DEFAULT_EMBED_COLOR))
+                                color=self.bot.config['BOT_DEFAULT_EMBED_COLOR']))
 
         for k, v in icmds.items():
             g = self.bot.get_guild(k)
@@ -281,7 +280,7 @@ class Cmds(commands.Cog):
             for inh in v:
                 embeds.append(Embed(title=f'Inherited cmds from {gu}\n'
                                           f'Page {len(embeds) + 1}/[MAX]', description=inh,
-                                    color=env.BOT_DEFAULT_EMBED_COLOR))
+                                    color=self.bot.config['BOT_DEFAULT_EMBED_COLOR']))
 
         for e in embeds:
             e.title = str(e.title).replace("[MAX]", str(len(embeds)))

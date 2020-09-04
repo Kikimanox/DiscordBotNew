@@ -10,10 +10,10 @@ for d in ['data', '_scripts', 'tmp', 'logs', 'logs/error', 'logs/info', 'logs/wo
     except FileExistsError:
         pass
 
-if not os.path.exists('env.py'):
-    print('env.py doesn\'t exist, creating...')
-    shutil.copy('env.template', 'env.py')
-    print('env.py created, please check the file env.py and '
+if not os.path.exists('config.json'):
+    print('config.json doesn\'t exist, creating...')
+    shutil.copy('config.template', 'config.json')
+    print('config.json created, please check the file config.json and '
           'fill in the appropriate fields in!!!!! (DO NOT FORGET TO DO THIS)')
 
 skipRenaming = input('For different bot instances, please rename '
@@ -42,9 +42,9 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     os.rename('main_d3.py', f'{m_d}')
     os.rename('bot_loop3.py', f'{b_l}')
 
-    shutil.copy('env.py', 'env.py.bak')
+    shutil.copy('config.json', 'config.json.bak')
     remove_lines = ['NEW_MAIN_D', 'NEW_BOT_LOOP']
-    with open('env.py.bak') as oldfile, open('env.py', 'w') as newfile:
+    with open('config.json.bak') as oldfile, open('config.json', 'w') as newfile:
         for line in oldfile:
             if not any(bad_line in line for bad_line in remove_lines):
                 newfile.write(line)
