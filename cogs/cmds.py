@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord import Member, Embed, File, utils
 import os
 import env
+from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -219,8 +220,72 @@ class Cmds(commands.Cog):
         self.set_commands()
         return await ctx.send("Done.")
 
-    # @commands.Cog.listener()
-    # async def on_message(self, message):
+    @commands.group(aliases=["lscmds", "lscmd", "listcmd", "listcommands", "commands", "cmds"])
+    async def listcmds(self, ctx):
+        """List all available commands"""
+        if ctx.invoked_subcommand is None:
+            await self.list_cmds_fnc(ctx)
+
+    @listcmds.command()
+    async def compact(self, ctx):
+        """Very compact view"""
+        await self.list_cmds_fnc(ctx, compact=True)
+
+    async def list_cmds_fnc(self, ctx, compact=False):
+        if ctx.guild.id not in self.bot.all_cmds: return await ctx.send("This server has no custom commands added")
+        cmds = [
+            k if compact else f'**{k}** (raw)' if v['raw'] else f'**{k}** (image)' if v['image'] else f'**{k}** (txt)'
+            for k, v in self.bot.all_cmds[ctx.guild.id]['cmds'].items()
+        ]
+        cmds = sorted(cmds)
+        icmds = [f'{c} (i)' for c in self.bot.all_cmds[ctx.guild.id]['inh_cmds_name_list']]
+        icmds_by_g = {}
+        if not compact:
+            _icmds = [cc for cc in self.bot.all_cmds[ctx.guild.id]['inh_cmd_list']]
+            for ic in _icmds:
+                for k, v in ic.items():
+                    if v['guild_id'] not in icmds_by_g: icmds_by_g[v['guild_id']] = []
+                    icmds_by_g[v['guild_id']].append(
+                        f'**{k}** (raw)' if v['raw'] else f'**{k}** (image)' if v['image'] else f'**{k}** (txt)'
+                    )
+            for k, v in icmds_by_g.items():
+                icmds_by_g[k] = dutils.getParts2kByDelimiter("**-** " + "\n**-** ".join(v), "\n**-** ", "**-** ", 450)
+
+        if compact:
+            cmds.extend(icmds)
+            ret = dutils.getParts2kByDelimiter(' | '.join(cmds), ' | ')
+            for r in ret:
+                await ctx.send(
+                    embed=(Embed(description=r).set_footer(text=f"{'(i) means inherited' if icmds else ''}")))
+            return
+
+        ret = "**-** " + "\n**-** ".join(cmds)
+        ret = dutils.getParts2kByDelimiter(ret, "\n**-** ", "**-** ", 450)
+        embeds = self.make_embeds(icmds_by_g, ret, ctx.guild.name)
+        if len(embeds) == 1:
+            await ctx.send(embed=embeds[0])
+        else:
+            await SimplePaginator(extras=embeds).paginate(ctx)
+
+    def make_embeds(self, icmds, cmds, guild_name):
+        embeds = []
+        for c in cmds:
+            embeds.append(Embed(title=f'Custom cmds for **{guild_name}**\n'
+                                      f'Page {len(embeds) + 1}/[MAX]', description=c,
+                                color=env.BOT_DEFAULT_EMBED_COLOR))
+
+        for k, v in icmds.items():
+            g = self.bot.get_guild(k)
+            gu = '**An __unknown__ server**'
+            if g: gu = f'**{g.name}**'
+            for inh in v:
+                embeds.append(Embed(title=f'Inherited cmds from {gu}\n'
+                                          f'Page {len(embeds) + 1}/[MAX]', description=inh,
+                                    color=env.BOT_DEFAULT_EMBED_COLOR))
+
+        for e in embeds:
+            e.title = str(e.title).replace("[MAX]", str(len(embeds)))
+        return embeds
 
 
 def setup(bot):

@@ -94,3 +94,19 @@ async def result_printer(ctx, result):
             os.remove(f"tmp/{ctx.message.id}.txt")
     else:
         await ctx.send(result)
+
+def getParts2kByDelimiter(text, delimi, extra='', limit=1900):
+    ret = []
+    arr = text.split(delimi)
+    i = -1
+    while arr:
+        i += 1
+        txt = ''
+        while len(txt) < limit:
+            if not arr: break
+            txt += (arr[0] + delimi)
+            del arr[0]
+        txt = txt[:len(txt) - len(delimi)]
+        if i > 0: txt = extra + txt
+        if txt != '': ret.append(txt)
+    return ret

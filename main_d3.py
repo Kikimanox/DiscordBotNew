@@ -114,9 +114,28 @@ async def on_message(message):
             if hasattr(bot, 'ranCommands'): bot.ranCommands += 1
             return await bot.process_commands(message)
         if message.guild and message.guild.id in bot.all_cmds:
-            if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list'] or \
-                    message.content[pfx_len:] in bot.all_cmds[message.guild.id]['cmds_name_list']:
-                c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
+            ctype = -1  # 1 possible_cmd | 2 mutli word | 3 same as 0 but inh | 4 same as 1 but inh
+            if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list']:
+                ctype = 1
+            elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['cmds_name_list']:
+                ctype = 2
+            elif possible_cmd in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
+                ctype = 3
+            elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
+                ctype = 4
+
+            if ctype != -1:
+                if ctype == 1:
+                    c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
+                elif ctype == 2:
+                    c = bot.all_cmds[message.guild.id]['cmds'][message.content[pfx_len:]]
+                elif ctype == 3:
+                    for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
+                        if possible_cmd in cc: c = cc[possible_cmd]
+                elif ctype == 4:
+                    for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
+                        if message.content[pfx_len:] in cc: c = cc[message.content[pfx_len:]]
+
                 if bool(c['raw']): return await message.channel.send(c['content'])
                 if bool(c['image']):
                     em = Embed(color=int(f'0x{c["color"][-6:]}', 16))
