@@ -134,8 +134,8 @@ async def on_message(message):
             Embed(title='My prefix is', description=bot.config['BOT_PREFIX']).set_footer(text='You can change it with '
                                                                                               f'{bot.config["BOT_PREFIX"]}prefix')))
 
-    if message.content.startswith(bot.config['BOT_PREFIX']) or message.content.split(' ')[
-        0] == f'<@!{bot.config["CLIENT_ID"]}>':
+    if message.content.startswith(bot.config['BOT_PREFIX']) or message.content.split(' ')[0] == \
+            f'<@!{bot.config["CLIENT_ID"]}>':
         pfx_len = len(bot.config['BOT_PREFIX']) if message.content.startswith(bot.config['BOT_PREFIX']) else len(
             f'<@!{bot.config["CLIENT_ID"]}>') + 1
         possible_cmd = message.content[pfx_len:].split(' ')[0]
