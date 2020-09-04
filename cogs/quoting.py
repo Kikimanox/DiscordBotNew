@@ -76,6 +76,7 @@ class Quoting(commands.Cog):
         await ctx.send('Error in the quote command')
 
     @commands.cooldown(1, 3600, commands.BucketType.channel)
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @commands.command()
     async def archive(self, ctx):
