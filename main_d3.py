@@ -30,12 +30,17 @@ import fileinput
 import importlib
 
 Prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
+
+
 def get_pre(_bot, _message): return Prefix
+
+
 bot = commands.Bot(command_prefix=get_pre)
 bot.all_cmds = {}
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
 bot.help_command = Help()
+
 
 @bot.event
 async def on_ready():
@@ -115,6 +120,7 @@ async def prefix(ctx, new_prefix=""):
     global Prefix
     Prefix = new_prefix
     await ctx.send("Prefix changed.")
+
 
 @bot.event
 async def on_message(message):
@@ -228,7 +234,11 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.CommandInvokeError):
         print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
     elif isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f"⏲ Command on cooldown, try again in {error.args[0].split(' in ')[-1]}", delete_after=5)
+        extra = ""
+        if error.cooldown.type.name != 'default':
+            extra += f" ({error.cooldown.type.name} cooldown)"
+        await ctx.send(f"⏲ Command on cooldown, try again"
+                       f" in {error.args[0].split(' in ')[-1]}" + extra, delete_after=5)
     elif isinstance(error, commands.errors.CheckFailure):
         await ctx.send("⚠ You don't have permissions to use that command.")
         bot.logger.error('CMD ERROR', 'NoPerms',

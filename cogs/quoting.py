@@ -75,7 +75,7 @@ class Quoting(commands.Cog):
     async def avatar_error(self, ctx, error):
         await ctx.send('Error in the quote command')
 
-    @commands.cooldown(1, 120, commands.BucketType.channel)
+    @commands.cooldown(1, 15, commands.BucketType.channel)
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @commands.command()
