@@ -38,7 +38,7 @@ class CommandsToGuild(BaseModel):
         )
 
 
-# db.drop_tables([Guild, Command, CommandsToGuild])
+db.drop_tables([Guild, Command, CommandsToGuild])
 db.create_tables([Guild, Command, CommandsToGuild])
 
 
