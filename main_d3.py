@@ -299,7 +299,7 @@ def load_extensions(cogs):
 if __name__ == '__main__':
     while True:
         try:
-            load_extensions(['cmds', 'store', 'debugger', 'terminal'])
+            load_extensions(['cmds', 'debugger', 'terminal', 'quoting'])
             if os.name != 'nt':
                 os.setpgrp()
             loop = asyncio.get_event_loop()
