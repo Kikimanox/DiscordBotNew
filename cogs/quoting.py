@@ -64,9 +64,9 @@ class Quoting(commands.Cog):
                 await ctx.send(embed=em)
             else:
                 await ctx.send(embed=Embed(description=f"*[This message]({msg.jump_url}) has no content*"))
-
+            await ctx.send("**Embed quote:**")
             for emm in msg.embeds:
-                await ctx.send(embed=emm, content="**Embed quote:**")
+                await ctx.send(embed=emm)
             return
 
         await ctx.send(embed=em)
@@ -113,11 +113,12 @@ class Quoting(commands.Cog):
                         if not pin.embeds[0].author.id == ctx.bot.config['CLIENT_ID']:
                             if not pin.embeds[0].description or 'Finished archiving pins' \
                                     not in pin.embeds[0].description:
-                                await ctx.send("**Content quote:**")
                                 if pin.content:
+                                    await ctx.send("**Content quote:**")
                                     await ctx.send(embed=em)
                                 else:
-                                    await ctx.send("*This message has no content*")
+                                    await ctx.send(embed=Embed(description=f"*[This message]({pin.jump_url}) "
+                                                                           f"has no content*"))
 
                                 await ctx.send("**Embed quote:**")
                         for emm in pin.embeds:
