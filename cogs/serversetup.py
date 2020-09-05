@@ -5,7 +5,7 @@ import os
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
-
+from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
 
 class ServerSetup(commands.Cog):
     def __init__(self, bot):
@@ -22,10 +22,22 @@ class ServerSetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.group()
-    async def everything(self, ctx):
+    async def everything(self, ctx, *, text):
         """Setup everything at once, read instructions.
 
-        Stuff
+        For a fast setup you can use the following format:
+        **BE SURE TO DOUBLE CHECK IDS, AND FOLLOW THE FORMAT EXACTLY**
+        **If you want to leave anything out put 0 in that line**
+        (just a plain zero chater (0) then move on)
+
+        MUTE_ROLE_ID
+        MODERATOR_ROLE_ID
+        LOGGING_CHANNEL_ID
+        LOGGING_LEAVE_JOIN_CH_ID
+        LOGGING_MOD_LOG_CH_ID
+        HOOK_LOGGING_ID
+        HOOK_LEAVE_JOIN_LOGGING_ID
+        HOOK_MOD_LOG_ID
         """
         raise NotImplementedError
 
@@ -101,7 +113,13 @@ class ServerSetup(commands.Cog):
     @setup.group()
     async def muterole(self, ctx, role: discord.Role):
         """Setup muterole"""
-        await ctx.send("Aight")
+        raise NotImplementedError
+
+    @commands.check(checks.admin_check)
+    @setup.group()
+    async def modrole(self, ctx, role: discord.Role):
+        """Setup moderator specific role"""
+        raise NotImplementedError
 
     @commands.check(checks.admin_check)
     @setup.group()
