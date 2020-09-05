@@ -298,18 +298,20 @@ async def before_any_command(ctx):
                         f"| Message: {ctx.message.content}")
 
 
-def load_extensions(cogs):
-    try:
-        for c in cogs:
-            bot.load_extension(f'cogs.{c}')
-    except Exception as e:
-        traceback.print_exc()
+def load_all_cogs_except(cogs_to_exclude):
+    for extension in os.listdir("cogs"):
+        if extension.endswith('.py'):
+            if extension[:-3] not in cogs_to_exclude:
+                try:
+                    bot.load_extension("cogs." + extension[:-3])
+                except Exception as e:
+                    traceback.print_exc()
 
 
 if __name__ == '__main__':
     while True:
         try:
-            load_extensions(['cmds', 'debugger', 'terminal', 'quoting'])
+            load_all_cogs_except(['_newCogTemplate'])
             if os.name != 'nt':
                 os.setpgrp()
             loop = asyncio.get_event_loop()
