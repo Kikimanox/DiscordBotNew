@@ -18,7 +18,7 @@ class ServerSetup(commands.Cog):
         self.set_setup()
 
     def set_setup(self):
-        self.bot.all_cmds = SSManager.get_setup_formatted()
+        self.bot.from_serversetup = SSManager.get_setup_formatted()
 
     @commands.check(checks.admin_check)
     @commands.group(aliases=["sup"])
