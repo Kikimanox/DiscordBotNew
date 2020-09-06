@@ -52,7 +52,7 @@ class Logging(BaseModel):
     type = CharField()  # reg, leavejoin, modlog
 
 
-db.drop_tables([Guild, Logging, Webhook])
+# db.drop_tables([Guild, WelcomeMsg, Logging, Webhook])
 db.create_tables([Guild, WelcomeMsg, Logging, Webhook])
 
 
