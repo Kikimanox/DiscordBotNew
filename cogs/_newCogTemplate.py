@@ -23,7 +23,7 @@ class ClassName(commands.Cog):
         await self.bot.wait_until_ready()
         while True:
             try:
-                pass  # code here
+                print("Code here")
             except:
                 pass
             await asyncio.sleep(10)  # sleep here
