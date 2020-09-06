@@ -9,7 +9,9 @@ import os
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
+import utils.timeStuff as tutils
 from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
+import datetime
 
 
 class ServerSetup(commands.Cog):
@@ -77,17 +79,20 @@ class ServerSetup(commands.Cog):
             chn = None
             if 'hook_reg' in data: chn = data['hook_reg']
             descField += f'❌ __**Regular logging webhook**__\n' if not chn else \
-                f'✅ __**Regular logging webhook**__\n{chn.name} (id: {chn.id})\n'
+                f'✅ __**Regular logging webhook**__\n{chn.name} (id: {chn.id})\n' \
+                f'Target: {chn.channel.mention}\n'
 
             chn = None
             if 'hook_leavejoin' in data: chn = data['hook_leavejoin']
             descField += f'❌ __**Leavejoin logging webhook**__\n' if not chn else \
-                f'✅ __**Leavejoin logging webhook**__\n{chn.name} (id: {chn.id})\n'
+                f'✅ __**Leavejoin logging webhook**__\n{chn.name} (id: {chn.id})\n' \
+                f'Target: {chn.channel.mention}\n'
 
             chn = None
             if 'hook_modlog' in data: chn = data['hook_modlog']
             descField += f'❌ __**Moderation log webhook**__\n' if not chn else \
-                f'✅ __**Moderation log webhook**__\n{chn.name} (id: {chn.id})\n'
+                f'✅ __**Moderation log webhook**__\n{chn.name} (id: {chn.id})\n' \
+                f'Target: {chn.channel.mention}\n'
             em.add_field(name='Logging webhooks', value=descField, inline=False)
 
             val = "There are no ignored channels"
@@ -623,24 +628,70 @@ class ServerSetup(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if self.bot.from_serversetup and member.guild.id in self.bot.from_serversetup:
-            if 'welcomemsg' in self.bot.from_serversetup[member.guild.id]:
-                wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
-                em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
-                if wmsg['display_mem_count']:
-                    em.set_footer(text=f'Member count: {len(member.guild.members)}')
-                if wmsg.images:
-                    pic = random.choice(wmsg['images'].split())
-                    if pic.startswith('http'):
-                        em.set_image(url=pic)
-                cnt = wmsg.content.replace('[username]', member.mention)
-                if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
-                        and not wmsg['title'] and not wmsg['display_mem_count']:
-                    await wmsg['target_ch'].send(content=cnt)
-                else:
-                    await wmsg['target_ch'].send(embed=em, content=cnt)
-                return
-        self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} in {str(member.guild)} {member.guild.id}")
+        try:
+            if self.bot.from_serversetup and member.guild.id in self.bot.from_serversetup:
+                if 'welcomemsg' in self.bot.from_serversetup[member.guild.id]:
+                    wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
+                    em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
+                    if wmsg['display_mem_count']:
+                        em.set_footer(text=f'Member count: {len(member.guild.members)}')
+                    if wmsg.images:
+                        pic = random.choice(wmsg['images'].split())
+                        if pic.startswith('http'):
+                            em.set_image(url=pic)
+                    cnt = wmsg.content.replace('[username]', member.mention)
+                    if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
+                            and not wmsg['title'] and not wmsg['display_mem_count']:
+                        await wmsg['target_ch'].send(content=cnt)
+                    else:
+                        await wmsg['target_ch'].send(embed=em, content=cnt)
+        except:
+            self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} "
+                                  f"in {str(member.guild)} {member.guild.id}")
+
+        if member.guild.id in self.bot.from_serversetup:
+            try:  # log it
+                sup = self.bot.from_serversetup[member.guild.id]
+                if sup['leavejoin']:
+                    icon_url = member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else str(
+                        member.avatar_url_as(format="png"))
+
+                    embed = Embed(color=0x5ace47, title=f'{str(member.name)} has joined.',
+                                  description=f'📈 {member.mention} (id: {member.id})')
+                    embed.set_footer(text=f"{datetime.datetime.now().strftime('%c')} | "
+                                          f"Member count: {len(member.guild.members)}")
+                    embed.set_author(name=f"{str(member)}", icon_url=icon_url)
+                    embed.add_field(name="Joined", value=tutils.convertTimeToReadable1(member.joined_at), inline=True)
+                    embed.add_field(name="Join Position", value=str(len(member.guild.members)), inline=True)
+                    embed.add_field(name="Registered on", value=tutils.convertTimeToReadable1(member.created_at),
+                                    inline=False)
+
+                    cnt = None
+                    bjac = (member.joined_at - member.created_at).total_seconds()
+                    if bjac < 60: cnt = f"⚠⚠ **User joined {int(bjac)} seconds after account creation** ⚠⚠"
+                    if 60 <= bjac < 3600: cnt = f"⚠ User joined **less than 1 hour** after account creation"
+                    if 3600 <= bjac < 604800: cnt = f"ℹ User joined **less than 1 week** after account creation"
+
+                    await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
+                                               regular_ch=sup['leavejoin'], embed=embed, content=cnt)
+            except:
+                self.bot.logger.error(f"Join log error: {str(member)} {member.id} "
+                                      f"in {str(member.guild)} {member.guild.id}")
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        if member.guild.id in self.bot.from_serversetup:
+            try:  # log it
+                sup = self.bot.from_serversetup[member.guild.id]
+                if sup['leavejoin']:
+                    embed = Embed(color=0xFF2244, description=f'📉 {str(member)} (id: {member.id}) has left the server',
+                                  timestamp=datetime.datetime.utcfromtimestamp(datetime.datetime.now().timestamp()))
+                    embed.set_footer(text=f'New member count: {str(len(member.guild.members))}')
+                    await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
+                                               regular_ch=sup['leavejoin'], embed=embed)
+            except:
+                self.bot.logger.error(f"Leave log error: {str(member)} {member.id} "
+                                      f"in {str(member.guild)} {member.guild.id}")
 
     async def do_setup(self, **kwargs):
         ctx = kwargs.get('ctx', None)

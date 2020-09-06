@@ -132,6 +132,7 @@ async def saveFile(link, path, fName):
                     fd.write(data)
     return fileName
 
+
 async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=None):
     """An interactive reaction confirmation dialog.
     Parameters
@@ -185,7 +186,6 @@ async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=No
     for emoji in ('\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}'):
         await msg.add_reaction(emoji)
 
-
     try:
         await ctx.bot.wait_for('raw_reaction_add', check=check, timeout=timeout)
     except asyncio.TimeoutError:
@@ -196,3 +196,18 @@ async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=No
             await msg.delete()
     finally:
         return confirm
+
+
+async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
+    hook_ok = regular_ch.id == hook.channel_id
+    if hook and hook_ok:
+        try:
+            await hook.send(embed=embed, content=content)
+        except:
+            await regular_ch.send(embed=embed, content=content)
+    else:
+        await regular_ch.send(embed=embed, content=content)
+    if not hook_ok:
+        await regular_ch.send("**Logging hook and channel id mismatch, please fix!!!**")
+        bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
+                         f"{guild.id})**")
