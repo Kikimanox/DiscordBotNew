@@ -1,3 +1,5 @@
+import asyncio
+import random
 import traceback
 import json
 import discord
@@ -15,7 +17,7 @@ class ServerSetup(commands.Cog):
         self.bot = bot
 
     @commands.check(checks.admin_check)
-    @commands.group()
+    @commands.group(aliases=["sup"])
     async def setup(self, ctx):
         """Use the subcommands to setup server related stuff
 
@@ -163,41 +165,297 @@ class ServerSetup(commands.Cog):
         await msg.edit(content='Done, setup complete')
 
     @commands.check(checks.admin_check)
-    @setup.group()
+    @setup.group(aliases=['wm'])
     async def welcomemsg(self, ctx):
         """Main w.m. setup command, use subcommands"""
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @welcomemsg.command()
-    async def mainsetup(self, ctx):
-        """Go trough the entire setup process"""
-        raise NotImplementedError
+    @welcomemsg.command(aliases=['m'])
+    async def mainsetup(self, ctx, target_channel: discord.TextChannel):
+        """Go trough the entire setup process
+
+        With this command you can setup an image or more images to be randomly picked
+        when the user joins the server, what the message content should be, embed title, and embed
+        content. Usage examples are shown below:
+
+        The only requiered argument is the welcome channel id, you will be querried for the rest of the data
+        during this comamnd's execution. Example below will set the channel with the following id to be the welcome one.
+
+        `[p]setup welcomemsg mainsetup 589190883857924154`"""
+        db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
+        db_wmsg = SSManager.get_or_create_and_get_welcomemsg(db_guild, target_channel.id, ctx.guild.id)
+
+        # This code is copy pasted from the old bot code, didn't feel like it needed to be changed
+        # (even though it's pretty spaghetti code)
+
+        # --- CHECKS START
+
+        def checkYN(m):
+            return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
+                   m.author == ctx.author and m.channel == ctx.channel
+
+        def checkAuthor(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        # --- CHECKS END
+
+        if db_wmsg.images or db_wmsg.content or db_wmsg.desc or db_wmsg.title:
+            #  Display old data
+
+            await ctx.send('Welcome data already setup, displaying current data:')
+            pics = '\n'.join([f'<{p}>' for p in db_wmsg.images.split()])
+            cnt = f"**Channel:** <#{db_wmsg.target_ch}>\n" \
+                  f"**Non embed msg:** {db_wmsg.content}\n" \
+                  f"**Embed Title:** {db_wmsg.title}\n" \
+                  f"**Embed Content** {db_wmsg.desc}\n" \
+                  f"**Embed Color** {hex(db_wmsg.color)}\n" \
+                  f"**\nWelcome images:**\n" \
+                  f"{pics}"
+            em = Embed(title=f'Data for {str(ctx.guild)}', color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'],
+                       description=cnt)
+            await ctx.send(embed=em)
+            # Prompt to start over
+            pr = await ctx.send('Do you wish to start the setup from the start? (y/n)')
+            try:
+                reply = await self.bot.wait_for("message", check=checkYN, timeout=30)
+            except asyncio.TimeoutError:
+                return await ctx.send("Cancelled.")
+            if not reply or reply.content.lower().strip() == 'n':
+                return await ctx.send("Cancelled.")
+
+        # Start prompting
+        emm = Embed(description='Starting setup, please reply with the required data, careful becasue '
+                                'there are no undos\n(you can start over by sending: `STOP THIS NOW` '
+                                'though ... but still, be careful)')
+        emm.set_image(url='http://totally-not.a-sketchy.site/7UAZyTZ.png')
+        await ctx.send(embed=emm)
+        await ctx.send('**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**')
+
+        # QUESTION 1
+        pr = await ctx.send(
+            'What should the message be? (the one outside the embed, send just **$** if nothing)\n'
+            'If you want to ping the user who has just joined use [username] in this message. Example:\n'
+            '\n[username] welcome to the server!')
+        try:
+            reply = await self.bot.wait_for("message", check=checkAuthor, timeout=120)
+        except asyncio.TimeoutError:
+            return await ctx.send("Setup cancelled.")
+        if not reply or reply.content.lower().strip() == 'stop this now':
+            return await ctx.send("Setup cancelled.")
+        else:
+            await pr.delete()
+            mm = reply.content.strip()
+            if mm == '$': mm = ""
+            if mm: db_wmsg.content = mm
+            await reply.delete()
+
+        # QUESTION 2
+        pr = await ctx.send('What should the embed title be? (send **$** if nothing)')
+        try:
+            reply = await self.bot.wait_for("message", check=checkAuthor, timeout=120)
+        except asyncio.TimeoutError:
+            return await ctx.send("Setup cancelled.")
+        if not reply or reply.content.lower().strip() == 'stop this now':
+            return await ctx.send("Setup cancelled.")
+        else:
+            await pr.delete()
+            rp = reply.content.strip()
+            if rp == '$': rp = ""
+            if rp: db_wmsg.title = rp
+            await reply.delete()
+
+        # QUESTION 3
+        pr = await ctx.send('What should the embed content be? (send **$** if nothing)')
+        try:
+            reply = await self.bot.wait_for("message", check=checkAuthor, timeout=120)
+        except asyncio.TimeoutError:
+            return await ctx.send("Setup cancelled.")
+        if not reply or reply.content.lower().strip() == 'stop this now':
+            return await ctx.send("Setup cancelled.")
+        else:
+            await pr.delete()
+            rp2 = reply.content.strip()
+            if rp2 == '$': rp2 = ""
+            if rp2: db_wmsg.desc = rp2
+            await reply.delete()
+
+        # QUESTION 4
+        pr = await ctx.send('What should the embed color be? (send **$** if you want to keep '
+                            'the default bot embed color)\nColor format, one of:\n'
+                            '0x1F2E3C | #1F2E3C | 1F2E3C')
+        try:
+            reply = await self.bot.wait_for("message", check=checkAuthor, timeout=120)
+        except asyncio.TimeoutError:
+            return await ctx.send("Setup cancelled.")
+        if not reply or reply.content.lower().strip() == 'stop this now':
+            return await ctx.send("Setup cancelled.")
+        else:
+            await pr.delete()
+            rp3 = reply.content.strip()
+            if rp3 == '$':
+                color = -100
+            else:
+                color = -100
+                try:
+                    color = int(rp3[-6:], 16)
+                except:
+                    await ctx.send("**(*This message* will auto delete in 20 seconds)"
+                                   "\nYou failed to input a correct color format, keeping the default bot color.\n"
+                                   f"Can still be changed with `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg "
+                                   f"color color_here`\n**"
+                                   f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
+                                   delete_after=20)
+                    color = -100
+
+                if color != -100: db_wmsg.color = color
+                await reply.delete()
+
+        # QUESTION 5
+        pr = await ctx.send('Please provide the image or images that should be used for the welcome message '
+                            'picture. (If more are provided then a random one will be chosen once '
+                            'a user joins the server)\nSend the images'
+                            'in the following format:\n\n- If none: just send **$**'
+                            '\n- If just one: Just send the one picture link.\n'
+                            '- If multiple: '
+                            'link1 link2 link3 link4 link5')
+        try:
+            reply = await self.bot.wait_for("message", check=checkAuthor, timeout=120)
+        except asyncio.TimeoutError:
+            return await ctx.send("Setup cancelled.")
+        if not reply or reply.content.lower().strip() == 'stop this now':
+            return await ctx.send("Setup cancelled.")
+        else:
+            await pr.delete()
+            if reply.content.strip() == '$':
+                images = ""
+            else:
+                images = " ".join(reply.content.replace('\n', ' ').split())
+            db_wmsg.images = images
+            await reply.delete()
+
+        # DONE QUERRYING, DISPLAY FINAL PREVIEW
+        await ctx.send('⚠ Setup done, preview below, if all is ok reply with **y** if not with **n** ⚠\n'
+                       '**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**')
+
+        pics = '\n'.join([f'<{p}>' for p in db_wmsg.images.split()])
+        cnt = f"**Channel:** <#{db_wmsg.target_ch}>\n" \
+              f"**Non embed msg:** {db_wmsg.content}\n" \
+              f"**Embed Title:** {db_wmsg.title}\n" \
+              f"**Embed Content** {db_wmsg.desc}\n" \
+              f"**Embed Color** {hex(db_wmsg.color)}\n" \
+              f"**\nWelcome images:**\n" \
+              f"{pics}"
+        em = Embed(title=f'Data for {str(ctx.guild)}', color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'],
+                   description=cnt)
+        await ctx.send(embed=em)
+
+        try:
+            reply = await self.bot.wait_for("message", check=checkYN, timeout=120)
+        except asyncio.TimeoutError:
+            return await ctx.send("Cancelled.")
+        if not reply or reply.content.lower().strip() == 'n':
+            return await ctx.send("Cancelled.")
+        else:
+            db_wmsg.save()
+            await ctx.send('Done, saved.')
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def title(self, ctx):
+    async def targetch(self, ctx, target_channel: discord.TextChannel):
+        """Fine tune target channel"""
+        await SSManager.update_or_error_welcomemsg_target_ch(target_channel.id, ctx.guild.id, ctx)
+
+    @commands.check(checks.admin_check)
+    @welcomemsg.command()
+    async def title(self, ctx, *, title):
         """Fine tune embed title"""
-        raise NotImplementedError
+        await SSManager.update_or_error_welcomemsg_title(title, ctx.guild.id, ctx)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def desc(self, ctx):
+    async def desc(self, ctx, *, description):
         """Fine tune embed desscription"""
-        raise NotImplementedError
+        await SSManager.update_or_error_welcomemsg_desc(description, ctx.guild.id, ctx)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def images(self, ctx):
-        """Fine tune embed possible images"""
-        raise NotImplementedError
+    async def images(self, ctx, *, images):
+        """Fine tune embed image(s) (seperate with a space)"""
+        images = " ".join(images.replace('\n', ' ').split())
+        await SSManager.update_or_error_welcomemsg_images(images, ctx.guild.id, ctx)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def content(self, ctx):
-        """Fine tune message outside of the embed"""
-        raise NotImplementedError
+    async def content(self, ctx, *, cnt):
+        """Fine tune message outside of the embed
+
+        [username] will be replaced with new user ping"""
+        await SSManager.update_or_error_welcomemsg_content(cnt, ctx.guild.id, ctx)
+
+    @commands.check(checks.admin_check)
+    @welcomemsg.command()
+    async def color(self, ctx, *, color):
+        """Fine tune embed color
+
+        Color format, one of:
+        0x1F2E3C | #1F2E3C | 1F2E3C"""
+        try:
+            _color = int(color[-6:], 16)
+        except:
+            return await ctx.send("Invalid color format, please use one of:\n"
+                                  "0x1F2E3C | #1F2E3C | 1F2E3C")
+
+        await SSManager.update_or_error_welcomemsg_color(_color, ctx.guild.id, ctx)
+
+    @commands.check(checks.admin_check)
+    @welcomemsg.command()
+    async def current(self, ctx):
+        """Display all current information regarding welcome messages"""
+        try:
+            db_wmsg = WelcomeMsg.get(WelcomeMsg.guild == ctx.guild.id)
+        except:
+            return await ctx.send("No data setup.")
+
+        if db_wmsg.images or db_wmsg.content or db_wmsg.desc or db_wmsg.title:
+            #  Display old data
+
+            await ctx.send('Ddisplaying current data:')
+            pics = '\n'.join([f'<{p}>' for p in db_wmsg.images.split()])
+            cnt = f"**Channel:** <#{db_wmsg.target_ch}>\n" \
+                  f"**Non embed msg:** {db_wmsg.content}\n" \
+                  f"**Embed Title:** {db_wmsg.title}\n" \
+                  f"**Embed Content** {db_wmsg.desc}\n" \
+                  f"**Embed Color** {hex(db_wmsg.color)}\n" \
+                  f"**\nWelcome images:**\n" \
+                  f"{pics}"
+            em = Embed(title=f'Data for {str(ctx.guild)}', color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'],
+                       description=cnt)
+            await ctx.send(embed=em)
+
+        else:
+            ctx.send("No data setup.")
+
+    @commands.check(checks.admin_check)
+    @welcomemsg.command()
+    async def test(self, ctx):
+        """Do a test welcome on yourself in this channel"""
+        try:
+            db_wmsg = WelcomeMsg.get(WelcomeMsg.guild == ctx.guild.id)
+        except:
+            return await ctx.send("No data setup.")
+
+        if db_wmsg.images or db_wmsg.content or db_wmsg.desc or db_wmsg.title:
+            em = Embed(title=db_wmsg.title, description=db_wmsg.desc, color=db_wmsg.color)
+            em.set_footer(text=f'Member count: {len(ctx.guild.members)}')
+            if db_wmsg.images:
+                em.set_image(url=random.choice(db_wmsg.images.split()))
+            await ctx.send(embed=em, content=db_wmsg.content.replace('[username]', ctx.author.mention))
+
+        else:
+            ctx.send("No data setup.")
 
     async def do_setup(self, **kwargs):
         ctx = kwargs.get('ctx', None)

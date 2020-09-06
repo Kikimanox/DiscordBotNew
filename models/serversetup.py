@@ -9,6 +9,7 @@ import os
 from peewee import *
 from datetime import datetime
 import utils.discordUtils as dutils
+from utils.dataIOa import dataIOa
 
 DB = "data/serversetup.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
@@ -27,10 +28,12 @@ class Guild(BaseModel):
 
 class WelcomeMsg(BaseModel):
     guild = ForeignKeyField(Guild, on_delete="CASCADE")
-    content = CharField(null=True)
-    desc = CharField(null=True)
-    images = CharField(null=True)
-    title = CharField(null=True)
+    content = CharField(default='')
+    desc = CharField(default='')
+    images = CharField(default='')
+    title = CharField(default='')
+    color = IntegerField(default=int(f"0x{dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16))
+    target_ch = IntegerField()  # target channel
 
 
 class Webhook(BaseModel):
@@ -60,6 +63,74 @@ class SSManager:
         except:
             guild = Guild.create(id=gid)
         return guild
+
+    @staticmethod
+    def get_or_create_and_get_welcomemsg(g, chid, gid):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+        except Exception as e:
+            wm = WelcomeMsg.create(target_ch=chid, guild=g)
+        return wm
+
+    @staticmethod
+    async def update_or_error_welcomemsg_target_ch(chid, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.target_ch = chid
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+
+    @staticmethod
+    async def update_or_error_welcomemsg_title(title, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.title = title
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+
+    @staticmethod
+    async def update_or_error_welcomemsg_desc(desc, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.desc = desc
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+
+    @staticmethod
+    async def update_or_error_welcomemsg_images(images, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.images = images
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+
+    @staticmethod
+    async def update_or_error_welcomemsg_content(content, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.content = content
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+
+    @staticmethod
+    async def update_or_error_welcomemsg_color(color, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.color = color
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     def create_or_update_logging(g, tar_id, typ):
