@@ -612,7 +612,8 @@ class ServerSetup(commands.Cog):
                 if pic.startswith('http'):
                     em.set_image(url=pic)
             cnt = db_wmsg.content.replace('[username]', ctx.author.mention)
-            if not db_wmsg.images and db_wmsg.content and not db_wmsg.desc and not db_wmsg.title:
+            if not db_wmsg.images and db_wmsg.content and not db_wmsg.desc \
+                    and not db_wmsg.title and not db_wmsg.display_mem_count:
                 await ctx.send(content=cnt)
             else:
                 await ctx.send(embed=em, content=cnt)
@@ -633,7 +634,8 @@ class ServerSetup(commands.Cog):
                     if pic.startswith('http'):
                         em.set_image(url=pic)
                 cnt = wmsg.content.replace('[username]', member.mention)
-                if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] and not wmsg['title']:
+                if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
+                        and not wmsg['title'] and not wmsg['display_mem_count']:
                     await wmsg['target_ch'].send(content=cnt)
                 else:
                     await wmsg['target_ch'].send(embed=em, content=cnt)
