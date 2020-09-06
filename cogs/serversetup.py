@@ -303,6 +303,7 @@ class ServerSetup(commands.Cog):
             rp3 = reply.content.strip()
             if rp3 == '$':
                 color = -100
+                await reply.delete()
             else:
                 color = -100
                 try:

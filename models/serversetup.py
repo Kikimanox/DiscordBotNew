@@ -209,3 +209,5 @@ class SSManager:
                         await bot.fetch_channel(ret[g['id']]['welcomemsg']['target_ch'])
                 except:
                     ret[g['id']]['welcomemsg'] = None
+
+        return ret
