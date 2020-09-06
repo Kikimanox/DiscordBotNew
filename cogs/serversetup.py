@@ -426,7 +426,7 @@ class ServerSetup(commands.Cog):
     async def images(self, ctx, *, images):
         """Fine tune embed image(s) (seperate with a space)"""
         images = " ".join(images.replace('\n', ' ').split())
-        for i in images:
+        for i in images.split():
             if not i.startswith('http'): return await ctx.send("One of the image links doesn't start with `http`...")
         await SSManager.update_or_error_welcomemsg_images(images, ctx.guild.id, ctx)
         await self.set_setup(ctx.guild.id)
