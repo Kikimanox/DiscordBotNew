@@ -361,7 +361,7 @@ class ServerSetup(commands.Cog):
                 images = ""
             else:
                 images = " ".join(reply.content.replace('\n', ' ').split())
-                for i in images:
+                for i in images.split():
                     if not i.startswith('http'):
                         await ctx.send(
                             "One of the image links doesn't start with `http`...\n"
