@@ -176,7 +176,36 @@ class SSManager:
         except:
             Webhook.insert(type=typ, guild=g, target_ch=tar_id, url=h_url, hook_id=hook_id).execute()
 
-
     @staticmethod
-    def get_setup_formatted():
-        pass
+    async def get_setup_formatted(bot, updating_g_id=None):
+        gs = [q for q in Guild.select().dicts()]
+        lgs = [q for q in Logging.select().dicts()]
+        whks = [q for q in Webhook.select().dicts()]
+        welcs = [q for q in WelcomeMsg.select().dicts()]
+
+        ret = {}
+        for g in gs:
+            if updating_g_id and updating_g_id != g['id']: continue
+            ret[g['id']] = {'muterole': g['muterole'], 'modrole': g['modrole']}
+            for lg in lgs:
+                if lg['guild'] != g['id']: continue
+                try:
+                    ret[g['id']][lg['type']] = await bot.fetch_channel(lg['target_ch'])
+                except:
+                    ret[g['id']][lg['type']] = None
+            for wh in whks:
+                if wh['guild'] != g['id']: continue
+                try:
+                    aa = await bot.fetch_webhook(wh['hook_id'])  # wh['hook_id']
+                    ret[g['id']][f"hook_{wh['type']}"] = aa
+                except:
+                    bot.logger.error(f"Webhook for guild {wh['guild']} missing")
+                    ret[g['id']][f"hook_{wh['type']}"] = None
+            for wel in welcs:
+                if wel['guild'] != g['id']: continue
+                ret[g['id']]['welcomemsg'] = wel
+                try:
+                    ret[g['id']]['welcomemsg']['target_ch'] = \
+                        await bot.fetch_channel(ret[g['id']]['welcomemsg']['target_ch'])
+                except:
+                    ret[g['id']]['welcomemsg'] = None

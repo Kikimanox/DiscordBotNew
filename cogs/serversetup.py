@@ -15,10 +15,12 @@ from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
 class ServerSetup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.set_setup()
+        bot.loop.create_task(self.set_setup())
 
-    def set_setup(self):
-        self.bot.from_serversetup = SSManager.get_setup_formatted()
+    async def set_setup(self, gid=None):
+        if not self.bot.is_ready():
+            await self.bot.wait_until_ready()
+        self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot, gid)
 
     @commands.check(checks.admin_check)
     @commands.group(aliases=["sup"])
@@ -365,28 +367,28 @@ class ServerSetup(commands.Cog):
         else:
             db_wmsg.save()
             await ctx.send('Done, saved.')
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
     async def targetch(self, ctx, target_channel: discord.TextChannel):
         """Fine tune target channel"""
         await SSManager.update_or_error_welcomemsg_target_ch(target_channel.id, ctx.guild.id, ctx)
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
     async def title(self, ctx, *, title):
         """Fine tune embed title"""
         await SSManager.update_or_error_welcomemsg_title(title, ctx.guild.id, ctx)
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
     async def desc(self, ctx, *, description):
         """Fine tune embed desscription"""
         await SSManager.update_or_error_welcomemsg_desc(description, ctx.guild.id, ctx)
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -394,7 +396,7 @@ class ServerSetup(commands.Cog):
         """Fine tune embed image(s) (seperate with a space)"""
         images = " ".join(images.replace('\n', ' ').split())
         await SSManager.update_or_error_welcomemsg_images(images, ctx.guild.id, ctx)
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -403,7 +405,7 @@ class ServerSetup(commands.Cog):
 
         [username] will be replaced with new user ping"""
         await SSManager.update_or_error_welcomemsg_content(cnt, ctx.guild.id, ctx)
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -419,7 +421,7 @@ class ServerSetup(commands.Cog):
                                   "0x1F2E3C | #1F2E3C | 1F2E3C")
 
         await SSManager.update_or_error_welcomemsg_color(_color, ctx.guild.id, ctx)
-        self.set_setup()
+        await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -468,6 +470,19 @@ class ServerSetup(commands.Cog):
         else:
             ctx.send("No data setup.")
 
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        if self.bot.from_serversetup and member.guild.id in self.bot.from_serversetup:
+            if 'welcomemsg' in self.bot.from_serversetup[member.guild.id]:
+                wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
+                em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
+                em.set_footer(text=f'Member count: {len(member.guild.members)}')
+                if wmsg['images']:
+                    em.set_image(url=random.choice(wmsg['images'].split()))
+                await wmsg['target_ch'].send(embed=em, content=wmsg['content'].replace('[username]', member.mention))
+                return
+        self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} in {str(member.guild)} {member.guild.id}")
+
     async def do_setup(self, **kwargs):
         ctx = kwargs.get('ctx', None)
         if not ctx: raise Exception("Missing ctx in do_setup")
@@ -514,7 +529,7 @@ class ServerSetup(commands.Cog):
             else:
                 await ctx.send(f"You shouldn't have hit this. oi.. <@!{ctx.bot.config['OWNER_ID']}>")
             if not quiet_succ: await ctx.send("Done.")
-            self.set_setup()
+            await self.set_setup(ctx.guild.id)
             return True
         except Exception as e:
             if str(e) == '_fail': return
