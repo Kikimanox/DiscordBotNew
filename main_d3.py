@@ -39,6 +39,7 @@ bot = commands.Bot(command_prefix=get_pre)
 ###
 bot.all_cmds = {}
 bot.from_serversetup = {}
+bot.running_tasks = []
 ###
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
@@ -48,10 +49,10 @@ bot.help_command = Help()
 @bot.event
 async def on_ready():
     ###
-    bot.all_cmds = {}
-    bot.from_serversetup = {}
+    if hasattr(bot, 'all_cmds') and not bot.all_cmds: bot.all_cmds = {}
+    if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
+    if hasattr(bot, 'running_tasks') and not bot.running_tasks: bot.running_tasks = []
     ###
-    bot.running_tasks = []
     bot.config = dataIOa.load_json('config.json')
     bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
     bot.uptime = datetime.datetime.utcnow()
@@ -110,6 +111,11 @@ def exit_bot(self):
     #         trace = traceback.format_exc()
     #         bot.logger.error(trace)
     #         print(trace)
+    for t in bot.running_tasks:
+        try:
+            t.cancel()
+        except:
+            pass
     os._exit(0)
 
 
