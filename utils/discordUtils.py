@@ -119,3 +119,13 @@ def getParts2kByDelimiter(text, delimi, extra='', limit=1900):
         if i > 0: txt = extra + txt
         if txt != '': ret.append(txt)
     return ret
+
+
+async def saveFile(link, path, fName):
+    fileName = f"{path}/{fName}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(link) as r:
+            with open(fileName, 'wb') as fd:
+                async for data in r.content.iter_chunked(1024):
+                    fd.write(data)
+    return fileName

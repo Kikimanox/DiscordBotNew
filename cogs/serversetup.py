@@ -1,3 +1,5 @@
+import traceback
+import json
 import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
@@ -6,6 +8,7 @@ from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
+
 
 class ServerSetup(commands.Cog):
     def __init__(self, bot):
@@ -22,24 +25,38 @@ class ServerSetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.group()
-    async def everything(self, ctx, *, text):
-        """Setup everything at once, read instructions.
-
-        For a fast setup you can use the following format:
-        **BE SURE TO DOUBLE CHECK IDS, AND FOLLOW THE FORMAT EXACTLY**
-        **If you want to leave anything out put 0 in that line**
-        (just a plain zero chater (0) then move on)
-
-        MUTE_ROLE_ID
-        MODERATOR_ROLE_ID
-        LOGGING_CHANNEL_ID
-        LOGGING_LEAVE_JOIN_CH_ID
-        LOGGING_MOD_LOG_CH_ID
-        HOOK_LOGGING_ID
-        HOOK_LEAVE_JOIN_LOGGING_ID
-        HOOK_MOD_LOG_ID
-        """
-        raise NotImplementedError
+    async def everything(self, ctx,
+                         logging_regular_channel: discord.TextChannel,
+                         logging_leavejoin_channel: discord.TextChannel,
+                         logging_modlog_channel: discord.TextChannel,
+                         hook_logging_id: int,
+                         hook_logging_target_ch: discord.TextChannel,
+                         hook_leavejoin_id: int,
+                         hook_leavejoin_target_ch: discord.TextChannel,
+                         hook_modlog_id: int,
+                         hook_modlog_target_ch: discord.TextChannel,
+                         moderator_role: discord.Role,
+                         mute_role: discord.Role):
+        """Setup everything at once"""
+        await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
+        await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
+        await self.do_setup(ctx=ctx, logging_modlog=logging_modlog_channel, quiet_succ=True)
+        await self.do_setup(hook_reg=hook_logging_id, hook_reg_target=hook_logging_target_ch, ctx=ctx,
+                            quiet_succ=True)
+        await self.do_setup(hook_leavejoin=hook_leavejoin_id, hook_leavejoin_target=hook_leavejoin_target_ch, ctx=ctx,
+                            quiet_succ=True)
+        await self.do_setup(hook_modlog=hook_modlog_id, hook_modlog_target=hook_modlog_target_ch, ctx=ctx,
+                            quiet_succ=True)
+        await self.do_setup(mod_role=moderator_role, ctx=ctx, quiet_succ=True)
+        await self.do_setup(mute_role=mute_role, ctx=ctx, quiet_succ=True)
+        await ctx.send("--------------\n"
+                       "*The following message always appears.\n"
+                       "If you didn't get any errors during the setup it actually worked.\n"
+                       "If you got errors ignore the following msg...*")
+        await ctx.send("Done!! As for the muted role, it's stored but...\n"
+                       "This doesn't mean the channel permissions are setup though.\n"
+                       "If they weren't set by hand yet, you can use:\n"
+                       f"`{ctx.bot.config['BOT_PREFIX']}setup muterolechperms <role_id>/<role_name>`")
 
     @commands.check(checks.admin_check)
     @setup.group()
@@ -50,9 +67,9 @@ class ServerSetup(commands.Cog):
 
         Setup XYZ webhook by providing it's id and target ch
 
-        Setup X channel and target_channel should match
+        **Setup X channel and target_channel should match**
 
-        ***WARNING!!!***
+        ***WARNING!!! (NEVER PASTE THE FULL WEBHOOK URL IN CHAT)***
         Do not copy more than the webhook id. DO NOT post the entire url.
         When you copy the webhook url, insert only the id as the parameter.
 
@@ -68,19 +85,19 @@ class ServerSetup(commands.Cog):
     @webhooks.command()
     async def regularlogging(self, ctx, hook_id: int, target_channel: discord.TextChannel):
         """Regular logging hook"""
-        raise NotImplementedError
+        await self.do_setup(hook_reg=hook_id, hook_reg_target=target_channel, ctx=ctx)
 
     @commands.check(checks.admin_check)
     @webhooks.command()
     async def leavejoin(self, ctx, hook_id: int, target_channel: discord.TextChannel):
         """Leave and join logging hook"""
-        raise NotImplementedError
+        await self.do_setup(hook_leavejoin=hook_id, hook_leavejoin_target=target_channel, ctx=ctx)
 
     @commands.check(checks.admin_check)
     @webhooks.command()
     async def modlog(self, ctx, hook_id: int, target_channel: discord.TextChannel):
         """Moderation log logging hook"""
-        raise NotImplementedError
+        await self.do_setup(hook_modlog=hook_id, hook_modlog_target=target_channel, ctx=ctx)
 
     @commands.check(checks.admin_check)
     @setup.group()
@@ -95,31 +112,55 @@ class ServerSetup(commands.Cog):
     @logging.command()
     async def regular(self, ctx, channel: discord.TextChannel):
         """Logging for deleted/edited messages"""
-        await self.do_setup(ctx=ctx, logging_ch=channel)
+        await self.do_setup(ctx=ctx, logging_reg=channel)
 
     @commands.check(checks.admin_check)
     @logging.command()
     async def leavejoin(self, ctx, channel: discord.TextChannel):
         """Logging for leave/join messages"""
-        raise NotImplementedError
+        await self.do_setup(ctx=ctx, logging_leavejoin=channel)
 
     @commands.check(checks.admin_check)
     @logging.command()
     async def modlog(self, ctx, channel: discord.TextChannel):
         """Logging for moderation related actions"""
-        raise NotImplementedError
+        await self.do_setup(ctx=ctx, logging_modlog=channel)
 
     @commands.check(checks.admin_check)
     @setup.group()
-    async def muterole(self, ctx, role: discord.Role):
-        """Setup muterole"""
-        raise NotImplementedError
+    async def muterolenew(self, ctx, role: discord.Role):
+        """Setup muterole
+        Note, this command may be used with any role, but it's main
+        purpose/use is to setup the mute role perms on the channels."""
+        await self.do_setup(mute_role=role, ctx=ctx)
+        await ctx.send("Stored/updated the muted role in the database.\n"
+                       "This doesn't mean the channel permissions are setup though.\n"
+                       "If they weren't set by hand yet, you can use:\n"
+                       f"`{ctx.bot.config['BOT_PREFIX']}setup muterolechperms <role_id>/<role_name>`\n")
 
     @commands.check(checks.admin_check)
     @setup.group()
     async def modrole(self, ctx, role: discord.Role):
         """Setup moderator specific role"""
-        raise NotImplementedError
+        await self.do_setup(mod_role=role, ctx=ctx)
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.admin_check)
+    @setup.group()
+    async def muterolechperms(self, ctx, role: discord.Role):
+        """Update channel perms for the mute role"""
+        msg = await ctx.send('Applying channel permissions')
+        for ch in ctx.guild.text_channels:
+            overwrites_muted = ch.overwrites_for(role)
+            overwrites_muted.send_messages = False
+            overwrites_muted.add_reactions = False
+            await ch.set_permissions(role, overwrite=overwrites_muted)
+        for ch in ctx.guild.voice_channels:
+            overwrites_muted = ch.overwrites_for(role)
+            overwrites_muted.speak = False
+            overwrites_muted.connect = False
+            await ch.set_permissions(role, overwrite=overwrites_muted)
+        await msg.edit(content='Done, setup complete')
 
     @commands.check(checks.admin_check)
     @setup.group()
@@ -161,6 +202,7 @@ class ServerSetup(commands.Cog):
     async def do_setup(self, **kwargs):
         ctx = kwargs.get('ctx', None)
         if not ctx: raise Exception("Missing ctx in do_setup")
+        quiet_succ = kwargs.get('quiet_succ', False)
         hook_reg = kwargs.get('hook_reg', None)
         hook_reg_target = kwargs.get('hook_reg_target', None)
         hook_leavejoin = kwargs.get('hook_leavejoin', None)
@@ -168,14 +210,51 @@ class ServerSetup(commands.Cog):
         hook_modlog = kwargs.get('hook_modlog', None)
         hook_modlog_target = kwargs.get('hook_modlog_target', None)
 
-        logging_reg = kwargs.get('logging_ch', None)
-        logging_leavejoin = kwargs.get('logging_ch', None)
-        logging_modlog = kwargs.get('logging_ch', None)
+        logging_reg = kwargs.get('logging_reg', None)
+        logging_leavejoin = kwargs.get('logging_leavejoin', None)
+        logging_modlog = kwargs.get('logging_modlog', None)
 
         mute_role = kwargs.get('mute_role', None)
+        mod_role = kwargs.get('mod_role', None)
 
-        if logging_reg and len(kwargs) == 2:
-            pass
+        db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
+        try:
+            if logging_reg and (len(kwargs) == 2 or (len(kwargs) == 3 and quiet_succ)):
+                SSManager.create_or_update_logging(db_guild, logging_reg.id, 'reg')
+            elif logging_leavejoin and (len(kwargs) == 2 or (len(kwargs) == 3 and quiet_succ)):
+                SSManager.create_or_update_logging(db_guild, logging_leavejoin.id, 'leavejoin')
+            elif logging_modlog and (len(kwargs) == 2 or (len(kwargs) == 3 and quiet_succ)):
+                SSManager.create_or_update_logging(db_guild, logging_modlog.id, 'modlog')
+            elif hook_reg and hook_reg_target and (len(kwargs) == 3 or (len(kwargs) == 4 and quiet_succ)):
+                await SSManager.create_or_update_logging_hook(db_guild, hook_reg, hook_reg_target.id, 'reg',
+                                                              await ctx.bot.fetch_webhook(hook_reg), ctx)
+            elif hook_leavejoin and hook_leavejoin_target and (len(kwargs) == 3 or (len(kwargs) == 4 and quiet_succ)):
+                await SSManager.create_or_update_logging_hook(db_guild, hook_leavejoin, hook_leavejoin_target.id,
+                                                              'leavejoin', await ctx.bot.fetch_webhook(hook_leavejoin),
+                                                              ctx)
+            elif hook_modlog and hook_modlog_target and (len(kwargs) == 3 or (len(kwargs) == 4 and quiet_succ)):
+                await SSManager.create_or_update_logging_hook(db_guild, hook_modlog, hook_modlog_target.id, 'modlog',
+                                                              await ctx.bot.fetch_webhook(hook_modlog), ctx)
+            elif mute_role and (len(kwargs) == 2 or (len(kwargs) == 3 and quiet_succ)):
+                db_guild.muterole = mute_role.id
+                db_guild.save()
+            elif mod_role and (len(kwargs) == 2 or (len(kwargs) == 3 and quiet_succ)):
+                db_guild.modrole = mod_role.id
+                db_guild.save()
+
+            else:
+                await ctx.send(f"You shouldn't have hit this. oi.. <@!{ctx.bot.config['OWNER_ID']}>")
+            if not quiet_succ: await ctx.send("Done.")
+            return True
+        except Exception as e:
+            if str(e) == '_fail': return
+            traceback.print_exc()
+            info = ""
+            if quiet_succ:
+                for k, v in kwargs.items(): kwargs[k] = str(v)
+                info += f" **Kwargs dump:**\n```{json.dumps(kwargs, indent=4)}```"
+            await ctx.send("Something went wrong." + info)
+            return False
 
 
 def setup(bot):

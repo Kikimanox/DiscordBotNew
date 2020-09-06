@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
 import os
+import traceback
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
