@@ -1,3 +1,5 @@
+import asyncio
+
 import utils.dataIO as dataIO
 import os
 from discord import Embed
@@ -129,3 +131,68 @@ async def saveFile(link, path, fName):
                 async for data in r.content.iter_chunked(1024):
                     fd.write(data)
     return fileName
+
+async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=None):
+    """An interactive reaction confirmation dialog.
+    Parameters
+    -----------
+    ctx: any
+        context from bot
+    message: str
+        The message to show along with the prompt.
+    timeout: float
+        How long to wait before returning.
+    delete_after: bool
+        Whether to delete the confirmation message after we're done.
+    reactor_id: Optional[int]
+        The member who should respond to the prompt. Defaults to the author of the
+        Context's message.
+    Returns
+    --------
+    Optional[bool]
+        ``True`` if explicit confirm,
+        ``False`` if explicit deny,
+        ``None`` if deny due to timeout
+    """
+
+    if not ctx.channel.permissions_for(ctx.me).add_reactions:
+        raise RuntimeError('Bot does not have Add Reactions permission.')
+
+    fmt = f'{message}\n\nReact with \N{WHITE HEAVY CHECK MARK} to confirm or \N{CROSS MARK} to deny.'
+
+    reactor_id = reactor_id or ctx.author.id
+    msg = await ctx.send(fmt)
+
+    confirm = None
+
+    def check(payload):
+        nonlocal confirm
+
+        if payload.message_id != msg.id or payload.user_id != reactor_id:
+            return False
+
+        codepoint = str(payload.emoji)
+
+        if codepoint == '\N{WHITE HEAVY CHECK MARK}':
+            confirm = True
+            return True
+        elif codepoint == '\N{CROSS MARK}':
+            confirm = False
+            return True
+
+        return False
+
+    for emoji in ('\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}'):
+        await msg.add_reaction(emoji)
+
+
+    try:
+        await ctx.bot.wait_for('raw_reaction_add', check=check, timeout=timeout)
+    except asyncio.TimeoutError:
+        confirm = None
+
+    try:
+        if delete_after:
+            await msg.delete()
+    finally:
+        return confirm

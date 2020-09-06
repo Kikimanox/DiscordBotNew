@@ -96,6 +96,11 @@ class ServerSetup(commands.Cog):
                 val = '\n'.join([f'{c.mention} (id: {c.id})' for c in chs])
             em.add_field(name='Logging ingores these channels', value=val, inline=False)
 
+            val = f"❌ __**Welcome message not setup**__ (see `{ctx.bot.config['BOT_PREFIX']}sup wm`)"
+            if 'welcomemsg' in data:
+                val = f"✅ __**Welcome message is setup**__ (see `{ctx.bot.config['BOT_PREFIX']}sup wm cur`)"
+            em.add_field(name='Welcome message status', value=val, inline=False)
+
             em.description = desc
             return await ctx.send(embed=em)
 
@@ -104,20 +109,20 @@ class ServerSetup(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @setup.command(aliases=["e"])
-    async def everything(self, ctx,
-                         mute_role: discord.Role,
-                         moderator_role: discord.Role,
-                         logging_regular_channel: discord.TextChannel,
-                         logging_leavejoin_channel: discord.TextChannel,
-                         logging_modlog_channel: discord.TextChannel,
-                         hook_logging_id: int,
-                         # hook_logging_target_ch: discord.TextChannel,
-                         hook_leavejoin_id: int,
-                         # hook_leavejoin_target_ch: discord.TextChannel,
-                         hook_modlog_id: int
-                         # hook_modlog_target_ch: discord.TextChannel,
-                         ):
+    @setup.command(aliases=["ae"])
+    async def almosteverything(self, ctx,
+                               mute_role: discord.Role,
+                               moderator_role: discord.Role,
+                               logging_regular_channel: discord.TextChannel,
+                               logging_leavejoin_channel: discord.TextChannel,
+                               logging_modlog_channel: discord.TextChannel,
+                               hook_logging_id: int,
+                               # hook_logging_target_ch: discord.TextChannel,
+                               hook_leavejoin_id: int,
+                               # hook_leavejoin_target_ch: discord.TextChannel,
+                               hook_modlog_id: int
+                               # hook_modlog_target_ch: discord.TextChannel,
+                               ):
         """Setup (almost) everything at once"""
         await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
@@ -265,7 +270,13 @@ class ServerSetup(commands.Cog):
     @commands.check(checks.admin_check)
     @setup.group(aliases=['wm'])
     async def welcomemsg(self, ctx):
-        """Main w.m. setup command, use subcommands"""
+        """Main w.m. setup command, use subcommands
+
+        Initially you're suppose to use
+        `[p]sup wm m`
+        or
+        `[p]setup welcomemessage mainsetup`
+        """
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
@@ -308,8 +319,9 @@ class ServerSetup(commands.Cog):
             cnt = f"**Channel:** <#{db_wmsg.target_ch}>\n" \
                   f"**Non embed msg:** {db_wmsg.content}\n" \
                   f"**Embed Title:** {db_wmsg.title}\n" \
-                  f"**Embed Content** {db_wmsg.desc}\n" \
-                  f"**Embed Color** {hex(db_wmsg.color)}\n" \
+                  f"**Embed Content:** {db_wmsg.desc}\n" \
+                  f"**Embed Color:** {hex(db_wmsg.color)}\n" \
+                  f"**Member count:**  {'True' if db_wmsg.display_mem_count else 'False'}\n" \
                   f"**\nWelcome images:**\n" \
                   f"{pics}"
             em = Embed(title=f'Data for {str(ctx.guild)}', color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'],
@@ -445,6 +457,12 @@ class ServerSetup(commands.Cog):
             db_wmsg.images = images
             await reply.delete()
 
+        confirm = await dutils.prompt(ctx, "**Do you wish to enable showing member count on welcome message?**")
+        if not confirm:
+            db_wmsg.display_mem_count = False
+        else:
+            db_wmsg.display_mem_count = True
+
         # DONE QUERRYING, DISPLAY FINAL PREVIEW
         await ctx.send('⚠ Setup done, preview below, if all is ok reply with **y** if not with **n** ⚠\n'
                        '**▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬**')
@@ -453,8 +471,9 @@ class ServerSetup(commands.Cog):
         cnt = f"**Channel:** <#{db_wmsg.target_ch}>\n" \
               f"**Non embed msg:** {db_wmsg.content}\n" \
               f"**Embed Title:** {db_wmsg.title}\n" \
-              f"**Embed Content** {db_wmsg.desc}\n" \
-              f"**Embed Color** {hex(db_wmsg.color)}\n" \
+              f"**Embed Content:** {db_wmsg.desc}\n" \
+              f"**Embed Color:** {hex(db_wmsg.color)}\n" \
+              f"**Member count:**  {'True' if db_wmsg.display_mem_count else 'False'}\n" \
               f"**\nWelcome images:**\n" \
               f"{pics}"
         em = Embed(title=f'Data for {str(ctx.guild)}', color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'],
@@ -477,6 +496,18 @@ class ServerSetup(commands.Cog):
     async def targetch(self, ctx, target_channel: discord.TextChannel):
         """Fine tune target channel"""
         await SSManager.update_or_error_welcomemsg_target_ch(target_channel.id, ctx.guild.id, ctx)
+        await self.set_setup(ctx.guild.id)
+
+    @commands.check(checks.admin_check)
+    @welcomemsg.command()
+    async def displaymemcount(self, ctx):
+        """Fine tune if you want to display member count"""
+        the_bool = True
+        confirm = await dutils.prompt(ctx, "**Do you wish to enable showing member count on welcome message?**")
+        if not confirm:
+            the_bool = False
+
+        await SSManager.update_or_error_welcomemsg_mem_cnt(the_bool, ctx.guild.id, ctx)
         await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
@@ -530,9 +561,14 @@ class ServerSetup(commands.Cog):
         await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
-    @welcomemsg.command()
+    @welcomemsg.command(aliases=["cur"])
     async def current(self, ctx):
         """Display all current information regarding welcome messages"""
+        if hasattr(ctx.bot, 'from_serversetup') and ('welcomemsg' not in ctx.bot.from_serversetup):
+            if self.tryParseOnce < 1:
+                ctx.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
+                self.tryParseOnce += 1
+                return await ctx.reinvoke(restart=True)
         try:
             db_wmsg = WelcomeMsg.get(WelcomeMsg.guild == ctx.guild.id)
         except:
@@ -546,8 +582,9 @@ class ServerSetup(commands.Cog):
             cnt = f"**Channel:** <#{db_wmsg.target_ch}>\n" \
                   f"**Non embed msg:** {db_wmsg.content}\n" \
                   f"**Embed Title:** {db_wmsg.title}\n" \
-                  f"**Embed Content** {db_wmsg.desc}\n" \
-                  f"**Embed Color** {hex(db_wmsg.color)}\n" \
+                  f"**Embed Content:** {db_wmsg.desc}\n" \
+                  f"**Embed Color:** {hex(db_wmsg.color)}\n" \
+                  f"**Member count:**  {'True' if db_wmsg.display_mem_count else 'False'}\n" \
                   f"**\nWelcome images:**\n" \
                   f"{pics}"
             em = Embed(title=f'Data for {str(ctx.guild)}', color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'],
@@ -555,7 +592,7 @@ class ServerSetup(commands.Cog):
             await ctx.send(embed=em)
 
         else:
-            ctx.send("No data setup.")
+            await ctx.send("No data setup.")
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -568,7 +605,8 @@ class ServerSetup(commands.Cog):
 
         if db_wmsg.images or db_wmsg.content or db_wmsg.desc or db_wmsg.title:
             em = Embed(title=db_wmsg.title, description=db_wmsg.desc, color=db_wmsg.color)
-            em.set_footer(text=f'Member count: {len(ctx.guild.members)}')
+            if db_wmsg.display_mem_count:
+                em.set_footer(text=f'Member count: {len(ctx.guild.members)}')
             if db_wmsg.images:
                 pic = random.choice(db_wmsg.images.split())
                 if pic.startswith('http'):
@@ -577,7 +615,7 @@ class ServerSetup(commands.Cog):
             await ctx.send(embed=em, content=cnt)
 
         else:
-            ctx.send("No data setup.")
+            await ctx.send("No data setup.")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -585,7 +623,8 @@ class ServerSetup(commands.Cog):
             if 'welcomemsg' in self.bot.from_serversetup[member.guild.id]:
                 wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
                 em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
-                em.set_footer(text=f'Member count: {len(member.guild.members)}')
+                if wmsg['display_mem_count']:
+                    em.set_footer(text=f'Member count: {len(member.guild.members)}')
                 if wmsg.images:
                     pic = random.choice(wmsg['images'].split())
                     if pic.startswith('http'):

@@ -35,7 +35,7 @@ class WelcomeMsg(BaseModel):
     title = CharField(default='')
     color = IntegerField(default=int(f"0x{dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16))
     target_ch = IntegerField()  # target channel
-
+    display_mem_count = BooleanField(default=True)
 
 class Webhook(BaseModel):
     guild = ForeignKeyField(Guild, on_delete="CASCADE")
@@ -53,6 +53,7 @@ class Logging(BaseModel):
 
 
 # db.drop_tables([Guild, WelcomeMsg, Logging, Webhook])
+# db.drop_tables([WelcomeMsg])
 db.create_tables([Guild, WelcomeMsg, Logging, Webhook])
 
 
@@ -128,6 +129,16 @@ class SSManager:
         try:
             wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
             wm.color = color
+            wm.save()
+            await ctx.send("Updated.")
+        except:
+            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+
+    @staticmethod
+    async def update_or_error_welcomemsg_mem_cnt(yesno, gid, ctx):
+        try:
+            wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
+            wm.display_mem_count = yesno
             wm.save()
             await ctx.send("Updated.")
         except:
@@ -212,5 +223,6 @@ class SSManager:
                         await bot.fetch_channel(ret[g['id']]['welcomemsg']['target_ch'])
                 except:
                     ret[g['id']]['welcomemsg'] = None
-
+                if not wel['content'] and not wel['desc'] and not wel['images'] and not wel['title']:
+                    ret[g['id']]['welcomemsg'] = None
         return ret
