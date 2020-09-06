@@ -31,6 +31,7 @@ class ServerSetup(commands.Cog):
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @setup.group()
     async def everything(self, ctx,
@@ -45,7 +46,7 @@ class ServerSetup(commands.Cog):
                          hook_modlog_target_ch: discord.TextChannel,
                          moderator_role: discord.Role,
                          mute_role: discord.Role):
-        """Setup everything at once"""
+        """Setup (almost) everything at once"""
         await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_modlog=logging_modlog_channel, quiet_succ=True)
@@ -135,7 +136,7 @@ class ServerSetup(commands.Cog):
         await self.do_setup(ctx=ctx, logging_modlog=channel)
 
     @commands.check(checks.admin_check)
-    @setup.group()
+    @setup.command()
     async def muterolenew(self, ctx, role: discord.Role):
         """Setup muterole
         Note, this command may be used with any role, but it's main
@@ -147,10 +148,29 @@ class ServerSetup(commands.Cog):
                        f"`{ctx.bot.config['BOT_PREFIX']}setup muterolechperms <role_id>/<role_name>`\n")
 
     @commands.check(checks.admin_check)
-    @setup.group()
+    @setup.command()
     async def modrole(self, ctx, role: discord.Role):
         """Setup moderator specific role"""
         await self.do_setup(mod_role=role, ctx=ctx)
+
+    @commands.check(checks.admin_check)
+    @setup.group(aliases=['dlg'])
+    async def dontlogchannel(self, ctx):
+        """Add or remove channels to not log from"""
+        if ctx.invoked_subcommand is None:
+            raise commands.errors.BadArgument
+
+    @commands.check(checks.admin_check)
+    @dontlogchannel.command()
+    async def add(self, ctx, channel: discord.TextChannel):
+        """Add chanenl to be ignore by the bot when logging"""
+        await self.do_setup(add_ignore=str(channel.id), ctx=ctx)
+
+    @commands.check(checks.admin_check)
+    @dontlogchannel.command()
+    async def remove(self, ctx, channel: discord.TextChannel):
+        """Remove chanenl from ignored channels when loggin"""
+        await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
@@ -520,6 +540,8 @@ class ServerSetup(commands.Cog):
 
         mute_role = kwargs.get('mute_role', None)
         mod_role = kwargs.get('mod_role', None)
+        add_ignore = kwargs.get('add_ignore', None)
+        remove_ignore = kwargs.get('remove_ignore', None)
 
         db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
         try:
@@ -545,6 +567,24 @@ class ServerSetup(commands.Cog):
             elif mod_role and (len(kwargs) == 2 or (len(kwargs) == 3 and quiet_succ)):
                 db_guild.modrole = mod_role.id
                 db_guild.save()
+            elif add_ignore and len(kwargs) == 2:
+                if add_ignore not in db_guild.ignored_chs_at_log:
+                    arr = db_guild.ignored_chs_at_log.split()
+                    arr.append(add_ignore)
+                    db_guild.ignored_chs_at_log = " ".join(arr)
+                    db_guild.save()
+                else:
+                    await ctx.send("This channel is already being ignored")
+                    raise Exception("_fail")
+            elif remove_ignore and len(kwargs) == 2:
+                if remove_ignore in db_guild.ignored_chs_at_log:
+                    arr = db_guild.ignored_chs_at_log.split()
+                    arr.remove(remove_ignore)
+                    db_guild.ignored_chs_at_log = " ".join(arr)
+                    db_guild.save()
+                else:
+                    await ctx.send("This channel is not ignored")
+                    raise Exception("_fail")
 
             else:
                 await ctx.send(f"You shouldn't have hit this. oi.. <@!{ctx.bot.config['OWNER_ID']}>")

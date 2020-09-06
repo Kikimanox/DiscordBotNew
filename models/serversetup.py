@@ -24,6 +24,7 @@ class Guild(BaseModel):
     id = IntegerField(primary_key=True)
     muterole = IntegerField(null=True)
     modrole = IntegerField(null=True)
+    ignored_chs_at_log = CharField(default="")
 
 
 class WelcomeMsg(BaseModel):
@@ -186,7 +187,9 @@ class SSManager:
         ret = {}
         for g in gs:
             if updating_g_id and updating_g_id != g['id']: continue
-            ret[g['id']] = {'muterole': g['muterole'], 'modrole': g['modrole']}
+            ret[g['id']] = {'muterole': g['muterole'],
+                            'modrole': g['modrole'],
+                            'ignored_chs_at_log': g['ignored_chs_at_log']}
             for lg in lgs:
                 if lg['guild'] != g['id']: continue
                 try:
