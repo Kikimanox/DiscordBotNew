@@ -59,17 +59,17 @@ class ServerSetup(commands.Cog):
             descField = ""
             chn = None
             if 'reg' in data: chn = data['reg']
-            descField += f'❌ __**Regular logging channel**__\n' if not chn else \
-                f'✅ __**Regular logging channel**__ {chn.mention} (id: {chn.id})\n'
+            descField += f'❌ __**Regular log channel**__\n' if not chn else \
+                f'✅ __**Regular log channel**__ {chn.mention} (id: {chn.id})\n'
 
             chn = None
             if 'leavejoin' in data: chn = data['leavejoin']
-            descField += f'❌ __**Leavejoin logging channel**__\n' if not chn else \
-                f'✅ __**Leavejoin logging channel**__ {chn.mention} (id: {chn.id})\n'
+            descField += f'❌ __**Leavejoin log channel**__\n' if not chn else \
+                f'✅ __**Leavejoin log channel**__ {chn.mention} (id: {chn.id})\n'
 
             chn = None
             if 'modlog' in data: chn = data['modlog']
-            descField += f'❌ __**Moderation log channel**__\n' if not chn else \
+            descField += f'❌ __**Mod log channel**__\n' if not chn else \
                 f'✅ __**Moderation log channel**__ {chn.mention} (id: {chn.id})\n'
             em.add_field(name='Logging channels', value=descField, inline=False)
 
