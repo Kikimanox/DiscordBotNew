@@ -15,6 +15,7 @@ from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
 class ServerSetup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.tryParseOnce = 0
         bot.loop.create_task(self.set_setup())
 
     async def set_setup(self, gid=None):
@@ -31,30 +32,101 @@ class ServerSetup(commands.Cog):
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
+    @commands.check(checks.admin_check)
+    @setup.command(aliases=["cur"], name="current")
+    async def _current(self, ctx):
+        """Display current server setup"""
+        desc = ""
+        em = Embed(title="Current setup", color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'])
+        if hasattr(ctx.bot, 'from_serversetup') and (ctx.guild.id not in ctx.bot.from_serversetup):
+            if self.tryParseOnce < 1:
+                ctx.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
+                self.tryParseOnce += 1
+                return await ctx.reinvoke(restart=True)
+
+            desc = "This server has no setup."
+        else:
+            data = ctx.bot.from_serversetup[ctx.guild.id]
+
+            chn = None
+            if data['muterole']: chn = discord.utils.get(ctx.guild.roles, id=data['muterole'])
+            desc += f'❌ __**Mute role**__\n' if not chn else f'✅ __**Mute role**__ {chn.mention} (id: {chn.id})\n'
+
+            chn = None
+            if data['modrole']: chn = discord.utils.get(ctx.guild.roles, id=data['modrole'])
+            desc += f'❌ __**Mod role**__\n' if not chn else f'✅ __**Mod role**__ {chn.mention} (id: {chn.id})\n'
+
+            descField = ""
+            chn = None
+            if 'reg' in data: chn = data['reg']
+            descField += f'❌ __**Regular logging channel**__\n' if not chn else \
+                f'✅ __**Regular logging channel**__ {chn.mention} (id: {chn.id})\n'
+
+            chn = None
+            if 'leavejoin' in data: chn = data['leavejoin']
+            descField += f'❌ __**Leavejoin logging channel**__\n' if not chn else \
+                f'✅ __**Leavejoin logging channel**__ {chn.mention} (id: {chn.id})\n'
+
+            chn = None
+            if 'modlog' in data: chn = data['modlog']
+            descField += f'❌ __**Moderation log channel**__\n' if not chn else \
+                f'✅ __**Moderation log channel**__ {chn.mention} (id: {chn.id})\n'
+            em.add_field(name='Logging channels', value=descField, inline=False)
+
+            descField = ""
+            chn = None
+            if 'hook_reg' in data: chn = data['hook_reg']
+            descField += f'❌ __**Regular logging webhook**__\n' if not chn else \
+                f'✅ __**Regular logging webhook**__\n{chn.name} (id: {chn.id})\n'
+
+            chn = None
+            if 'hook_leavejoin' in data: chn = data['hook_leavejoin']
+            descField += f'❌ __**Leavejoin logging webhook**__\n' if not chn else \
+                f'✅ __**Leavejoin logging webhook**__\n{chn.name} (id: {chn.id})\n'
+
+            chn = None
+            if 'hook_modlog' in data: chn = data['hook_modlog']
+            descField += f'❌ __**Moderation log webhook**__\n' if not chn else \
+                f'✅ __**Moderation log webhook**__\n{chn.name} (id: {chn.id})\n'
+            em.add_field(name='Logging webhooks', value=descField, inline=False)
+
+            val = "There are no ignored channels"
+            if data['ignored_chs_at_log']:
+                chs = [discord.utils.get(ctx.guild.channels, id=int(ch)) for ch in data['ignored_chs_at_log'].split()]
+                val = '\n'.join([f'{c.mention} (id: {c.id})' for c in chs])
+            em.add_field(name='Logging ingores these channels', value=val, inline=False)
+
+            em.description = desc
+            return await ctx.send(embed=em)
+
+        em.description = desc
+        await ctx.send(embed=em)
+
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @setup.group()
+    @setup.command(aliases=["e"])
     async def everything(self, ctx,
+                         mute_role: discord.Role,
+                         moderator_role: discord.Role,
                          logging_regular_channel: discord.TextChannel,
                          logging_leavejoin_channel: discord.TextChannel,
                          logging_modlog_channel: discord.TextChannel,
                          hook_logging_id: int,
-                         hook_logging_target_ch: discord.TextChannel,
+                         # hook_logging_target_ch: discord.TextChannel,
                          hook_leavejoin_id: int,
-                         hook_leavejoin_target_ch: discord.TextChannel,
-                         hook_modlog_id: int,
-                         hook_modlog_target_ch: discord.TextChannel,
-                         moderator_role: discord.Role,
-                         mute_role: discord.Role):
+                         # hook_leavejoin_target_ch: discord.TextChannel,
+                         hook_modlog_id: int
+                         # hook_modlog_target_ch: discord.TextChannel,
+                         ):
         """Setup (almost) everything at once"""
         await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_modlog=logging_modlog_channel, quiet_succ=True)
-        await self.do_setup(hook_reg=hook_logging_id, hook_reg_target=hook_logging_target_ch, ctx=ctx,
+        await self.do_setup(hook_reg=hook_logging_id, hook_reg_target=logging_regular_channel, ctx=ctx,
                             quiet_succ=True)
-        await self.do_setup(hook_leavejoin=hook_leavejoin_id, hook_leavejoin_target=hook_leavejoin_target_ch, ctx=ctx,
+        await self.do_setup(hook_leavejoin=hook_leavejoin_id, hook_leavejoin_target=logging_leavejoin_channel, ctx=ctx,
                             quiet_succ=True)
-        await self.do_setup(hook_modlog=hook_modlog_id, hook_modlog_target=hook_modlog_target_ch, ctx=ctx,
+        await self.do_setup(hook_modlog=hook_modlog_id, hook_modlog_target=logging_modlog_channel, ctx=ctx,
                             quiet_succ=True)
         await self.do_setup(mod_role=moderator_role, ctx=ctx, quiet_succ=True)
         await self.do_setup(mute_role=mute_role, ctx=ctx, quiet_succ=True)
