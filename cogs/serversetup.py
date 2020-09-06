@@ -15,6 +15,10 @@ from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
 class ServerSetup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.set_setup()
+
+    def set_setup(self):
+        self.bot.all_cmds = SSManager.get_setup_formatted()
 
     @commands.check(checks.admin_check)
     @commands.group(aliases=["sup"])
@@ -361,24 +365,28 @@ class ServerSetup(commands.Cog):
         else:
             db_wmsg.save()
             await ctx.send('Done, saved.')
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
     async def targetch(self, ctx, target_channel: discord.TextChannel):
         """Fine tune target channel"""
         await SSManager.update_or_error_welcomemsg_target_ch(target_channel.id, ctx.guild.id, ctx)
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
     async def title(self, ctx, *, title):
         """Fine tune embed title"""
         await SSManager.update_or_error_welcomemsg_title(title, ctx.guild.id, ctx)
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
     async def desc(self, ctx, *, description):
         """Fine tune embed desscription"""
         await SSManager.update_or_error_welcomemsg_desc(description, ctx.guild.id, ctx)
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -386,6 +394,7 @@ class ServerSetup(commands.Cog):
         """Fine tune embed image(s) (seperate with a space)"""
         images = " ".join(images.replace('\n', ' ').split())
         await SSManager.update_or_error_welcomemsg_images(images, ctx.guild.id, ctx)
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -394,6 +403,7 @@ class ServerSetup(commands.Cog):
 
         [username] will be replaced with new user ping"""
         await SSManager.update_or_error_welcomemsg_content(cnt, ctx.guild.id, ctx)
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -409,6 +419,7 @@ class ServerSetup(commands.Cog):
                                   "0x1F2E3C | #1F2E3C | 1F2E3C")
 
         await SSManager.update_or_error_welcomemsg_color(_color, ctx.guild.id, ctx)
+        self.set_setup()
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
@@ -503,6 +514,7 @@ class ServerSetup(commands.Cog):
             else:
                 await ctx.send(f"You shouldn't have hit this. oi.. <@!{ctx.bot.config['OWNER_ID']}>")
             if not quiet_succ: await ctx.send("Done.")
+            self.set_setup()
             return True
         except Exception as e:
             if str(e) == '_fail': return

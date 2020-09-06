@@ -176,6 +176,7 @@ class SSManager:
         except:
             Webhook.insert(type=typ, guild=g, target_ch=tar_id, url=h_url, hook_id=hook_id).execute()
 
+
     @staticmethod
-    def get_all_data():
+    def get_setup_formatted():
         pass
