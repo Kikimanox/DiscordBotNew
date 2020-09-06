@@ -307,6 +307,7 @@ class ServerSetup(commands.Cog):
             else:
                 color = -100
                 try:
+                    if len(rp3) < 6: raise Exception("fail")
                     color = int(rp3[-6:], 16)
                 except:
                     await ctx.send("**(*This message* will auto delete in 20 seconds)"
@@ -340,6 +341,15 @@ class ServerSetup(commands.Cog):
                 images = ""
             else:
                 images = " ".join(reply.content.replace('\n', ' ').split())
+                for i in images:
+                    if not i.startswith('http'):
+                        await ctx.send(
+                            "One of the image links doesn't start with `http`...\n"
+                            f"Try adding them again with `{ctx.bot.config['BOT_PREFIX']}"
+                            f"setup welcomemsg images <pics>`",
+                            delete_after=20)
+                        images = ""
+                        break
             db_wmsg.images = images
             await reply.delete()
 
@@ -396,6 +406,8 @@ class ServerSetup(commands.Cog):
     async def images(self, ctx, *, images):
         """Fine tune embed image(s) (seperate with a space)"""
         images = " ".join(images.replace('\n', ' ').split())
+        for i in images:
+            if not i.startswith('http'): return await ctx.send("One of the image links doesn't start with `http`...")
         await SSManager.update_or_error_welcomemsg_images(images, ctx.guild.id, ctx)
         await self.set_setup(ctx.guild.id)
 
@@ -416,6 +428,7 @@ class ServerSetup(commands.Cog):
         Color format, one of:
         0x1F2E3C | #1F2E3C | 1F2E3C"""
         try:
+            if len(color) < 6: raise Exception("fail")
             _color = int(color[-6:], 16)
         except:
             return await ctx.send("Invalid color format, please use one of:\n"
@@ -465,8 +478,11 @@ class ServerSetup(commands.Cog):
             em = Embed(title=db_wmsg.title, description=db_wmsg.desc, color=db_wmsg.color)
             em.set_footer(text=f'Member count: {len(ctx.guild.members)}')
             if db_wmsg.images:
-                em.set_image(url=random.choice(db_wmsg.images.split()))
-            await ctx.send(embed=em, content=db_wmsg.content.replace('[username]', ctx.author.mention))
+                pic = random.choice(db_wmsg.images.split())
+                if pic.startswith('http'):
+                    em.set_image(url=pic)
+            cnt = db_wmsg.content.replace('[username]', ctx.author.mention)
+            await ctx.send(embed=em, content=cnt)
 
         else:
             ctx.send("No data setup.")
@@ -478,9 +494,12 @@ class ServerSetup(commands.Cog):
                 wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
                 em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
                 em.set_footer(text=f'Member count: {len(member.guild.members)}')
-                if wmsg['images']:
-                    em.set_image(url=random.choice(wmsg['images'].split()))
-                await wmsg['target_ch'].send(embed=em, content=wmsg['content'].replace('[username]', member.mention))
+                if wmsg.images:
+                    pic = random.choice(wmsg['images'].split())
+                    if pic.startswith('http'):
+                        em.set_image(url=pic)
+                cnt = wmsg.content.replace('[username]', member.mention)
+                await wmsg['target_ch'].send(embed=em, content=cnt)
                 return
         self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} in {str(member.guild)} {member.guild.id}")
 
