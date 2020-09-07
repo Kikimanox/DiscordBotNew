@@ -36,8 +36,6 @@ class Cmds(commands.Cog):
         Similar applies to `add raw [args...]` But when using that the message will not be
         embedded, aka. the message will be sent RAW!
         """
-        a = [cmd for cmd in Command.select()]
-
         first_arg = args.split(' ')[0]
         if first_arg in ctx.command.all_commands:
             c = ctx.command.all_commands[first_arg]

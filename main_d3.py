@@ -43,6 +43,7 @@ bot.all_cmds = {}
 bot.from_serversetup = {}
 bot.running_tasks = []
 bot.moderation_blacklist = {-1: 'dummy'}
+bot.banned_cuz_blacklist = {}
 ###
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)

@@ -640,6 +640,7 @@ class ServerSetup(commands.Cog):
         do_wel_msg = True
         if member.guild.id in smb and member.id in smb[member.guild.id]:
             try:
+                self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 1
                 await member.ban(reason="User joined when they were blacklisted. Removed the user from "
                                         "the datbase blacklist", delete_message_days=0)
                 Blacklist.delete().where(Blacklist.user_id == member.id, Blacklist.guild == member.guild.id).execute()
@@ -695,6 +696,7 @@ class ServerSetup(commands.Cog):
 
                     if not do_wel_msg:
                         cnt = "💥 **User was banned right away because they were on the blacklist**"
+                        embed.color = 0x338026
 
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed, content=cnt)
@@ -708,6 +710,9 @@ class ServerSetup(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        if self.bot.banned_cuz_blacklist and f'{member.id}_{member.guild.id}' in self.bot.banned_cuz_blacklist:
+            del self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+            return
         if member.guild.id in self.bot.from_serversetup:
             try:  # log it
                 sup = self.bot.from_serversetup[member.guild.id]
