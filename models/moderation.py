@@ -32,7 +32,7 @@ class Actions(BaseModel):
     reason = CharField()
     responsible = IntegerField()
     offended = IntegerField()
-    type = CharField()  # mute, warn, ban, blacklist
+    type = CharField()  # mute, warn, ban(types) blacklist
     jump_url = CharField()
 
 

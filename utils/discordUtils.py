@@ -220,6 +220,55 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
                          f"{guild.id})**")
 
 
+async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
+                      no_dm=False, softban=False):
+    member = user
+    if not member:
+        if massbanning: return -1
+        return await ctx.send('Could not find this user in this server')
+    if member:
+        try:
+            await member.ban(reason=reason, delete_message_days=removeMsgs)
+            if softban:
+                await member.unban(reason=reason)
+            try:
+                if not no_dm and not massbanning:
+                    await member.send(f'You have been {"banned" if not softban else "soft-banned"} '
+                                      f'from the {str(ctx.guild)} '
+                                      f'server {"" if not reason else f", reason: {reason}"}')
+            except:
+                print(f"Member {'' if not member else member.id} disabled dms")
+            return_msg = f'{"Banned" if not softban else "Soft-banned"} the user {member.mention} (id: {member.id})'
+            if reason:
+                return_msg += f" for reason: `{reason}`"
+
+            # print(f'{datetime.datetime.now().strftime("%c")} ({ctx.guild.id} | {str(ctx.guild)}) MOD LOG (ban): '
+            #      f'{str(ctx.author)} ({ctx.author.id}) banned '
+            #      f'the user {str(member)} ({member.id}). Reason: {reason}')
+            if not massbanning:
+                await ctx.send(embed=Embed(description=return_msg, color=0xdd0000))
+            if not massbanning:
+                typ = "ban"
+                if removeMsgs > 0: typ = f"ban ({removeMsgs})"
+                if removeMsgs == 7: typ = "banish"
+                if softban and removeMsgs == 0: typ = "softban"
+                if softban and removeMsgs == 7: typ = "softbanish"
+                # TODO: Following 2 lines, but in the mssban cmd but differentelt
+                act_id = await moderation_action(ctx, reason, typ, member)
+                await post_mod_log_based_on_type(ctx, typ, act_id)
+            # await dutils.mod_log(f"Mod log: Ban", f"**Offended:** {str(member)} ({member.id})\n"
+            #                                      f"**Reason:** {reason}\n"
+            #                                      f"**Responsible:** {str(ctx.author)} ({ctx.author.id})",
+            #                     colorr=0x33d8f0, author=ctx.author)
+            return member.id
+        except discord.Forbidden:
+            if massbanning: return -100  # special return
+            await ctx.send('Could not ban user. Not enough permissions.')
+    else:
+        if massbanning: return -1
+        return await ctx.send('Could not find user.')
+
+
 async def mute_user(ctx, member, length, reason):
     mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
     if mute_role in ctx.guild.get_member(member.id).roles:

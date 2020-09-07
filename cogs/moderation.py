@@ -90,8 +90,147 @@ class Moderation(commands.Cog):
 
         await dutils.mute_user(ctx, user, length, reason)
 
-    async def moderation_action(self, **kwargs):
-        pass
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def ban(self, ctx, user: discord.Member, *, reason=""):
+        """Ban a user with an optionally supplied reason.
+
+        `[p]ban @user`
+        `[p]ban USER_ID`
+        `[p]ban USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def sban(self, ctx, user: discord.Member, *, reason=""):
+        """Ban a user with an optionally supplied reason. **(won't dm them)**
+
+        `[p]sban @user`
+        `[p]sban USER_ID`
+        `[p]sban USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, no_dm=True)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def banish(self, ctx, user: discord.Member, *, reason=""):
+        """Same as ban but also deletes message history (7 days)
+
+        `[p]banish @user`
+        `[p]banish USER_ID`
+        `[p]banish USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, removeMsgs=7)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def sbanish(self, ctx, user: discord.Member, *, reason=""):
+        """Same as ban but also deletes message history (7 days) **(no dm)**
+
+        `[p]sbanish @user`
+        `[p]sbanish USER_ID`
+        `[p]sbanish USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, removeMsgs=7, no_dm=True)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def softban(self, ctx, user: discord.Member, *, reason=""):
+        """Ban, but unban right away
+
+        `[p]softban @user`
+        `[p]softban USER_ID`
+        `[p]softban USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, softban=True)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def ssoftban(self, ctx, user: discord.Member, *, reason=""):
+        """Ban, but unban right away (won't dm them)
+
+        `[p]ssoftban @user`
+        `[p]ssoftban USER_ID`
+        `[p]ssoftban USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, softban=True, no_dm=True)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def softbanish(self, ctx, user: discord.Member, *, reason=""):
+        """Ban, but unban right away also deletes message history (7 days)
+
+        `[p]softbanish @user`
+        `[p]softbanish USER_ID`
+        `[p]softbanish USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, removeMsgs=7, softban=True)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def ssoftbanish(self, ctx, user: discord.Member, *, reason=""):
+        """Ban, but unban right away also dels msg history (7d) **(no dm)**
+
+        `[p]ssoftbanish @user`
+        `[p]ssoftbanish USER_ID`
+        `[p]ssoftbanish USER_ID optional reason goes here here`"""
+        await dutils.banFunction(ctx, user, reason, removeMsgs=7, softban=True, no_dm=True)
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def massban(self, ctx, delete_messages_days: int, *users: discord.Member):
+        """Ban multiple users at once (no dm by default)
+
+        **delete_messages_days** => Has to be 0 or more and 7 or less
+
+        `[p]multiple 0 @user1 @user2 @user3` ...
+        `[p]ban 7 USER_ID1 USER_ID2 USER_ID3 USER_ID4` ...
+
+        ⚠If you got the invalid arguments error. Check the ids or user names/pings.
+        Some are wrong.
+
+        You can use `[p]massbantest <SAME_ARGUMENTS_AS_YOU_JUST_USED>`
+        To test which of these users/ids/names/pings is wrong."""
+        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("delete_messages_days has to be"
+                                                                                       "0 or more and 7 or less")
+        users = list(set(users))  # remove dupes
+        m = await ctx.send("Massbanning...")
+        rets = []
+        for user in users:
+            rets.append(await dutils.banFunction(ctx, user, removeMsgs=delete_messages_days,
+                                                 massbanning=True, no_dm=True))
+        ret_msg = "Massban complete!"
+        for i in range(len(rets)):
+            if rets[i] < 0:
+                if rets[i] == -1: ret_msg += f"\n**INFO:** Could not find the user with the id {users[i].id}"
+                if rets[i] == -100: ret_msg += f"\n**INFO:** Could not ban the user with the id {users[i].id} " \
+                                               f"(Not enough permissions.)"
+            else:
+                pass  # TODO: Stuff
+
+        await m.delete()
+        await ctx.send(ret_msg)
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def massbantest(self, ctx, delete_messages_days: int, *users):
+        """Test if massban would work with these arguments"""
+        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("delete_messages_days has to be"
+                                                                                       "0 or more and 7 or less. Fix "
+                                                                                       "that first...")
+        wrong = ""
+        for _u in users:
+            try:
+                if _u[:3] == "<@!" and _u[-1] == ">":
+                    u = ctx.guild.get_member(int(_u[3:-1]))
+                else:
+                    u = ctx.guild.get_member(int(_u))
+                if not u: wrong += (_u + '\n')
+            except:
+                u = discord.utils.get(ctx.guild.members, name=_u)
+                if not u: wrong += (_u + '\n')
+        wrong = wrong.replace('@', '@\u200b')
+
+        if not wrong:
+            await ctx.send("✅ Arguments are ok, this should work")
+        else:
+            await ctx.send("❌ Displaying wrong/bad arguments:\n\n" + wrong)
 
     async def if_you_need_loop(self):
         await self.bot.wait_until_ready()
