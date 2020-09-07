@@ -95,15 +95,18 @@ class Moderation(commands.Cog):
     @commands.check(checks.ban_members_check)
     @commands.command()
     async def ban(self, ctx, user: discord.Member, *, reason=""):
-        """Ban a user with an optionally supplied reason.
+        """Ban a user with an optional reason. Prefix with s for "no dm"
 
-        **Every ban/banish/softban command (except massban)
+        Tip:
+
+        **Every ban/banish/softban/softbanish command (except massban)
         has another copy of it but with a `s` prefix**
         For example: `[p]sban @user` will ban them but
         will not dm them that they were banned.
 
         Ban = Delete no messages
         Banish = Delete 7 days of messages
+        Softban = Ban but unban right away
 
         `[p]ban @user`
         `[p]ban USER_ID`
