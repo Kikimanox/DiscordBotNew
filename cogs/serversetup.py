@@ -59,20 +59,20 @@ class ServerSetup(commands.Cog):
             desc += f'❌ __**Mod role**__\n' if not chn else f'✅ __**Mod role**__ {chn.mention} (id: {chn.id})\n'
 
             descField = ""
-            chn = None
-            if 'reg' in data: chn = data['reg']
-            descField += f'❌ __**Regular log channel**__\n' if not chn else \
-                f'✅ __**Regular log channel**__ {chn.mention} (id: {chn.id})\n'
+            chn1 = None
+            if 'reg' in data: chn1 = data['reg']
+            descField += f'❌ __**Regular log channel**__\n' if not chn1 else \
+                f'✅ __**Regular log channel**__ {chn1.mention} (id: {chn1.id})\n'
 
-            chn = None
-            if 'leavejoin' in data: chn = data['leavejoin']
-            descField += f'❌ __**Leavejoin log channel**__\n' if not chn else \
-                f'✅ __**Leavejoin log channel**__ {chn.mention} (id: {chn.id})\n'
+            chn2 = None
+            if 'leavejoin' in data: chn2 = data['leavejoin']
+            descField += f'❌ __**Leavejoin log channel**__\n' if not chn2 else \
+                f'✅ __**Leavejoin log channel**__ {chn2.mention} (id: {chn2.id})\n'
 
-            chn = None
-            if 'modlog' in data: chn = data['modlog']
-            descField += f'❌ __**Mod log channel**__\n' if not chn else \
-                f'✅ __**Moderation log channel**__ {chn.mention} (id: {chn.id})\n'
+            chn3 = None
+            if 'modlog' in data: chn3 = data['modlog']
+            descField += f'❌ __**Mod log channel**__\n' if not chn3 else \
+                f'✅ __**Moderation log channel**__ {chn3.mention} (id: {chn3.id})\n'
             em.add_field(name='Logging channels', value=descField, inline=False)
 
             descField = ""
@@ -81,18 +81,21 @@ class ServerSetup(commands.Cog):
             descField += f'❌ __**Regular logging webhook**__\n' if not chn else \
                 f'✅ __**Regular logging webhook**__\n{chn.name} (id: {chn.id})\n' \
                 f'Target: {chn.channel.mention}\n'
+            if chn and chn1 and chn.channel_id != chn1.id: descField = descField[:-1] + "⚠**MISMATCH**⚠\n"
 
             chn = None
             if 'hook_leavejoin' in data: chn = data['hook_leavejoin']
             descField += f'❌ __**Leavejoin logging webhook**__\n' if not chn else \
                 f'✅ __**Leavejoin logging webhook**__\n{chn.name} (id: {chn.id})\n' \
                 f'Target: {chn.channel.mention}\n'
+            if chn and chn2 and chn.channel_id != chn2.id: descField = descField[:-1] + "⚠**MISMATCH**⚠\n"
 
             chn = None
             if 'hook_modlog' in data: chn = data['hook_modlog']
             descField += f'❌ __**Moderation log webhook**__\n' if not chn else \
                 f'✅ __**Moderation log webhook**__\n{chn.name} (id: {chn.id})\n' \
                 f'Target: {chn.channel.mention}\n'
+            if chn and chn3 and chn.channel_id != chn3.id: descField = descField[:-1] + "⚠**MISMATCH**⚠\n"
             em.add_field(name='Logging webhooks', value=descField, inline=False)
 
             val = "There are no ignored channels"
@@ -677,6 +680,10 @@ class ServerSetup(commands.Cog):
             except:
                 self.bot.logger.error(f"Join log error: {str(member)} {member.id} "
                                       f"in {str(member.guild)} {member.guild.id}")
+
+    @commands.Cog.listener()
+    async def on_webhooks_update(self, channel):
+        await self.set_setup(channel.guild.id)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):

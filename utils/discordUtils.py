@@ -214,7 +214,8 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
     else:
         await regular_ch.send(embed=embed, content=content)
     if not hook_ok:
-        await regular_ch.send("**Logging hook and channel id mismatch, please fix!!!**")
+        await regular_ch.send("⚠**Logging hook and channel id mismatch, please fix!**⚠\n"
+                              f"(tip: run the command `{bot.config['BOT_PREFIX']}sup cur`)")
         bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
                          f"{guild.id})**")
 
@@ -315,7 +316,7 @@ async def moderation_action(ctx, reason, action_type, offended):
 
 
 async def post_mod_log_based_on_type(ctx, log_type, act_id):
-    await log(ctx, this_content="a", this_embed="b")
+    await log(ctx, this_content="TODO", this_embed=Embed(description="TODO"), this_hook_type='modlog')
 
 
 async def log(ctx, title=None, txt=None, author=None,
@@ -336,6 +337,7 @@ async def log(ctx, title=None, txt=None, author=None,
     :return:
     """
     try:
+        guild = ctx.guild if not guild else guild
         sup = ctx.bot.from_serversetup[guild.id]
         if not this_content and not this_embed:
             desc = []

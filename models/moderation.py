@@ -27,13 +27,13 @@ class Mutes(BaseModel):
 
 class Actions(BaseModel):
     guild = IntegerField()
-    reason = CharField()
-    type = CharField()  # mute, warn, ban, blacklist
-    date = DateTimeField(default=datetime.utcnow)
     channel = IntegerField()
-    jump_url = CharField()
+    date = DateTimeField(default=datetime.utcnow)
+    reason = CharField()
     responsible = IntegerField()
     offended = IntegerField()
+    type = CharField()  # mute, warn, ban, blacklist
+    jump_url = CharField()
 
 
 class Blacklist(BaseModel):
