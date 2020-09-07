@@ -258,8 +258,8 @@ class Stats(commands.Cog):
     async def botunblacklist(self, ctx, user_id: int):
         """Unblacklist user by id [Admin only]"""
         if user_id in ctx.bot.blacklist:
+            del ctx.bot.blacklist[user_id]
             BotBlacklist.delete().where(BotBlacklist.user == user_id).execute()
-            del ctx.bot.blacklist[ctx.author.id]
             await ctx.send("Done.")
         else:
             await ctx.send("This user id is not banned from the bot.")
@@ -269,8 +269,8 @@ class Stats(commands.Cog):
     async def botunban(self, ctx, user_id: int):
         """Unban user by id [Admin only]"""
         if user_id in ctx.bot.banlist:
+            del ctx.bot.banlist[user_id]
             BotBanlist.delete().where(BotBanlist.user == user_id).execute()
-            del ctx.bot.banlist[ctx.author.id]
             await ctx.send("Done.")
         else:
             await ctx.send("This user id is not banned from the bot.")

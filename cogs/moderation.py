@@ -1,4 +1,6 @@
 import asyncio
+import time
+
 import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
@@ -248,6 +250,17 @@ class Moderation(commands.Cog):
             except:
                 pass
             await asyncio.sleep(10)  # sleep here
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def blacklist(self, ctx, *user_ids: int):
+        """Blacklist a user or users by id"""
+        user_ids = list(set(user_ids))  # remove dupes
+        if len(user_ids) > 90: return await ctx.send("Can only blacklist up to 90 at once")
+        data = [{'guild': ctx.guild.id, 'user_id': uid} for uid in user_ids]
+        Blacklist.insert_many(data).execute()
+        self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
+        await ctx.send("Done.")
 
 
 def setup(bot):

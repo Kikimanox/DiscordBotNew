@@ -42,6 +42,7 @@ bot = commands.Bot(command_prefix=get_pre)
 bot.all_cmds = {}
 bot.from_serversetup = {}
 bot.running_tasks = []
+bot.moderation_blacklist = {-1: 'dummy'}
 ###
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
@@ -53,6 +54,7 @@ bot.before_run_cmd = 0
 async def on_ready():
     ###
     if hasattr(bot, 'all_cmds') and not bot.all_cmds: bot.all_cmds = {}
+    if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
     if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
     if hasattr(bot, 'running_tasks') and not bot.running_tasks: bot.running_tasks = []
     ###

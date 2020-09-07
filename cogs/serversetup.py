@@ -1,11 +1,14 @@
 import asyncio
 import random
+import time
 import traceback
 import json
 import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
 import os
+
+from models.moderation import Blacklist, ModManager
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -631,26 +634,41 @@ class ServerSetup(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        try:
-            if self.bot.from_serversetup and member.guild.id in self.bot.from_serversetup:
-                if 'welcomemsg' in self.bot.from_serversetup[member.guild.id]:
-                    wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
-                    em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
-                    if wmsg['display_mem_count']:
-                        em.set_footer(text=f'Member count: {len(member.guild.members)}')
-                    if wmsg.images:
-                        pic = random.choice(wmsg['images'].split())
-                        if pic.startswith('http'):
-                            em.set_image(url=pic)
-                    cnt = wmsg.content.replace('[username]', member.mention)
-                    if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
-                            and not wmsg['title'] and not wmsg['display_mem_count']:
-                        await wmsg['target_ch'].send(content=cnt)
-                    else:
-                        await wmsg['target_ch'].send(embed=em, content=cnt)
-        except:
-            self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} "
-                                  f"in {str(member.guild)} {member.guild.id}")
+        if -1 in self.bot.moderation_blacklist:
+            self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
+        smb = self.bot.moderation_blacklist
+        do_wel_msg = True
+        if member.guild.id in smb and member.id in smb[member.guild.id]:
+            try:
+                await member.ban(reason="User joined when they were blacklisted. Removed the user from "
+                                        "the datbase blacklist", delete_message_days=0)
+                Blacklist.delete().where(Blacklist.user_id == member.id, Blacklist.guild == member.guild.id).execute()
+                self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
+            except:
+                pass
+            do_wel_msg = False
+
+        if do_wel_msg:
+            try:
+                if self.bot.from_serversetup and member.guild.id in self.bot.from_serversetup:
+                    if 'welcomemsg' in self.bot.from_serversetup[member.guild.id]:
+                        wmsg = self.bot.from_serversetup[member.guild.id]['welcomemsg']
+                        em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
+                        if wmsg['display_mem_count']:
+                            em.set_footer(text=f'Member count: {len(member.guild.members)}')
+                        if wmsg.images:
+                            pic = random.choice(wmsg['images'].split())
+                            if pic.startswith('http'):
+                                em.set_image(url=pic)
+                        cnt = wmsg.content.replace('[username]', member.mention)
+                        if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
+                                and not wmsg['title'] and not wmsg['display_mem_count']:
+                            await wmsg['target_ch'].send(content=cnt)
+                        else:
+                            await wmsg['target_ch'].send(embed=em, content=cnt)
+            except:
+                self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} "
+                                      f"in {str(member.guild)} {member.guild.id}")
 
         if member.guild.id in self.bot.from_serversetup:
             try:  # log it
@@ -674,6 +692,9 @@ class ServerSetup(commands.Cog):
                     if bjac < 60: cnt = f"⚠⚠ **User joined {int(bjac)} seconds after account creation** ⚠⚠"
                     if 60 <= bjac < 3600: cnt = f"⚠ User joined **less than 1 hour** after account creation"
                     if 3600 <= bjac < 604800: cnt = f"ℹ User joined **less than 1 week** after account creation"
+
+                    if not do_wel_msg:
+                        cnt = "💥 **User was banned right away because they were on the blacklist**"
 
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed, content=cnt)
@@ -733,7 +754,7 @@ class ServerSetup(commands.Cog):
             print(ret)
         g = self.bot.get_guild(g_id)
         await dutils.log(self.bot, "Bulk message delete", f"{len(payload.message_ids)} messages deleted in "
-                                                f"{(g.get_channel(ch_id)).mention}", None, 0x960f0f, guild=g)
+                                                          f"{(g.get_channel(ch_id)).mention}", None, 0x960f0f, guild=g)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):

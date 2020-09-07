@@ -230,7 +230,7 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
         return await ctx.send('Could not find this user in this server')
     if member:
         try:
-            # await member.ban(reason=reason, delete_message_days=removeMsgs)
+            await member.ban(reason=reason, delete_message_days=removeMsgs)
             if softban:
                 await member.unban(reason=reason)
             try:

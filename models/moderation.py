@@ -41,7 +41,7 @@ class Blacklist(BaseModel):
     user_id = IntegerField()
 
 
-db.drop_tables([Mutes, Actions, Blacklist])
+# db.drop_tables([Mutes, Actions, Blacklist])
 db.create_tables([Mutes, Actions, Blacklist])
 
 
@@ -49,3 +49,15 @@ class ModManager:
     @staticmethod
     def get_expired_mutes(gid):
         pass
+
+    @staticmethod
+    def return_blacklist_lists():
+        bs = [q for q in Blacklist.select().dicts()]
+        ret = {}
+        for b in bs:
+            if b['guild'] not in ret:
+                ret[b['guild']] = []
+            ret[b['guild']].append(int(b['user_id']))
+        for k, v in ret.items():
+            ret[k] = list(set(v))
+        return ret
