@@ -186,24 +186,31 @@ class Moderation(commands.Cog):
 
         You can use `[p]massbantest <SAME_ARGUMENTS_AS_YOU_JUST_USED>`
         To test which of these users/ids/names/pings is wrong."""
-        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("delete_messages_days has to be"
-                                                                                       "0 or more and 7 or less")
+        if len(users) == 1: return await ctx.send("Why would you *massban* only 1 user? Aborting.")
+        if len(users) > 50: return await ctx.send("Can mass ban up to max 50 users at once.")
+        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("**delete_messages_days**"
+                                                                                       " has to be"
+                                                                                       " 0 or more and 7 or less. Fix "
+                                                                                       "that first...")
         users = list(set(users))  # remove dupes
         m = await ctx.send("Massbanning...")
         rets = []
         for user in users:
             rets.append(await dutils.banFunction(ctx, user, removeMsgs=delete_messages_days,
-                                                 massbanning=True, no_dm=True))
-        ret_msg = "Massban complete!"
+                                                 massbanning=True, no_dm=True, reason="massban"))
+        orig_msg = f"Massban complete! Banned **{len([r for r in rets if r])}** users"
+        ret_msg = orig_msg
         for i in range(len(rets)):
             if rets[i] < 0:
-                if rets[i] == -1: ret_msg += f"\n**INFO:** Could not find the user with the id {users[i].id}"
-                if rets[i] == -100: ret_msg += f"\n**INFO:** Could not ban the user with the id {users[i].id} " \
-                                               f"(Not enough permissions.)"
+                if rets[i] == -1: ret_msg += f"\n**F1:** {users[i].id}"
+                if rets[i] == -100: ret_msg += f"\n**F2:** {users[i].id}"
             else:
-                pass  # TODO: Stuff
+                pass
 
         await m.delete()
+        if ret_msg != orig_msg:
+            await ctx.send("**F1** means that the user couldn't be found.\n"
+                           "**F2** means that I couldn't ban the user because not enough permissions")
         await ctx.send(ret_msg)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
@@ -211,8 +218,9 @@ class Moderation(commands.Cog):
     @commands.command()
     async def massbantest(self, ctx, delete_messages_days: int, *users):
         """Test if massban would work with these arguments"""
-        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("delete_messages_days has to be"
-                                                                                       "0 or more and 7 or less. Fix "
+        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("**delete_messages_days**"
+                                                                                       " has to be"
+                                                                                       " 0 or more and 7 or less. Fix "
                                                                                        "that first...")
         wrong = ""
         for _u in users:
