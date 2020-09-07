@@ -132,7 +132,7 @@ class Stats(commands.Cog):
             if value._tokens == 0
         ]
         if being_spammed: being_spammed = '\n' + ", ".join(being_spammed)
-        description.append(f'Current Spammers (bucket):{being_spammed or "**None**"}')
+        description.append(f'Current Spammers (bucket): {being_spammed or "**None**"}')
 
         if being_spammed:
             embed.colour = WARNING
@@ -218,7 +218,8 @@ class Stats(commands.Cog):
 
         output = '\n'.join(f'{k :<{width + 1}}: {c}' for k, c in common)
 
-        await ctx.send(f'```\n{output}\n```')
+        await ctx.send(embed=Embed(title="Comand statistics",
+                                   description=output))
 
     @commands.command(aliases=['bb'], hidden=True)
     @commands.check(checks.owner_check)

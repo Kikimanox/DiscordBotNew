@@ -97,13 +97,21 @@ class Moderation(commands.Cog):
     async def ban(self, ctx, user: discord.Member, *, reason=""):
         """Ban a user with an optionally supplied reason.
 
+        **Every ban/banish/softban command (except massban)
+        has another copy of it but with a `s` prefix**
+        For example: `[p]sban @user` will ban them but
+        will not dm them that they were banned.
+
+        Ban = Delete no messages
+        Banish = Delete 7 days of messages
+
         `[p]ban @user`
         `[p]ban USER_ID`
         `[p]ban USER_ID optional reason goes here here`"""
         await dutils.banFunction(ctx, user, reason)
 
     @commands.check(checks.ban_members_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def sban(self, ctx, user: discord.Member, *, reason=""):
         """Ban a user with an optionally supplied reason. **(won't dm them)**
 
@@ -123,7 +131,7 @@ class Moderation(commands.Cog):
         await dutils.banFunction(ctx, user, reason, removeMsgs=7)
 
     @commands.check(checks.ban_members_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def sbanish(self, ctx, user: discord.Member, *, reason=""):
         """Same as ban but also deletes message history (7 days) **(no dm)**
 
@@ -143,7 +151,7 @@ class Moderation(commands.Cog):
         await dutils.banFunction(ctx, user, reason, softban=True)
 
     @commands.check(checks.ban_members_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def ssoftban(self, ctx, user: discord.Member, *, reason=""):
         """Ban, but unban right away (won't dm them)
 
@@ -163,7 +171,7 @@ class Moderation(commands.Cog):
         await dutils.banFunction(ctx, user, reason, removeMsgs=7, softban=True)
 
     @commands.check(checks.ban_members_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def ssoftbanish(self, ctx, user: discord.Member, *, reason=""):
         """Ban, but unban right away also dels msg history (7d) **(no dm)**
 
