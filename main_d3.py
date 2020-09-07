@@ -67,10 +67,10 @@ async def on_ready():
         os.makedirs("logs/error")
         os.makedirs("logs/info")
         os.makedirs("logs/workers")
-    logHandler = handlers.RotatingFileHandler('logs/info/info.log', maxBytes=5000, backupCount=10, encoding='utf-8')
+    logHandler = handlers.RotatingFileHandler('logs/info/info.log', maxBytes=5000, backupCount=20, encoding='utf-8')
     logHandler.setLevel(logging.INFO)
     logHandler.setFormatter(formatter)
-    errorLogHandler = handlers.RotatingFileHandler('logs/error/error.log', maxBytes=5000, backupCount=10,
+    errorLogHandler = handlers.RotatingFileHandler('logs/error/error.log', maxBytes=5000, backupCount=20,
                                                    encoding='utf-8')
     errorLogHandler.setLevel(logging.ERROR)
     errorLogHandler.setFormatter(formatter)

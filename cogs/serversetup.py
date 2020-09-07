@@ -696,19 +696,42 @@ class ServerSetup(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
-                message.channel.guild.id not in self.bot.from_serversetup:
+                message.guild.id not in self.bot.from_serversetup:
             return
         txt = f"By: {message.author.mention} (id: {message.author.id}) in " \
               f"{message.channel.mention}\n\n{message.content}\n"
         if len(message.attachments) > 0:
             txt += '\n**Attachments:**\n'
             txt += '\n'.join([a.filename for a in message.attachments])
-        await self.log("Message deleted", txt, message.author, 0xd6260b)
+        await dutils.log("Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
+
+    @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload):
+        msgs = payload.cached_messages
+        ch_id = payload.channel_id
+        g_id = payload.guild_id
+        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.now().strftime('%c')} -- Displaying cached messages\n" \
+              f"(ch: {ch_id}) (guild: {g_id})\n\n"
+        for message in msgs:
+            if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
+                    message.guild.id not in self.bot.from_serversetup:
+                continue
+            txt = f"{message.author.name} (id: {message.author.id}): {message.content}"
+            if len(message.attachments) > 0:
+                txt += '\n**Attachments:**\n'
+                txt += '\n'.join([a.filename for a in message.attachments])
+            # await dutils.log("Message deleted", txt, message.author, 0xd6260b)
+            ret += (txt + '\n')
+        if len(msgs) > 0:
+            print(ret)
+        g = self.bot.get_guild(g_id)
+        await dutils.log("Bulk message delete", f"{len(payload.message_ids)} messages deleted in "
+                                                f"{(g.get_channel(ch_id)).mention}", None, 0x960f0f, guild=g)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         if isinstance(before.channel, discord.DMChannel) or before.author.bot or \
-                before.channel.guild.id not in self.bot.from_serversetup:
+                before.guild.id not in self.bot.from_serversetup:
             return
         try:
             txt = f"By: {before.author.mention} (id: {before.author.id}) in {before.channel.mention}\n\n" \
@@ -716,31 +739,7 @@ class ServerSetup(commands.Cog):
                   f"[Jump to message]({after.jump_url})"
         except:
             txt = "can not retrieve edited message content, please contact the bot owner about this"
-        await self.log("Message edited", txt, before.author, 0xffb81f)
-
-    async def log(self, title, txt, author, colorr=0x222222, imageUrl=''):
-        try:
-            sup = self.bot.from_serversetup[author.guild.id]
-            desc = []
-            while len(txt) > 0:
-                desc.append(txt[:2000])
-                txt = txt[2000:]
-            for txt in desc:
-                em = discord.Embed(description=txt, color=colorr)
-                icon_url = author.avatar_url if 'gif' in str(author.avatar_url).split('.')[-1] else str(
-                    author.avatar_url_as(format="png"))
-                em.set_author(name=f"{title}", icon_url=icon_url)
-                em.set_footer(text=f"{datetime.datetime.now().strftime('%c')}")
-                if imageUrl:
-                    try:
-                        em.set_thumbnail(url=imageUrl)
-                    except:
-                        pass
-                await dutils.try_send_hook(author.guild, self.bot, hook=sup['hook_reg'],
-                                           regular_ch=sup['reg'], embed=em)
-        except:
-            traceback.print_exc()
-            self.bot.logger.error("Something went wrong when logging")
+        await dutils.log("Message edited", txt, before.author, 0xffb81f, guild=before.guild)
 
     async def do_setup(self, **kwargs):
         ctx = kwargs.get('ctx', None)

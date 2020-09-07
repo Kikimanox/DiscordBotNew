@@ -1,5 +1,8 @@
 import asyncio
+import traceback
 
+import discord
+import time
 import utils.dataIO as dataIO
 import os
 from discord import Embed
@@ -9,6 +12,7 @@ import datetime
 import aiohttp
 import random
 from discord import File
+from models.moderation import (Mutes, Actions, Blacklist, ModManager)
 
 
 async def getChannel(ctx, arg):
@@ -199,7 +203,9 @@ async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=No
 
 
 async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
-    hook_ok = regular_ch.id == hook.channel_id
+    hook_ok = False
+    if hasattr(hook, 'channel_id'):
+        hook_ok = regular_ch.id == hook.channel_id
     if hook and hook_ok:
         try:
             await hook.send(embed=embed, content=content)
@@ -211,3 +217,159 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         await regular_ch.send("**Logging hook and channel id mismatch, please fix!!!**")
         bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
                          f"{guild.id})**")
+
+
+async def mute_user(ctx, member, length, reason):
+    mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
+    if mute_role in ctx.guild.get_member(member.id).roles:
+        return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
+    unmute_time = None
+    # thanks Luc#5653
+    if length:
+        units = {
+            "d": 86400,
+            "h": 3600,
+            "m": 60,
+            "s": 1
+        }
+        seconds = 0
+        match = re.findall("([0-9]+[smhd])", length)  # Thanks to 3dshax server's former bot
+        if not match:
+            p = ctx.bot.config['BOT_PREFIX']
+            return await ctx.send(f"Could not parse mute length. Are you sure you're "
+                                  f"giving it in the right format? Ex: `{p}mute @user 30m`, "
+                                  f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
+        try:
+            for item in match:
+                seconds += int(item[:-1]) * units[item[-1]]
+            timestamp = datetime.datetime.now()
+            delta = datetime.timedelta(seconds=seconds)
+        except OverflowError:
+            return await ctx.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
+        unmute_time = timestamp + delta
+
+        # modData[str(ctx.guild.id)]["muted_users"][str(member.id)] = {"until": unmute_time.timestamp(),
+        #                                                             "muted_member": str(member),
+        #                                                             "reason": reason,
+        #                                                             "until_ver2": unmute_time.strftime('%c')}
+    try:
+        await member.add_roles(mute_role)
+        try:
+            await member.send(f'You have been muted on the {str(ctx.guild)} server '
+                              f'{"for " + length if length else "indefinitely "}'
+                              f' {"" if not reason else f"reason: {reason}"}')
+        except:
+            print(f"Member {'' if not member else member.id} disabled dms")
+    except discord.errors.Forbidden:
+        return await ctx.send("💢 I don't have permission to do this.")
+    # if not length:
+    # modData[str(ctx.guild.id)]["muted_users"][str(member.id)] = {"until": 999999999999,
+    #                                                             "muted_member": str(member),
+    #                                                             "reason": reason,
+    #                                                            "until_ver2": 'indefinitely '}
+    # print(f'{datetime.datetime.now().strftime("%c")} ({ctx.guild.id} | {str(ctx.guild)}) MOD LOG (mute):'
+    #       f' {str(ctx.author)} ({ctx.author.id}) muted '
+    #       f'the user {str(member)} ({member.id}).{" Length: " + length if length else " Length: indefinitely "} '
+    #       f'Reason: {reason}')
+
+    try:
+        mute = Mutes.get(Mutes.user_id == member.id, Mutes.guild == ctx.guild.id)
+        mute.len_str = 'indefinitely ' if not length else length
+        mute.expires_on = unmute_time if length else datetime.datetime.max
+        mute.muted_by = ctx.author.id
+        mute.reason = mute.reason + ' ||| ' + reason
+        mute.save()
+    except:
+        Mutes.insert(guild=ctx.guild.id, reason=reason, user_id=member.id,
+                     len_str='indefinitely ' if not length else length,
+                     expires_on=unmute_time if length else datetime.datetime.max,
+                     muted_by=ctx.author.id).execute()
+    await ctx.send(embed=Embed(
+        description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
+        color=0x6785da))
+    act_id = await moderation_action(ctx, reason, "mute", member)
+    await post_mod_log_based_on_type(ctx, "mute", act_id)
+    # dataIOa.save_json(self.modfilePath, modData)
+    # await dutils.mod_log(f"Mod log: Mute", f"**Offended:** {str(member)} ({member.id})\n"
+    #                                       f"**Reason:** {reason}\n"
+    #                                       f"**Responsible:** {str(ctx.author)} ({ctx.author.id})",
+    #                     colorr=0x33d8f0, author=ctx.author)
+
+
+async def moderation_action(ctx, reason, action_type, offended):
+    """
+    :param ctx: ctx
+    :param reason: reason
+    :param action_type: mute, warn, ban, blacklist
+    :param offended: offended member
+    :return: insert id or None if fails
+    """
+    try:
+        ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
+                                jump_url=ctx.message.jump_url, responsible=ctx.author.id,
+                                offended=offended.id).execute()
+        return ins_id
+    except:
+        ctx.bot.logger.error(f"Failed to insert mod action: {ctx.message.jump_url}")
+        return None
+
+
+async def post_mod_log_based_on_type(ctx, log_type, act_id):
+    await log(ctx, this_content="a", this_embed="b")
+
+
+async def log(ctx, title=None, txt=None, author=None,
+              colorr=0x222222, imageUrl='', guild=None, content=None,
+              this_embed=None, this_content=None, this_hook_type=None):
+    """
+    :param ctx:
+    :param title:
+    :param txt:
+    :param author:
+    :param colorr:
+    :param imageUrl:
+    :param guild:
+    :param content:
+    :param this_embed:
+    :param this_content:
+    :param this_hook_type: this_hook_type: reg | leavejoin | modlog
+    :return:
+    """
+    try:
+        sup = ctx.bot.from_serversetup[guild.id]
+        if not this_content and not this_embed:
+            desc = []
+            while len(txt) > 0:
+                desc.append(txt[:2000])
+                txt = txt[2000:]
+            i = 0
+            for txt in desc:
+                em = discord.Embed(description=txt, color=colorr)
+                if author:
+                    icon_url = author.avatar_url if 'gif' in str(author.avatar_url).split('.')[-1] else str(
+                        author.avatar_url_as(format="png"))
+                    em.set_author(name=f"{title}", icon_url=icon_url)
+                em.set_footer(text=f"{datetime.datetime.now().strftime('%c')}")
+                if imageUrl:
+                    try:
+                        em.set_thumbnail(url=imageUrl)
+                    except:
+                        pass
+                if title and not author:
+                    em.title = title
+                cnt = None
+                if i == 0 and content:
+                    cnt = content
+                    i += 1
+
+                await try_send_hook(guild, ctx.bot, hook=sup['hook_reg'],
+                                    regular_ch=sup['reg'], embed=em, content=cnt)
+        else:
+            await try_send_hook(guild, ctx.bot,
+                                hook=sup['hook_reg' if not this_hook_type else f'hook_{this_hook_type}'],
+                                regular_ch=sup['reg' if not this_hook_type else this_hook_type], embed=this_embed,
+                                content=this_content)
+
+    except:
+        traceback.print_exc()
+        ctx.bot.logger.error("Something went wrong when logging")

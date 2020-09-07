@@ -107,6 +107,7 @@ class Stats(commands.Cog):
         embed.timestamp = datetime.datetime.utcnow()
         await ctx.send(embed=embed)
 
+
 def setup(bot):
     ext = Stats(bot)
     bot.add_cog(ext)
