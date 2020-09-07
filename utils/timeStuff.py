@@ -2,6 +2,7 @@ import arrow
 import datetime
 from dateutil.relativedelta import relativedelta
 
+
 class plural:
     def __init__(self, value):
         self.value = value
@@ -13,6 +14,7 @@ class plural:
         if abs(v) != 1:
             return f'{v} {plural}'
         return f'{v} {singular}'
+
 
 def human_join(seq, delim=', ', final='or'):
     size = len(seq)
@@ -27,10 +29,12 @@ def human_join(seq, delim=', ', final='or'):
 
     return delim.join(seq[:-1]) + f' {final} {seq[-1]}'
 
+
 def convertTimeToReadable1(time):
     dd = arrow.get(time).datetime
     epoch = (dd.replace(tzinfo=None) - datetime.datetime(1970, 1, 1)).total_seconds()
     return str(datetime.datetime.utcfromtimestamp(int(epoch)).strftime('%d/%m/%Y %H:%M:%S'))
+
 
 # credit to Danny
 def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
@@ -93,3 +97,13 @@ def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
             return human_join(output, final='and') + suffix
         else:
             return ' '.join(output) + suffix
+
+
+def convert_sec_to_smh(sec):
+    if sec < 60:
+        tim = f'{sec}s'
+    elif 3600 > sec >= 60:
+        tim = f'{sec // 60}m'
+    else:
+        tim = f'{sec // 3600}h{(sec // 60) % 60}m'
+    return tim

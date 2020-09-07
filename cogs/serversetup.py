@@ -710,7 +710,7 @@ class ServerSetup(commands.Cog):
         if len(message.attachments) > 0:
             txt += '\n**Attachments:**\n'
             txt += '\n'.join([a.filename for a in message.attachments])
-        await dutils.log("Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
+        await dutils.log(self.bot, "Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -732,7 +732,7 @@ class ServerSetup(commands.Cog):
         if len(msgs) > 0:
             print(ret)
         g = self.bot.get_guild(g_id)
-        await dutils.log("Bulk message delete", f"{len(payload.message_ids)} messages deleted in "
+        await dutils.log(self.bot, "Bulk message delete", f"{len(payload.message_ids)} messages deleted in "
                                                 f"{(g.get_channel(ch_id)).mention}", None, 0x960f0f, guild=g)
 
     @commands.Cog.listener()
@@ -746,7 +746,7 @@ class ServerSetup(commands.Cog):
                   f"[Jump to message]({after.jump_url})"
         except:
             txt = "can not retrieve edited message content, please contact the bot owner about this"
-        await dutils.log("Message edited", txt, before.author, 0xffb81f, guild=before.guild)
+        await dutils.log(self.bot, "Message edited", txt, before.author, 0xffb81f, guild=before.guild)
 
     async def do_setup(self, **kwargs):
         ctx = kwargs.get('ctx', None)

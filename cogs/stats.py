@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 import itertools
-
+from collections import Counter, defaultdict
 import discord
 import pkg_resources
 import psutil
@@ -14,6 +14,7 @@ from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
+from models.bot import BotBlacklist, BotBanlist
 
 
 class Stats(commands.Cog):
@@ -101,13 +102,187 @@ class Stats(commands.Cog):
 
         version = pkg_resources.get_distribution('discord.py').version
         embed.add_field(name='Guilds', value=str(guilds))
-        embed.add_field(name='Commands Ran', value=self.bot.ranCommands)
+        embed.add_field(name='Commands Ran', value=sum(self.bot.command_stats.values()))
         embed.add_field(name='Uptime', value=self.get_bot_uptime(brief=True))
         embed.set_footer(text=f'Made with discord.py v{version}', icon_url='http://i.imgur.com/5BFecvA.png')
         embed.timestamp = datetime.datetime.utcnow()
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=['hp'])
+    @commands.check(checks.owner_check)
+    async def bothealth(self, ctx):
+        """Various bot health monitoring tools."""
+
+        # This uses a lot of private methods because there is no
+        # clean way of doing this otherwise.
+
+        HEALTHY = discord.Colour(value=0x43B581)
+        UNHEALTHY = discord.Colour(value=0xF04947)
+        WARNING = discord.Colour(value=0xF09E47)
+        total_warnings = 0
+
+        embed = discord.Embed(title='Bot Health Report', colour=HEALTHY)
+
+        description = []
+
+        spam_control = self.bot.spam_control
+        a = spam_control._cache.items()
+        being_spammed = [
+            str(key) for key, value in spam_control._cache.items()
+            if value._tokens == 0
+        ]
+        if being_spammed: being_spammed = '\n' + ", ".join(being_spammed)
+        description.append(f'Current Spammers (bucket):{being_spammed or "**None**"}')
+
+        if being_spammed:
+            embed.colour = WARNING
+            total_warnings += 1
+
+        try:
+            task_retriever = asyncio.Task.all_tasks
+        except AttributeError:
+            # future proofing for 3.9 I guess
+            task_retriever = asyncio.all_tasks
+        else:
+            all_tasks = task_retriever(loop=self.bot.loop)
+
+        event_tasks = [
+            t for t in all_tasks
+            if 'Client._run_event' in repr(t) and not t.done()
+        ]
+
+        cogs_directory = os.path.dirname(__file__)
+        tasks_directory = os.path.join('discord', 'ext', 'tasks', '__init__.py')
+        inner_tasks = [
+            t for t in all_tasks
+            if cogs_directory in repr(t) or tasks_directory in repr(t)
+        ]
+
+        bad_inner_tasks = ", ".join(hex(id(t)) for t in inner_tasks if t.done() and t._exception is not None)
+        total_warnings += bool(bad_inner_tasks)
+        embed.add_field(name='Inner Tasks', value=f'Total: **{len(inner_tasks)}**\nFailed: '
+                                                  f'**{bad_inner_tasks or "None"}**')
+        embed.add_field(name='Events Waiting', value=f'Total: **{len(event_tasks)}**', inline=False)
+
+        command_waiters = self.bot.before_run_cmd - 1  # Because this one will be counted
+        description.append(f'Commands Waiting: **{command_waiters}**')
+
+        try:
+            memory_usage = self.process.memory_full_info().uss / 1024 ** 2
+            cpu_usage = self.process.cpu_percent() / psutil.cpu_count()
+            embed.add_field(name='Process', value=f'{memory_usage:.2f} MiB\n{cpu_usage:.2f}% CPU', inline=False)
+        except:
+            embed.add_field(name='Process', value=f'Process does not allow memory and CPU usage view', inline=False)
+
+        global_rate_limit = not self.bot.http._global_over.is_set()
+        description.append(f'Global Rate Limit: **{global_rate_limit}**')
+
+        if command_waiters >= 8:
+            total_warnings += 1
+            embed.colour = WARNING
+
+        if global_rate_limit or total_warnings >= 9:
+            embed.colour = UNHEALTHY
+
+        embed.set_footer(text=f'{total_warnings} warning(s)')
+        embed.description = '\n'.join(description)
+        await ctx.send(embed=embed)
+
+    async def register_command(self, ctx):
+        if ctx.command is None:
+            return
+        command = ctx.command.qualified_name
+        self.bot.command_stats[command] += 1
+
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx):
+        await self.register_command(ctx)
+
+    @commands.command()
+    @commands.check(checks.owner_check)
+    async def commandstats(self, ctx, limit=20):
+        """Shows command stats.
+        Use a negative number for bottom instead of top.
+        This is only for the current session.
+        """
+        if len(self.bot.command_stats) == 0:
+            return await ctx.send("No ran commands yet")
+        counter = self.bot.command_stats
+        width = len(max(counter, key=len))
+        total = sum(counter.values())
+
+        if limit > 0:
+            common = counter.most_common(limit)
+        else:
+            common = counter.most_common()[limit:]
+
+        output = '\n'.join(f'{k :<{width + 1}}: {c}' for k, c in common)
+
+        await ctx.send(f'```\n{output}\n```')
+
+    @commands.command(aliases=['bb'], hidden=True)
+    @commands.check(checks.owner_check)
+    async def lsbotblacklist(self, ctx, limit=20):
+        """Show blacklisted users up to a limit"""
+        await self.botbl_disp(ctx, limit, self.bot.blacklist, "Bot blacklist")
+
+    @commands.command(aliases=['bbb'], hidden=True)
+    @commands.check(checks.owner_check)
+    async def lsbotbanlist(self, ctx, limit=20):
+        """Show banned users up to a limit"""
+        await self.botbl_disp(ctx, limit, self.bot.banlist, "Bot banlist")
+
+    @staticmethod
+    async def botbl_disp(ctx, limit, bb, title):
+        if not bb:
+            return await ctx.send(f"{title} is empty")
+        users = [(k, v) for k, v in bb.items()]
+        output = '\n'.join(f'{k} : {c}' for k, c in users[:limit])
+        await ctx.send(embed=Embed(description=f'{output}', title=title))
+
+    @commands.cooldown(1, 60 * 60 * 7, commands.BucketType.user)
+    @commands.command(hidden=True)
+    async def unblacklistme(self, ctx):
+        """Remove yourself from the blacklist"""
+        if ctx.author.id in ctx.bot.blacklist:
+            BotBlacklist.delete().where(BotBlacklist.user == ctx.author.id).execute()
+            del ctx.bot.blacklist[ctx.author.id]
+            await ctx.send("\N{WHITE HEAVY CHECK MARK} You have "
+                           "been removed from the blacklist.")
+        else:
+            await ctx.send("\N{CROSS MARK} You are not blacklisted")
+            ctx.command.reset_cooldown(ctx)
+
+    @commands.command()
+    @commands.check(checks.admin_check)
+    async def botunban(self, ctx, user_id: int):
+        """Unban user by id"""
+        if user_id in ctx.bot.banlist:
+            BotBanlist.delete().where(BotBanlist.user == user_id).execute()
+            del ctx.bot.banlist[ctx.author.id]
+            await ctx.send("Done.")
+        else:
+            await ctx.send("This user id is not banned from the bot.")
+
 
 def setup(bot):
+    if not hasattr(bot, 'command_stats'):
+        bot.command_stats = Counter()
+
+    # in case of even further spam, add a cooldown mapping
+    # for people who excessively spam commands
+    bot.spam_control = commands.CooldownMapping.from_cooldown(7, 12, commands.BucketType.user)
+
+    # A counter to auto-ban frequent spammers
+    # Triggering the rate limit 5 times in a row will auto-ban the user from the bot.
+    bot._auto_spam_count = Counter()
+    bot.blacklist = {}
+    bs = [q for q in BotBlacklist.select().dicts()]
+    for b in bs:  bot.blacklist[b['user']] = b['meta']
+
+    bot.banlist = {}
+    bs = [q for q in BotBanlist.select().dicts()]
+    for b in bs:  bot.banlist[b['user']] = b['meta']
+
     ext = Stats(bot)
     bot.add_cog(ext)

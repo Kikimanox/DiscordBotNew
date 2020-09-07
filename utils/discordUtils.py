@@ -6,6 +6,8 @@ import time
 import utils.dataIO as dataIO
 import os
 from discord import Embed
+
+from models.bot import BotBlacklist, BotBanlist
 from utils.dataIOa import dataIOa
 import re
 import datetime
@@ -365,14 +367,14 @@ async def moderation_action(ctx, reason, action_type, offended):
 
 
 async def post_mod_log_based_on_type(ctx, log_type, act_id):
-    await log(ctx, this_content="TODO", this_embed=Embed(description="TODO"), this_hook_type='modlog')
+    await log(ctx.bot, this_content="TODO", this_embed=Embed(description="TODO"), this_hook_type='modlog')
 
 
-async def log(ctx, title=None, txt=None, author=None,
+async def log(bot, title=None, txt=None, author=None,
               colorr=0x222222, imageUrl='', guild=None, content=None,
-              this_embed=None, this_content=None, this_hook_type=None):
+              this_embed=None, this_content=None,
+              this_hook_type=None):
     """
-    :param ctx:
     :param title:
     :param txt:
     :param author:
@@ -383,11 +385,11 @@ async def log(ctx, title=None, txt=None, author=None,
     :param this_embed:
     :param this_content:
     :param this_hook_type: this_hook_type: reg | leavejoin | modlog
+    :param bot:
     :return:
     """
     try:
-        guild = ctx.guild if not guild else guild
-        sup = ctx.bot.from_serversetup[guild.id]
+        sup = bot.from_serversetup[guild.id]
         if not this_content and not this_embed:
             desc = []
             while len(txt) > 0:
@@ -413,14 +415,28 @@ async def log(ctx, title=None, txt=None, author=None,
                     cnt = content
                     i += 1
 
-                await try_send_hook(guild, ctx.bot, hook=sup['hook_reg'],
+                await try_send_hook(guild, bot, hook=sup['hook_reg'],
                                     regular_ch=sup['reg'], embed=em, content=cnt)
         else:
-            await try_send_hook(guild, ctx.bot,
+            await try_send_hook(guild, bot,
                                 hook=sup['hook_reg' if not this_hook_type else f'hook_{this_hook_type}'],
                                 regular_ch=sup['reg' if not this_hook_type else this_hook_type], embed=this_embed,
                                 content=this_content)
 
     except:
         traceback.print_exc()
-        ctx.bot.logger.error("Something went wrong when logging")
+        bot.logger.error("Something went wrong when logging")
+
+
+async def ban_from_bot(bot, offended, meta, gid, ch_to_reply_at=None):
+    bot.banlist[offended.id] = meta
+    try:
+        bb = BotBanlist.get(BotBlacklist.user == offended.id)
+        bb.meta = meta
+        bb.when = datetime.datetime.utcnow()
+        bb.guild = gid
+        bb.save()
+    except:
+        BotBanlist.insert(user=offended.id, guild=gid, meta=meta).execute()
+    if ch_to_reply_at:
+        await ch_to_reply_at.send(f'💢 💢 💢 {offended.mention} you have been banned from the bot!')

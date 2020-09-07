@@ -76,7 +76,7 @@ class Quoting(commands.Cog):
         await ctx.send('Error in the quote command')
 
     @commands.cooldown(1, 15, commands.BucketType.channel)
-    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.check(checks.admin_check)
     @commands.command()
     async def archive(self, ctx):
@@ -141,6 +141,7 @@ class Quoting(commands.Cog):
                                          color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR']))
         await msg.pin()
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.manage_messages_check)
     @commands.command()
     async def pinstatus(self, ctx, *arg):

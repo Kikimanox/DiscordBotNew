@@ -28,6 +28,8 @@ import logging.handlers as handlers
 from utils.dataIOa import dataIOa
 import fileinput
 import importlib
+import utils.discordUtils as dutils
+from models.bot import BotBlacklist, BotBanlist
 
 Prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
 
@@ -44,6 +46,7 @@ bot.running_tasks = []
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
 bot.help_command = Help()
+bot.before_run_cmd = 0
 
 
 @bot.event
@@ -56,7 +59,7 @@ async def on_ready():
     bot.config = dataIOa.load_json('config.json')
     bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
     bot.uptime = datetime.datetime.utcnow()
-    bot.ranCommands = 0
+    # bot.ranCommands = 0
     bot.help_command = Help()
     bot.logger = logging.getLogger('my_app')
     bot.logger.setLevel(logging.INFO)
@@ -149,11 +152,71 @@ async def on_message(message):
 
     if message.content.startswith(bot.config['BOT_PREFIX']) or message.content.split(' ')[0] == \
             f'<@!{bot.config["CLIENT_ID"]}>':
+
+        if message.author.id in bot.banlist:
+            return
+
         pfx_len = len(bot.config['BOT_PREFIX']) if message.content.startswith(bot.config['BOT_PREFIX']) else len(
             f'<@!{bot.config["CLIENT_ID"]}>') + 1
         possible_cmd = message.content[pfx_len:].split(' ')[0]
+
+        if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
+
+            if possible_cmd == 'unblacklistme':
+                return await bot.process_commands(message)
+
+        if message.author.id in bot.blacklist:
+            return
+
+        bucket = bot.spam_control.get_bucket(message)
+        current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+        retry_after = bucket.update_rate_limit(current)
+        author_id = message.author.id
+        is_admin = False
+        if message.guild:
+            is_admin = message.author.guild_permissions.administrator
+        if retry_after and author_id != bot.config['OWNER_ID'] and not is_admin:
+            bot._auto_spam_count[author_id] += 1
+            d_max = 4
+            if bot._auto_spam_count[author_id] >= d_max:
+                # await self.add_to_blacklist(author_id)
+
+                if possible_cmd != 'unblacklistme':
+                    bot.blacklist[author_id] = f"{str(message.author)} {datetime.datetime.now().strftime('%c')}" \
+                                               f" source: {message.jump_url}"
+                    del bot._auto_spam_count[author_id]
+                    # await self.log_spammer(ctx, message, retry_after, autoblock=True)
+                    out = f'SPAMMER BLACKLISTED: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
+                    print(out)
+
+                    try:
+                        bb = BotBlacklist.get(BotBlacklist.user == author_id)
+                        bb.meta = out
+                        bb.when = datetime.datetime.utcnow()
+                        bb.guild = message.guild.id
+                        bb.save()
+                    except:
+                        BotBlacklist.insert(user=author_id, guild=message.guild.id, meta=out).execute()
+                    await message.channel.send(f'💢 {message.author.mention} you have been blacklisted from the bot '
+                                               f'for spamming. You may remove yourself from the blacklist '
+                                               f'once in a certain period. '
+                                               f'To do that you can use `{bot.config["BOT_PREFIX"]}unblacklistme`')
+                else:
+                    out2 = f"{str(message.author)} {datetime.datetime.now().strftime('%c')}" \
+                           f" source: {message.jump_url}"
+                    out = f'SPAMMER BANNED FROM BOT: {author_id} | {retry_after} |' \
+                          f' {message.content} | {message.jump_url}'
+                    if message.author.id not in bot.banlist:
+                        await dutils.ban_from_bot(bot, message.author, out2, message.guild.id, message.channel)
+                    d = 0
+            else:
+                out = f'almost SPAMMER: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
+            bot.logger.info(out)
+            if bot._auto_spam_count[author_id] == d_max - 1: return
+        else:
+            bot._auto_spam_count.pop(author_id, None)
+
         if possible_cmd in bot.all_commands:
-            if hasattr(bot, 'ranCommands'): bot.ranCommands += 1
             return await bot.process_commands(message)
         if message.guild and message.guild.id in bot.all_cmds:
             ctype = -1  # 1 possible_cmd | 2 mutli word | 3 same as 0 but inh | 4 same as 1 but inh
@@ -250,12 +313,15 @@ async def on_command_error(ctx, error):
         extra = ""
         if error.cooldown.type.name != 'default':
             extra += f" ({error.cooldown.type.name} cooldown)"
+        tim = error.args[0].split(' in ')[-1]
+        sec = int(tim.split('.')[0])
+        tim = tutils.convert_sec_to_smh(sec)
         await ctx.send(f"⏲ Command on cooldown, try again"
-                       f" in {error.args[0].split(' in ')[-1]}" + extra, delete_after=5)
+                       f" in **{tim}**" + extra, delete_after=5)
     elif isinstance(error, commands.errors.CheckFailure):
         await ctx.send("⚠ You don't have permissions to use that command.")
-        bot.logger.error('CMD ERROR', 'NoPerms',
-                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}', ctx)
+        bot.logger.error('CMD ERROR NoPerms'
+                         f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         formatter = Help()
         help_msg = await formatter.format_help_for(ctx, ctx.command)
@@ -309,6 +375,15 @@ async def before_any_command(ctx):
     if hasattr(bot, 'logger'):
         bot.logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
                         f"| Message: {ctx.message.content}")
+    bot.before_run_cmd += 1
+
+
+@bot.after_invoke
+async def after_any_command(ctx):
+    # do something after a command is called
+    if not bot.is_ready():
+        await bot.wait_until_ready()
+    bot.before_run_cmd -= 1
 
 
 def load_all_cogs_except(cogs_to_exclude):
