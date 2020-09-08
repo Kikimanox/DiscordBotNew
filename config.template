@@ -5,6 +5,7 @@
     "BOT_TOKEN": "",
     "OWNER_TOKEN": "",
     "BOT_PREFIX": "",
+    "B_PREF_GUILD" : {},
     "BOT_DEFAULT_EMBED_COLOR_STR": "",
     "BOT_DEFAULT_EMBED_COLOR": 0,
     "IMGUR_ID": "",
