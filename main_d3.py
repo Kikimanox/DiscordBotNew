@@ -153,6 +153,7 @@ async def prefix(ctx, new_prefix=""):
         "with a space at the end, for example `bb command` then do: "
         "`.prefix bb{space_here}`")
     ctx.bot.config['B_PREF_GUILD'][str(ctx.guild.id)] = new_prefix
+    if new_prefix == Prefix: del ctx.bot.config['B_PREF_GUILD'][str(ctx.guild.id)]
     dataIOa.save_json("config.json", bot.config)
     global Prefix_Per_Guild
     Prefix_Per_Guild = ctx.bot.config['B_PREF_GUILD']

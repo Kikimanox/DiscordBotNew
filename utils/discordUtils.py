@@ -385,7 +385,9 @@ async def moderation_action(ctx, reason, action_type, offender, no_dm=False):
         ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
                                 jump_url=ctx.message.jump_url, responsible=ctx.author.id,
                                 offender=offender, user_display_name=disp_n, no_dm=no_dm).execute()
-        return ins_id
+        case_id = Actions.select().where(Actions.guild == ctx.guild.id).count()
+        Actions.update(case_id_on_g=case_id).where(Actions.id == ins_id).execute()
+        return case_id
     except:
         ctx.bot.logger.error(f"Failed to insert mod action: {ctx.message.jump_url}")
         return None

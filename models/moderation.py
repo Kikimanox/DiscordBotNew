@@ -27,6 +27,7 @@ class Mutes(BaseModel):
 
 class Actions(BaseModel):
     id = AutoField()
+    case_id_on_g = IntegerField(default=-1)
     guild = IntegerField()
     channel = IntegerField()
     date = DateTimeField(default=datetime.utcnow)
