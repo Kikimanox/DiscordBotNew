@@ -141,6 +141,8 @@ def exit_bot(self):
 @bot.command()
 async def prefix(ctx, new_prefix=""):
     """Check or change the prefix"""
+    if '@' in new_prefix: return await ctx.send("The character `@` is not allowed in "
+                                                "the bot's prefix. Try again.")
     if not new_prefix:
         return await ctx.send(embed=Embed(title='My prefix is', description=dutils.bot_pfx(ctx.bot, ctx.message)))
     if '{space_here}' in new_prefix:  new_prefix = new_prefix.replace('{space_here}', ' ')
@@ -164,6 +166,8 @@ async def globalprefix(ctx, new_prefix=""):
 
     If you need spaces, do {space_here}
     and it will be replaced with spaces"""
+    if '@' in new_prefix: return await ctx.send("The character `@` is not allowed in "
+                                                "the bot's prefix. Try again.")
     if not new_prefix:
         return await ctx.send(embed=Embed(title='My main prefix is', description=bot.config['BOT_PREFIX']))
     if '{space_here}' in new_prefix:  new_prefix = new_prefix.replace('{space_here}', ' ')

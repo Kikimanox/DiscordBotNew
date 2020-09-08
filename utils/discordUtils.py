@@ -229,12 +229,16 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         except:
             await regular_ch.send(embed=embed, content=content)
     else:
+        if not hook_ok:
+            warn = "⚠**Logging hook and channel id mismatch, please fix!**⚠\n" \
+                   "Can probably be fiex by changing the hook's target channel.\n" \
+                   f"Or `{bot_pfx(bot, regular_ch)}setup webhooks` if there's something else wrong.\n" \
+                   f"Target channel has to be {regular_ch.mention}" \
+                   f"(tip: run the command `{bot_pfx(bot, regular_ch)}sup cur`)"
+            bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
+                             f"{guild.id})**")
+            content = f"{'' if not content else content}\n\n{warn}"
         await regular_ch.send(embed=embed, content=content)
-    if not hook_ok:
-        await regular_ch.send("⚠**Logging hook and channel id mismatch, please fix!**⚠\n"
-                              f"(tip: run the command `{bot_pfx(bot, regular_ch)}sup cur`)")
-        bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
-                         f"{guild.id})**")
 
 
 async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
@@ -270,7 +274,7 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 if removeMsgs == 7: typ = "banish"
                 if softban and removeMsgs == 0: typ = "softban"
                 if softban and removeMsgs == 7: typ = "softbanish"
-                act_id = await moderation_action(ctx, reason, typ, member)
+                act_id = await moderation_action(ctx, reason, typ, member, no_dm=no_dm)
                 await post_mod_log_based_on_type(ctx, typ, act_id, offender=member, reason=reason)
             # await dutils.mod_log(f"Mod log: Ban", f"**offender:** {str(member)} ({member.id})\n"
             #                                      f"**Reason:** {reason}\n"
@@ -354,7 +358,7 @@ async def mute_user(ctx, member, length, reason, no_dm=False):
     await ctx.send(embed=Embed(
         description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
         color=0x6785da))
-    act_id = await moderation_action(ctx, reason, "mute", member)
+    act_id = await moderation_action(ctx, reason, "mute", member, no_dm=no_dm)
     await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
                                      offender=member, reason=reason)
     # dataIOa.save_json(self.modfilePath, modData)
@@ -364,12 +368,13 @@ async def mute_user(ctx, member, length, reason, no_dm=False):
     #                     colorr=0x33d8f0, author=ctx.author)
 
 
-async def moderation_action(ctx, reason, action_type, offender):
+async def moderation_action(ctx, reason, action_type, offender, no_dm=False):
     """
     :param ctx: ctx
     :param reason: reason
     :param action_type: mute, warn, ban, blacklist
     :param offender: offender member
+    :param no_dm: did the member recieve a dm of the action
     :return: insert id or None if fails
     """
     try:
@@ -379,7 +384,7 @@ async def moderation_action(ctx, reason, action_type, offender):
             offender = offender.id
         ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
                                 jump_url=ctx.message.jump_url, responsible=ctx.author.id,
-                                offender=offender, user_display_name=disp_n).execute()
+                                offender=offender, user_display_name=disp_n, no_dm=no_dm).execute()
         return ins_id
     except:
         ctx.bot.logger.error(f"Failed to insert mod action: {ctx.message.jump_url}")

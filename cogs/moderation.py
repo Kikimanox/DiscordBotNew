@@ -1,4 +1,5 @@
 import asyncio
+import re
 import time
 
 import discord
@@ -71,48 +72,160 @@ class Moderation(commands.Cog):
     @commands.check(checks.manage_channels_check)
     @commands.command()
     async def case(self, ctx, case_id: int, *, reason):
-        """Supply a reason to a claim witht out one"""
+        """Supply a reason to a moderation action witht out one"""
         pass
 
-    @commands.cooldown(1, 3, commands.BucketType.user)
-    @commands.check(checks.manage_channels_check)
+    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.check(checks.manage_messages_check)
     @commands.command(aliases=["listcase", "lsc", 'showcase', 'showcases'])
-    async def listcases(self, ctx, case_id: int = 0, limit=10, *, types: str = ""):
+    async def listcases(self, ctx, case_id: int = 0, limit=10, *, extra: str = ""):
         """List case(s), see help to see command usage
         Use this command to see a case or multiple caes
 
         Use case examples:
 
-        **I want to see a list of recent caes**
+        **See a list of recent caes**
         `[p]lsc` (will simply show the last 10 cases)
-        `[p]lsc 0 30` <- use this if you want to change the limt
         `[p]lsc -1 30` <- use `-1` there to view **any** querry reversed
 
-        **I want to see one specific case by id**
+        **See one specific case by id**
         `[p]lsc case_id`
 
-        **I want to see 40 cases before/after a certain date**
-        snyax: (YEAR, MONTH, DAY, HOUR, MINUTE, SECOND) *all be filled out!!*
-        `[p]lsc 0 40 before=(2020, 10, 8, 23, 50, 0)`
-        `[p]lsc 0 40 after=(2020, 5, 5, 0, 0, 0) mute`
+        **See 40 cases before/after a date**
+        snyax: (YEAR, MONTH, DAY, HOUR, MINUTE, SECOND)
+        `[p]lsc 0 40 warn before=(2020, 10, 8, 23, 50, 0) ban`
+        `[p]lsc 0 40 after=(2020, 5, 5) before=(2020, 5, 3)`
 
-        **I want to see only one or more types of case**
+        **See only one or more types of case**
         `[p]lsc 0 40 mute` (Will show up to 40 last mutes)
-        `[p]lsc 0 10 softban banish` (shows up to 10 last softbans or banishes)
+        `[p]lsc 0 10 softban banish dm_me`
 
-        **What are the possible case types anyway?**
-        `*ban*` - any ban type case
-        `ban` - regular ban
-        `banish` - ban but with 7 days purged messages
-        `softban` - ban, but unban right away
-        `softbanish` - banish + softban (7 days messages rip)
+        **See cases from certain responsible or offenders**
+        `[p]lsc 0 30 mute resp=(MOD_ID)` (can use multiple)
+        `[p]lsc 0 15 offen=(ID1, ID2, ID3) compact`
 
-        `mute` - mute action
-        `warn` - warn action
-        `blacklist` - blacklisted some users
+        **Possible types?**
+        `*ban*` <- for any ban action, `ban`, `banish`, `softban`,
+        `softbanish`, `massban`, `blacklist`, `warn`, `mute`, `unmute`
+
+        **Other extra agruments:** `compact`, `dm_me`
         """
-        if case_id == 0 and limit == 20 and not types:
-            await ctx.send("TODO: Display all")
+        types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
+                 'blacklist', 'warn', 'mute', 'unmute', '*ban*']
+        q = None
+        reverse = True if case_id == -1 else False
+        af_date = None
+        bf_date = None
+        resp = None
+        offeners = None
+        got_types = []
+        dm_me = bool('dm_me' in extra)
+        compact = bool('compact' in extra)
+
+        if case_id == 0 and limit == 10 and not extra:
+            q = Actions.select().limit(limit)
+        elif case_id > 0 and limit == 10 and not extra:
+            q = Actions.select().where(Actions.id == case_id)
+        elif case_id > -2 and limit > 0 and extra:
+            possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen'})
+            was_eq = False
+            near = ""
+            for ex in extra.split():
+                if ')' in ex and not was_eq: return await ctx.send("Invalid syntax. You forgot a `(` somewhere")
+                if was_eq:
+                    if '(' in ex: break
+                    if ')' not in ex: continue
+                    was_eq = False
+                    continue
+                near = ex
+
+                if '=' not in ex:
+                    if '(' in ex: return await ctx.send("Invalid syntax. You have an `(` but no `=` before it.")
+                    # provided.append(ex)
+                    if ex not in possible:
+                        inv = ex.replace('@', '@\u200b')
+                        return await ctx.send(f"Invalid extra argument `{inv}`")
+                else:
+                    if '(' not in ex: return await ctx.send("Invalid syntax. You either forgot a `(` somewhere **or** "
+                                                            "you have a "
+                                                            "space before or after `=`")
+                    was_eq = True
+                    candidate = ex.split('=')[0]
+                    if candidate not in possible:
+                        inv = candidate.replace('@', '@\u200b')
+                        if not inv: inv = ' '
+                        near = near.replace('@', '@\u200b')
+                        return await ctx.send(f"Invalid extra argument `{inv}` "
+                                              f"(or you have "
+                                              f"a space before `=`"
+                                              f" somewhere)\n{'' if inv is not ' ' else f'See near `{near}`'}")
+            near = near.replace('@', '@\u200b')
+            if was_eq: return await ctx.send(f"You forgot to close a `)` at `{near}`")
+            if 'after=' in extra or 'before=' in extra:
+                try:
+                    aa = re.search(r'after=(.*)\)', extra)
+                    bb = re.search(r'before=(.*)\)', extra)
+                    af = tuple(map(int, re.findall(r'\d+', '' if not aa else aa.group(1))))[:6]
+                    bf = tuple(map(int, re.findall(r'\d+', '' if not bb else bb.group(1))))[:6]
+                    parsing_now = "after"
+                    try:
+                        af_date = datetime.datetime(*af)
+                        parsing_now = "before"
+                        bf_date = datetime.datetime(*bf)
+                    except Exception as e:
+                        trace = traceback.format_exc()
+                        ctx.bot.logger.error(trace)
+                        ee = str(e).replace('@', '@\u200b')
+                        return await ctx.send(f"Something went wrong when parsing **{parsing_now}** date. "
+                                              f"Please check your "
+                                              f"syntax and semantics. Exception:\n"
+                                              f"```\n{ee}```")
+                except:
+                    trace = traceback.format_exc()
+                    ctx.bot.logger.error(trace)
+                    return await ctx.send("Something went wrong. Please re-check usage.")
+            try:
+                parsing_now = 'resp'
+                if 'resp=' in extra:
+                    rr = re.search(r'resp=(.*)\)', extra)
+                    rr_ids = list(map(int, re.findall(r'\d+', '' if not rr else rr.group(1))))
+                    if rr_ids: resp = rr_ids
+
+                if 'offen=' in extra:
+                    rr = re.search(r'offen=(.*)\)', extra)
+                    rr_ids = list(map(int, re.findall(r'\d+', '' if not rr else rr.group(1))))
+                    if rr_ids: offenders = rr_ids
+            except Exception as e:
+                ee = str(e).replace('@', '@\u200b')
+                return await ctx.send("Something went wrong when parsing **{parsing_now}** arguments. Exception:\n"
+                                      f"```\n{ee}```")
+            if extra:
+                types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
+                         'blacklist', 'warn', 'mute', 'unmute', '*ban*']
+                b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban']
+                got_types = list(set(types) & set(extra.split()))
+                if '*ban*' in got_types:
+                    got_types = list(set(got_types) - {*b_types, '*ban*'})
+                    got_types = list(set(got_types) | set(b_types))
+
+            # TODO: setup a querry
+        else:
+            return await ctx.send("Invalid provided arguments.")
+
+        if q:
+            try:
+                cases = [c for c in q.dicts()]
+                await ctx.send("Le list")
+                if not compact:
+                    pass
+
+
+
+            except:
+                await ctx.send("Something weird went wrong when executing querry.")
+                ctx.bot.logger.error('listcases execution ERROR:\n' + traceback.format_exc())
+        else:
+            return await ctx.send("No records found with the provided arguments.")
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
@@ -417,7 +530,7 @@ class Moderation(commands.Cog):
             txt = []
             for w in warn_arr:
                 responsible = ctx.guild.get_member(int(w['responsible']))
-                if not responsible: responsible = m_id
+                if not responsible: responsible = f"*{w['responsible']} (left server)*"
                 txt.append(f"\n\n**->** `{w['reason']}`\n"
                            f"*-by: {responsible}*\n"
                            f"*-on: {w['date'].strftime('%c')}*")
