@@ -160,7 +160,7 @@ class Moderation(commands.Cog):
     @commands.check(checks.ban_members_check)
     @commands.command()
     async def ban(self, ctx, user: discord.Member, *, reason=""):
-        """Ban a user with an optional reason. Prefix with s for "no dm"
+        """Ban a user with an optional reason. Prefix with `s` for "no dm"
 
         Tip:
 
