@@ -257,8 +257,8 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 if softban and removeMsgs == 0: typ = "softban"
                 if softban and removeMsgs == 7: typ = "softbanish"
                 act_id = await moderation_action(ctx, reason, typ, member)
-                await post_mod_log_based_on_type(ctx, typ, act_id, offended=member, reason=reason)
-            # await dutils.mod_log(f"Mod log: Ban", f"**Offended:** {str(member)} ({member.id})\n"
+                await post_mod_log_based_on_type(ctx, typ, act_id, offender=member, reason=reason)
+            # await dutils.mod_log(f"Mod log: Ban", f"**offender:** {str(member)} ({member.id})\n"
             #                                      f"**Reason:** {reason}\n"
             #                                      f"**Responsible:** {str(ctx.author)} ({ctx.author.id})",
             #                     colorr=0x33d8f0, author=ctx.author)
@@ -342,30 +342,30 @@ async def mute_user(ctx, member, length, reason, no_dm=False):
         color=0x6785da))
     act_id = await moderation_action(ctx, reason, "mute", member)
     await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
-                                     offended=member, reason=reason)
+                                     offender=member, reason=reason)
     # dataIOa.save_json(self.modfilePath, modData)
-    # await dutils.mod_log(f"Mod log: Mute", f"**Offended:** {str(member)} ({member.id})\n"
+    # await dutils.mod_log(f"Mod log: Mute", f"**offender:** {str(member)} ({member.id})\n"
     #                                       f"**Reason:** {reason}\n"
     #                                       f"**Responsible:** {str(ctx.author)} ({ctx.author.id})",
     #                     colorr=0x33d8f0, author=ctx.author)
 
 
-async def moderation_action(ctx, reason, action_type, offended):
+async def moderation_action(ctx, reason, action_type, offender):
     """
     :param ctx: ctx
     :param reason: reason
     :param action_type: mute, warn, ban, blacklist
-    :param offended: offended member
+    :param offender: offender member
     :return: insert id or None if fails
     """
     try:
         disp_n = ""
-        if offended and hasattr(offended, 'id'):
-            disp_n = offended.display_name
-            offended = offended.id
+        if offender and hasattr(offender, 'id'):
+            disp_n = offender.display_name
+            offender = offender.id
         ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
                                 jump_url=ctx.message.jump_url, responsible=ctx.author.id,
-                                offended=offended, user_display_name=disp_n).execute()
+                                offender=offender, user_display_name=disp_n).execute()
         return ins_id
     except:
         ctx.bot.logger.error(f"Failed to insert mod action: {ctx.message.jump_url}")
@@ -373,7 +373,7 @@ async def moderation_action(ctx, reason, action_type, offended):
 
 
 async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str=None,
-                                     offended=None, reason=None, warn_number=1):
+                                     offender=None, reason=None, warn_number=1):
     em = Embed()
     responsb = ctx.author
     if not reason: reason = "*No reason provided.\n" \
@@ -381,12 +381,12 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str=None,
                             f"`{ctx.bot.config['BOT_PREFIX']}case {act_id} reason here`*"
 
     em.add_field(name='Responsible', value=f'{responsb.mention}\n{responsb}', inline=True)
-    if offended:
-        em.add_field(name='Offended', value=f'{offended.mention}\n{offended}\n{offended.id}', inline=True)
+    if offender:
+        em.add_field(name='Offender', value=f'{offender.mention}\n{offender}\n{offender.id}', inline=True)
     if log_type != 'blacklist':
-        em.add_field(name='Reason', value=reason, inline=True if offended else False)
+        em.add_field(name='Reason', value=reason, inline=True if offender else False)
     else:
-        em.add_field(name='Offended', value=reason, inline=True if offended else False)
+        em.add_field(name='offender', value=reason, inline=True if offender else False)
     title = ""
     if log_type == 'mute':
         title = "User muted indefinitely" if mute_time_str == 'indefinitely' else f'User muted for {mute_time_str}'
@@ -408,8 +408,8 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str=None,
     # todo unmute
 
     # em.set_thumbnail(url=get_icon_url_for_member(ctx.author))
-    if offended:
-        em.set_author(name=title, icon_url=get_icon_url_for_member(offended))
+    if offender:
+        em.set_author(name=title, icon_url=get_icon_url_for_member(offender))
     else:
         em.title = title
     em.set_footer(text=f"{datetime.datetime.now().strftime('%c')} | "
@@ -480,18 +480,18 @@ async def log(bot, title=None, txt=None, author=None,
         bot.logger.error("Something went wrong when logging")
 
 
-async def ban_from_bot(bot, offended, meta, gid, ch_to_reply_at=None):
-    bot.banlist[offended.id] = meta
+async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None):
+    bot.banlist[offender.id] = meta
     try:
-        bb = BotBanlist.get(BotBlacklist.user == offended.id)
+        bb = BotBanlist.get(BotBlacklist.user == offender.id)
         bb.meta = meta
         bb.when = datetime.datetime.utcnow()
         bb.guild = gid
         bb.save()
     except:
-        BotBanlist.insert(user=offended.id, guild=gid, meta=meta).execute()
+        BotBanlist.insert(user=offender.id, guild=gid, meta=meta).execute()
     if ch_to_reply_at:
-        await ch_to_reply_at.send(f'💢 💢 💢 {offended.mention} you have been banned from the bot!')
+        await ch_to_reply_at.send(f'💢 💢 💢 {offender.mention} you have been banned from the bot!')
 
 
 def get_icon_url_for_member(member):

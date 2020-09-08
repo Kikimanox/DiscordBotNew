@@ -317,8 +317,8 @@ class Moderation(commands.Cog):
         act_id = await dutils.moderation_action(ctx, reason, 'warn', user)
         num_warns = Actions.select().where(Actions.type == 'warn',
                                            Actions.guild == ctx.guild.id,
-                                           Actions.offended == user.id).count()
-        await dutils.post_mod_log_based_on_type(ctx, 'warn', act_id, offended=user,
+                                           Actions.offender == user.id).count()
+        await dutils.post_mod_log_based_on_type(ctx, 'warn', act_id, offender=user,
                                                 reason=reason, warn_number=num_warns)
         await ctx.send(content=f'**{user.mention} has been warned, reason:**',
                        embed=Embed(description=reason).set_footer(
@@ -365,7 +365,7 @@ class Moderation(commands.Cog):
                 await ctx.send("User by provided id is not on the server anymore.")
 
             ws = [q for q in Actions.select().where(Actions.type == 'warn',
-                                                    Actions.offended == m_id,
+                                                    Actions.offender == m_id,
                                                     Actions.guild == ctx.guild.id).dicts()]
             if not ws:
                 return await ctx.send("This user has no warnings.")
@@ -446,8 +446,8 @@ class Moderation(commands.Cog):
     def ws_to_usr_dict(ws):
         ret = {}
         for w in ws:
-            if not w['offended'] in ret: ret[w['offended']] = []
-            ret[w['offended']].append(w)
+            if not w['offender'] in ret: ret[w['offender']] = []
+            ret[w['offender']].append(w)
         return ret
 
 

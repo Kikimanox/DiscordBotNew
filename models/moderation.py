@@ -1,7 +1,7 @@
 """
 Mutes: id, guild, user, reason, length_str, expires_on
 Actions: id, guild, reason, type, date, channel, msg_jump,
-responsible, offended
+responsible, offender
 """
 
 from peewee import *
@@ -31,7 +31,7 @@ class Actions(BaseModel):
     date = DateTimeField(default=datetime.utcnow)
     reason = CharField(null=True)
     responsible = IntegerField()
-    offended = IntegerField(null=True)
+    offender = IntegerField(null=True)
     user_display_name = CharField(null=True)
     type = CharField()  # mute, warn, ban(types) blacklist
     jump_url = CharField()
