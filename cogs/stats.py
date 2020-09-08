@@ -198,7 +198,7 @@ class Stats(commands.Cog):
     async def on_command_completion(self, ctx):
         await self.register_command(ctx)
 
-    @commands.command()
+    @commands.command(aliases=['cmdss'])
     @commands.check(checks.owner_check)
     async def commandstats(self, ctx, limit=20):
         """Shows command stats.
@@ -217,9 +217,10 @@ class Stats(commands.Cog):
             common = counter.most_common()[limit:]
 
         output = '\n'.join(f'{k :<{width + 1}}: {c}' for k, c in common)
-
-        await ctx.send(embed=Embed(title="Comand statistics",
-                                   description=output))
+        ic = dutils.get_icon_url_for_member(ctx.bot.user)
+        await ctx.send(embed=Embed(description=f'```\n{output}```',
+                                   color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'])
+                       .set_author(icon_url=ic, name="Comand statistics"))
 
     @commands.command(aliases=['bb'], hidden=True)
     @commands.check(checks.owner_check)
