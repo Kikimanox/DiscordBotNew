@@ -6,12 +6,15 @@ from discord.ext import commands
 from discord import Member, Embed, File, utils
 import os
 import traceback
+
+from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 import datetime
-
+from columnar import columnar
+from operator import itemgetter
 from models.moderation import (Mutes, Actions, Blacklist, ModManager)
 
 
@@ -91,6 +94,29 @@ class Moderation(commands.Cog):
                                                        f"Use `{ctx.bot.config['BOT_PREFIX']}setup muterolenew <role>`")
 
         await dutils.mute_user(ctx, user, length, reason)
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command(hidden=True)
+    async def smute(self, ctx, user: discord.Member, length="", *, reason=""):
+        """Mutes a user. Check usage with .help smute (no dm)
+
+        Same as mute, but won't dm the muted user
+
+        Supply a #d#h#m#s for a timed mute. Examples:
+        `[p]smute @user` - will mute the user indefinitely
+        `[p]smute USER_ID` - can also use id instead of mention
+        `[p]smute @user 2h30m Optional reason goes here`
+        `[p]smute @user 10d Muted for ten days for that and this`"""
+        can_even_execute = True
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            sup = ctx.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
+                                                       f"Use `{ctx.bot.config['BOT_PREFIX']}setup muterolenew <role>`")
+
+        await dutils.mute_user(ctx, user, length, reason, no_dm=True)
 
     @commands.check(checks.ban_members_check)
     @commands.command()
@@ -224,7 +250,9 @@ class Moderation(commands.Cog):
         if ret_msg != orig_msg:
             await ctx.send("**F1** means that the user couldn't be found.\n"
                            "**F2** means that I couldn't ban the user because not enough permissions")
-        await ctx.send(ret_msg)
+        await ctx.send(embed=Embed(description=ret_msg))
+        act_id = await dutils.moderation_action(ctx, "", "massban", None)
+        await dutils.post_mod_log_based_on_type(ctx, 'massban', act_id)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.ban_members_check)
@@ -272,6 +300,155 @@ class Moderation(commands.Cog):
         Blacklist.insert_many(data).execute()
         self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
         await ctx.send("Done.")
+        bs = ', '.join([str(u) for u in user_ids])
+        act_id = await dutils.moderation_action(ctx, "", "blacklist", bs)
+        await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs, )
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command()
+    async def warn(self, ctx, user: discord.Member, *, reason):
+        """Warn a user with a necessary supplied reason.
+
+         `[p]warn @user Reason goes here` (reason has to be supplied)
+         `[p]warn user_id Reason goes here`"""
+        if reason == '': return await ctx.send('Warn failed, please supply '
+                                               'a reason for the warn (`.warn @user '
+                                               'reason goes here`)')
+        act_id = await dutils.moderation_action(ctx, reason, 'warn', user)
+        num_warns = Actions.select().where(Actions.type == 'warn',
+                                           Actions.guild == ctx.guild.id,
+                                           Actions.offended == user.id).count()
+        await dutils.post_mod_log_based_on_type(ctx, 'warn', act_id, offended=user,
+                                                reason=reason, warn_number=num_warns)
+        await ctx.send(content=f'**{user.mention} has been warned, reason:**',
+                       embed=Embed(description=reason).set_footer(
+                           text=f'Number of warnings: {num_warns}'))
+        try:
+            await user.send(f'You have been warned on the {str(ctx.guild)} '
+                            f'server, reason: {reason}')
+        except:
+            print(f"Member {'' if not user else user.id} disabled dms")
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command()
+    async def warnlist(self, ctx, user=None):
+        """Show warnings for a user or display all warnings.
+
+        `[p]warnlist @user`
+        `[p]warnlist USER_ID`
+        `[p]warnlist` **<-- This displays all warnings**"""
+        view_all = False
+        if not user:
+            view_all = True
+            if not (await dutils.prompt(ctx, "You are about to view a list of all warnings, proceeed?")):
+                return await ctx.send("Cancelled viewing all warnings.")
+
+        if not view_all:
+            if ctx.message.mentions:
+                member = ctx.message.mentions[0]
+            elif user and user.isdigit():
+                member = ctx.guild.get_member(int(user))
+            else:
+                member = None
+            if not member:
+                member = discord.utils.get(ctx.guild.members, name=user)
+            if not member and not user.isdigit():
+                return await ctx.send("Could not find this user.\n"
+                                      "If the user left the server then "
+                                      "the argument has to be an integer "
+                                      "(user id basically) "
+                                      "to view the left user's warns")
+            if member:
+                m_id = member.id
+            else:
+                m_id = user
+                await ctx.send("User by provided id is not on the server anymore.")
+
+            ws = [q for q in Actions.select().where(Actions.type == 'warn',
+                                                    Actions.offended == m_id,
+                                                    Actions.guild == ctx.guild.id).dicts()]
+            if not ws:
+                return await ctx.send("This user has no warnings.")
+            ws = self.ws_to_usr_dict(ws)
+            warn_arr = ws[m_id]
+            title = f"Warnings for {f'{m_id} __(user not on the server)__' if not member else f'{member} ({m_id})'}"
+            txt = []
+            for w in warn_arr:
+                responsible = ctx.guild.get_member(int(w['responsible']))
+                if not responsible: responsible = m_id
+                txt.append(f"\n\n**->** `{w['reason']}`\n"
+                           f"*-by: {responsible}*\n"
+                           f"*-on: {w['date'].strftime('%c')}*")
+            txt = txt[::-1]
+            desc = ""
+            desc_arr = []
+            while len(txt) > 0:
+                desc += txt.pop()
+                if len(desc) > 400:
+                    desc_arr.append(desc)
+                    desc = ""
+            if desc: desc_arr.append(desc)
+
+            embeds = []
+            for i in range(len(desc_arr)):
+                em = Embed(title=title + f'\nPage {i + 1}/{len(desc_arr)}',
+                           description=desc_arr[i], color=0xf26338)
+                if member: em.set_thumbnail(url=dutils.get_icon_url_for_member(member))
+                em.set_footer(text='Times are in UTC')
+                embeds.append(em)
+
+            if len(embeds) == 1:
+                await ctx.send(embed=embeds[0])
+            else:
+                await SimplePaginator(extras=embeds).paginate(ctx)
+
+        else:
+            ws = [q for q in Actions.select().where(Actions.type == 'warn',
+                                                    Actions.guild == ctx.guild.id).dicts()]
+            if not ws:
+                return await ctx.send("This server didn't issue any warnings yet.")
+            ws = self.ws_to_usr_dict(ws)
+            toEmbed = []
+            for k, v in ws.items():
+                toEmbed.append([v[0]['user_display_name'], str(k), len(v)])
+            embeds = []
+            leng = 0
+            done = False
+            warns = sorted(toEmbed, key=itemgetter(2), reverse=True)
+            headers = ['Name', 'Id', 'Count']
+            i = 1
+            while True:
+                desc = []
+                idxRange = 0
+                for warn in warns:
+                    destCpy = desc.copy()
+                    warn[0] = warn[0][:10]
+                    destCpy.append(warn)
+                    cc = columnar(destCpy, headers, no_borders=True)
+                    if len(cc) > 990: break
+                    desc.append(warn)
+                    idxRange += 1
+                del warns[:idxRange]
+                cc = columnar(desc, headers, no_borders=True)
+                embeds.append(Embed(title=f"Warnlist display. Page {i}/[MAX]", description=f'\n```{cc}\n```'))
+                if len(warns) == 0: break
+                i += 1
+
+            for e in embeds:
+                e.title = str(e.title).replace("[MAX]", str(i))
+
+            if len(embeds) == 1:
+                await ctx.send(embed=embeds[0])
+            else:
+                await SimplePaginator(extras=embeds).paginate(ctx)
+
+    @staticmethod
+    def ws_to_usr_dict(ws):
+        ret = {}
+        for w in ws:
+            if not w['offended'] in ret: ret[w['offended']] = []
+            ret[w['offended']].append(w)
+        return ret
 
 
 def setup(bot):

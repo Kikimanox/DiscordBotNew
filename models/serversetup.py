@@ -6,9 +6,9 @@ Webhooks: id, url, id, target_ch, FK_GUILD, valid
 """
 import os
 
+import aiohttp
 from peewee import *
 from datetime import datetime
-import utils.discordUtils as dutils
 from utils.dataIOa import dataIOa
 
 DB = "data/serversetup.db"
@@ -36,6 +36,7 @@ class WelcomeMsg(BaseModel):
     color = IntegerField(default=int(f"0x{dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16))
     target_ch = IntegerField()  # target channel
     display_mem_count = BooleanField(default=True)
+
 
 class Webhook(BaseModel):
     guild = ForeignKeyField(Guild, on_delete="CASCADE")
@@ -174,7 +175,8 @@ class SSManager:
         if f'{ctx.bot.user.display_name} logging hook'[:32] != raw_hook.name:
             url = str(ctx.bot.user.avatar_url).replace('.webp', '.png')
             tf = f'a{str(int(datetime.utcnow().timestamp()))}a'
-            fnn = await dutils.saveFile(url, 'tmp', tf)
+            # from utils.discordUtils import saveFile
+            fnn = await saveFile(url, 'tmp', tf)  # copy from dutils because circular import
             with open(fnn, 'rb') as fp:
                 await raw_hook.edit(name=f'{ctx.bot.user.display_name} logging hook'[:32], avatar=fp.read())
             os.remove(fnn)
@@ -225,3 +227,13 @@ class SSManager:
                 if not wel['content'] and not wel['desc'] and not wel['images'] and not wel['title']:
                     ret[g['id']]['welcomemsg'] = None
         return ret
+
+
+async def saveFile(link, path, fName):
+    fileName = f"{path}/{fName}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(link) as r:
+            with open(fileName, 'wb') as fd:
+                async for data in r.content.iter_chunked(1024):
+                    fd.write(data)
+    return fileName

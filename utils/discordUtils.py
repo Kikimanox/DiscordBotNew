@@ -8,6 +8,7 @@ import os
 from discord import Embed
 
 from models.bot import BotBlacklist, BotBanlist
+from models.serversetup import Guild, SSManager
 from utils.dataIOa import dataIOa
 import re
 import datetime
@@ -232,7 +233,7 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
         try:
             await member.ban(reason=reason, delete_message_days=removeMsgs)
             if softban:
-                await member.unban(reason=reason)
+                await member.unban(reason='Softbanned')
             try:
                 if not no_dm and not massbanning:
                     await member.send(f'You have been {"banned" if not softban else "soft-banned"} '
@@ -255,9 +256,8 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 if removeMsgs == 7: typ = "banish"
                 if softban and removeMsgs == 0: typ = "softban"
                 if softban and removeMsgs == 7: typ = "softbanish"
-                # TODO: Following 2 lines, but in the mssban cmd but differentelt
                 act_id = await moderation_action(ctx, reason, typ, member)
-                await post_mod_log_based_on_type(ctx, typ, act_id)
+                await post_mod_log_based_on_type(ctx, typ, act_id, offended=member, reason=reason)
             # await dutils.mod_log(f"Mod log: Ban", f"**Offended:** {str(member)} ({member.id})\n"
             #                                      f"**Reason:** {reason}\n"
             #                                      f"**Responsible:** {str(ctx.author)} ({ctx.author.id})",
@@ -271,7 +271,7 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
         return await ctx.send('Could not find user.')
 
 
-async def mute_user(ctx, member, length, reason):
+async def mute_user(ctx, member, length, reason, no_dm=False):
     mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
     if mute_role in ctx.guild.get_member(member.id).roles:
         return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
@@ -307,9 +307,10 @@ async def mute_user(ctx, member, length, reason):
     try:
         await member.add_roles(mute_role)
         try:
-            await member.send(f'You have been muted on the {str(ctx.guild)} server '
-                              f'{"for " + length if length else "indefinitely "}'
-                              f' {"" if not reason else f"reason: {reason}"}')
+            if not no_dm:
+                await member.send(f'You have been muted on the {str(ctx.guild)} server '
+                                  f'{"for " + length if length else "indefinitely "}'
+                                  f' {"" if not reason else f"reason: {reason}"}')
         except:
             print(f"Member {'' if not member else member.id} disabled dms")
     except discord.errors.Forbidden:
@@ -340,7 +341,8 @@ async def mute_user(ctx, member, length, reason):
         description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
         color=0x6785da))
     act_id = await moderation_action(ctx, reason, "mute", member)
-    await post_mod_log_based_on_type(ctx, "mute", act_id)
+    await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
+                                     offended=member, reason=reason)
     # dataIOa.save_json(self.modfilePath, modData)
     # await dutils.mod_log(f"Mod log: Mute", f"**Offended:** {str(member)} ({member.id})\n"
     #                                       f"**Reason:** {reason}\n"
@@ -357,17 +359,62 @@ async def moderation_action(ctx, reason, action_type, offended):
     :return: insert id or None if fails
     """
     try:
+        disp_n = ""
+        if offended and hasattr(offended, 'id'):
+            disp_n = offended.display_name
+            offended = offended.id
         ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
                                 jump_url=ctx.message.jump_url, responsible=ctx.author.id,
-                                offended=offended.id).execute()
+                                offended=offended, user_display_name=disp_n).execute()
         return ins_id
     except:
         ctx.bot.logger.error(f"Failed to insert mod action: {ctx.message.jump_url}")
         return None
 
 
-async def post_mod_log_based_on_type(ctx, log_type, act_id):
-    await log(ctx.bot, this_content="TODO", this_embed=Embed(description="TODO"), this_hook_type='modlog')
+async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str=None,
+                                     offended=None, reason=None, warn_number=1):
+    em = Embed()
+    responsb = ctx.author
+    if not reason: reason = "*No reason provided.\n" \
+                            "Can still be supplied with:\n" \
+                            f"`{ctx.bot.config['BOT_PREFIX']}case {act_id} reason here`*"
+
+    em.add_field(name='Responsible', value=f'{responsb.mention}\n{responsb}', inline=True)
+    if offended:
+        em.add_field(name='Offended', value=f'{offended.mention}\n{offended}\n{offended.id}', inline=True)
+    if log_type != 'blacklist':
+        em.add_field(name='Reason', value=reason, inline=True if offended else False)
+    else:
+        em.add_field(name='Offended', value=reason, inline=True if offended else False)
+    title = ""
+    if log_type == 'mute':
+        title = "User muted indefinitely" if mute_time_str == 'indefinitely' else f'User muted for {mute_time_str}'
+        em.colour = 0xbf5b30
+
+    if 'ban' in log_type:
+        title = log_type.capitalize()
+        em.colour = 0xe62d10
+
+    if log_type == 'blacklist':
+        title = "Blacklist"
+        em.colour = 0x050100
+
+    if log_type == 'warn':
+        tim = 'times already' if warn_number > 1 else 'time'
+        title = f'User warned ({warn_number} {tim})'
+        em.colour = 0xfa8507
+
+    # todo unmute
+
+    # em.set_thumbnail(url=get_icon_url_for_member(ctx.author))
+    if offended:
+        em.set_author(name=title, icon_url=get_icon_url_for_member(offended))
+    else:
+        em.title = title
+    em.set_footer(text=f"{datetime.datetime.now().strftime('%c')} | "
+                       f'Case id: {act_id}')
+    await log(ctx.bot, this_embed=em, this_hook_type='modlog', guild=ctx.guild)
 
 
 async def log(bot, title=None, txt=None, author=None,
@@ -389,6 +436,11 @@ async def log(bot, title=None, txt=None, author=None,
     :return:
     """
     try:
+        hook_typ = 'reg'
+        if this_hook_type: hook_typ = this_hook_type
+        if not bot.from_serversetup:
+            bot.from_serversetup = await SSManager.get_setup_formatted(bot)
+        if guild.id not in bot.from_serversetup: return
         sup = bot.from_serversetup[guild.id]
         if not this_content and not this_embed:
             desc = []
@@ -415,12 +467,12 @@ async def log(bot, title=None, txt=None, author=None,
                     cnt = content
                     i += 1
 
-                await try_send_hook(guild, bot, hook=sup['hook_reg'],
-                                    regular_ch=sup['reg'], embed=em, content=cnt)
+                await try_send_hook(guild, bot, hook=sup[f'hook_{hook_typ}'],
+                                    regular_ch=sup[hook_typ], embed=em, content=cnt)
         else:
             await try_send_hook(guild, bot,
-                                hook=sup['hook_reg' if not this_hook_type else f'hook_{this_hook_type}'],
-                                regular_ch=sup['reg' if not this_hook_type else this_hook_type], embed=this_embed,
+                                hook=sup[f'hook_{hook_typ}'],
+                                regular_ch=sup[hook_typ], embed=this_embed,
                                 content=this_content)
 
     except:
@@ -440,3 +492,8 @@ async def ban_from_bot(bot, offended, meta, gid, ch_to_reply_at=None):
         BotBanlist.insert(user=offended.id, guild=gid, meta=meta).execute()
     if ch_to_reply_at:
         await ch_to_reply_at.send(f'💢 💢 💢 {offended.mention} you have been banned from the bot!')
+
+
+def get_icon_url_for_member(member):
+    return member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else \
+        str(member.avatar_url_as(format="png"))

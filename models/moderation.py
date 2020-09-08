@@ -29,9 +29,10 @@ class Actions(BaseModel):
     guild = IntegerField()
     channel = IntegerField()
     date = DateTimeField(default=datetime.utcnow)
-    reason = CharField()
+    reason = CharField(null=True)
     responsible = IntegerField()
-    offended = IntegerField()
+    offended = IntegerField(null=True)
+    user_display_name = CharField(null=True)
     type = CharField()  # mute, warn, ban(types) blacklist
     jump_url = CharField()
 
