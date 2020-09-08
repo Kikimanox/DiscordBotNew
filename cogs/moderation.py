@@ -70,9 +70,48 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_channels_check)
     @commands.command()
-    async def case(self, ctx, claim_id: int, *, reason):
+    async def case(self, ctx, case_id: int, *, reason):
         """Supply a reason to a claim witht out one"""
         pass
+
+    @commands.check(checks.manage_channels_check)
+    @commands.command(aliases=["listcase", "lsc"])
+    async def listcases(self, ctx, case_id: int = -1, limit=20, *types: str):
+        """List case(s), see help to see command usage
+        Use this command to see a case or multiple caes
+
+        Use case examples:
+
+        **I want to see a list of recent caes**
+        `[p]lsc` (will simply show the last 20 cases)
+        `[p]lsc -1 30` <- use this if you want to change the limt
+
+        **I want to see one specific case by id**
+        `[p]lsc case_id`
+
+        **I want to see 40 cases before/after a certain date**
+        snyax: (YEAR, MONTH, DAY, HOUR, MINUTE, SECOND) *all be filled out!!*
+        *if you're only interested in a date, not the hour, just do (2020, 10, 10, 0, 0, 0)*
+        `[p]lsc -1 40 before=(2020, 10, 8, 23, 50, 0)`
+        `[p]lsc -1 40 after=(2020, 5, 5, 0, 0, 0)`
+
+        **I want to see only one or more types of case**
+        `[p]lsc -1 40 mute` (Will show up to 40 last mutes)
+        `[p]lsc -1 10 softban banish` (shows up to 10 last softbans or banishes)
+
+        **What are the possible case types anyway?**
+        `*ban*` - any ban type case
+        `ban` - regular ban
+        `banish` - ban but with 7 days purged messages
+        `softban` - ban, but unban right away
+        `softbanish` - banish + softban (7 days messages rip)
+
+        `mute` - mute action
+        `warn` - warn action
+        `blacklist` - blacklisted some users
+        """
+        if case_id == -1 and limit == 20 and not types:
+            await ctx.send("TODO: Display all")
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
