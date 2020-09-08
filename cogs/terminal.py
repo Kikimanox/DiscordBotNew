@@ -10,6 +10,7 @@ from platform import uname, python_version
 from json import decoder, dump, load
 from utils.dataIOa import dataIOa as dataIO
 from utils.checks import owner_check
+import utils.discordUtils as dutils
 
 try:
     from subprocess import DEVNULL  # Python 3
@@ -140,7 +141,7 @@ class Terminal(commands.Cog):
         if add_or_remove == "add":
             if not text:
                 return await ctx.send(
-                    f"Error. Missing command to alias. Ex: `{ctx.bot.config['BOT_PREFIX']}cmdsettings "
+                    f"Error. Missing command to alias. Ex: `{dutils.bot_pfx(ctx.bot, ctx.message)}cmdsettings "
                     f"alias add \"test\" \"cat log.txt\"")
             else:
                 self.alias[alias] = {os: text}

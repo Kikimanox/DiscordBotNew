@@ -5,7 +5,7 @@ Logging: id, target_ch, type, FK_GUILD, FK_Hooks
 Webhooks: id, url, id, target_ch, FK_GUILD, valid
 """
 import os
-
+import discord
 import aiohttp
 from peewee import *
 from datetime import datetime
@@ -82,7 +82,8 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg "
+                           f"mainsetup <channel>` first")
 
     @staticmethod
     async def update_or_error_welcomemsg_title(title, gid, ctx):
@@ -92,7 +93,7 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     async def update_or_error_welcomemsg_desc(desc, gid, ctx):
@@ -102,7 +103,7 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     async def update_or_error_welcomemsg_images(images, gid, ctx):
@@ -112,7 +113,7 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     async def update_or_error_welcomemsg_content(content, gid, ctx):
@@ -122,7 +123,7 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     async def update_or_error_welcomemsg_color(color, gid, ctx):
@@ -132,7 +133,7 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     async def update_or_error_welcomemsg_mem_cnt(yesno, gid, ctx):
@@ -142,7 +143,7 @@ class SSManager:
             wm.save()
             await ctx.send("Updated.")
         except:
-            await ctx.send(f"Please run `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg mainsetup <channel>` first")
+            await ctx.send(f"Please run `{bot_pfx(ctx.bot, ctx.message)}setup welcomemsg mainsetup <channel>` first")
 
     @staticmethod
     def create_or_update_logging(g, tar_id, typ):
@@ -237,3 +238,16 @@ async def saveFile(link, path, fName):
                 async for data in r.content.iter_chunked(1024):
                     fd.write(data)
     return fileName
+
+def bot_pfx(bot, _message):
+    """
+    :param bot: The bot
+    :param _message: Preferrably mesage,
+    if there is none use something that has the guild in it under .guild
+    :return: prefix
+    """
+    prefix = bot.config['BOT_PREFIX']
+    if hasattr(_message, 'channel') and isinstance(_message.channel, discord.DMChannel): return prefix
+    gid = str(_message.guild.id)
+    if gid not in bot.config['B_PREF_GUILD']: return prefix
+    return bot.config['B_PREF_GUILD'][gid]

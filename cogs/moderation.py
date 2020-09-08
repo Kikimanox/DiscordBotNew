@@ -131,7 +131,8 @@ class Moderation(commands.Cog):
         else:
             can_even_execute = False
         if not can_even_execute: return await ctx.send(f"Mute role not setup. "
-                                                       f"Use `{ctx.bot.config['BOT_PREFIX']}setup muterolenew <role>`")
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
+                                                       f"<role>`")
 
         await dutils.mute_user(ctx, user, length, reason)
 
@@ -154,7 +155,8 @@ class Moderation(commands.Cog):
         else:
             can_even_execute = False
         if not can_even_execute: return await ctx.send(f"Mute role not setup. "
-                                                       f"Use `{ctx.bot.config['BOT_PREFIX']}setup muterolenew <role>`")
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup "
+                                                       f"muterolenew <role>`")
 
         await dutils.mute_user(ctx, user, length, reason, no_dm=True)
 

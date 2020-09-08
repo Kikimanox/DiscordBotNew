@@ -216,9 +216,9 @@ class Stats(commands.Cog):
         else:
             common = counter.most_common()[limit:]
 
-        output = '\n'.join(f'{k :<{width + 1}}: {c}' for k, c in common)
+        output = '\n'.join(f'{k :<{width + 1}}| {c}' for k, c in common)
         ic = dutils.get_icon_url_for_member(ctx.bot.user)
-        await ctx.send(embed=Embed(description=f'```\n{output}```',
+        await ctx.send(embed=Embed(description=output,
                                    color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'])
                        .set_author(icon_url=ic, name="Comand statistics"))
 

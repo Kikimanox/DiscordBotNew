@@ -34,12 +34,22 @@ import utils.discordUtils as dutils
 from models.bot import BotBlacklist, BotBanlist
 
 Prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
+Prefix_Per_Guild = dataIOa.load_json('config.json')['B_PREF_GUILD']
 
 
-def get_pre(_bot, _message): return Prefix
+def get_pre(_bot, _message):
+    if isinstance(_message.channel, discord.DMChannel): return Prefix
+    gid = str(_message.guild.id)
+    if gid not in Prefix_Per_Guild: return Prefix
+    return Prefix_Per_Guild[gid]
 
 
-bot = commands.Bot(command_prefix=get_pre)
+def get_pre_or_mention(_bot, _message):
+    extras = [get_pre(_bot, _message)]
+    return commands.when_mentioned_or(*extras)(_bot, _message)
+
+
+bot = commands.Bot(command_prefix=get_pre_or_mention)
 ###
 bot.all_cmds = {}
 bot.from_serversetup = {}
@@ -132,10 +142,37 @@ def exit_bot(self):
 async def prefix(ctx, new_prefix=""):
     """Check or change the prefix"""
     if not new_prefix:
-        return await ctx.send(embed=Embed(title='My prefix is', description=bot.config['BOT_PREFIX']))
+        return await ctx.send(embed=Embed(title='My prefix is', description=dutils.bot_pfx(ctx.bot, ctx.message)))
+    if '{space_here}' in new_prefix:  new_prefix = new_prefix.replace('{space_here}', ' ')
+    if new_prefix.strip() == "": return await ctx.send("A prefix can not be only spaces.")
+    if dutils.bot_pfx(ctx.bot, ctx.message) == new_prefix: return await ctx.send(
+        "Why are you trying to make the new prefix the same "
+        "as the previous one? Oh yeah, if you are trying to make a prefix"
+        "with a space at the end, for example `bb command` then do: "
+        "`.prefix bb{space_here}`")
+    ctx.bot.config['B_PREF_GUILD'][str(ctx.guild.id)] = new_prefix
+    dataIOa.save_json("config.json", bot.config)
+    global Prefix_Per_Guild
+    Prefix_Per_Guild = ctx.bot.config['B_PREF_GUILD']
+    await ctx.send("Prefix changed.")
+
+
+@commands.check(owner_check)
+@bot.command(aliases=['gprefix'], hidden=True)
+async def globalprefix(ctx, new_prefix=""):
+    """Check or change the main default prefix
+
+    If you need spaces, do {space_here}
+    and it will be replaced with spaces"""
+    if not new_prefix:
+        return await ctx.send(embed=Embed(title='My main prefix is', description=bot.config['BOT_PREFIX']))
+    if '{space_here}' in new_prefix:  new_prefix = new_prefix.replace('{space_here}', ' ')
+    if new_prefix.strip() == "": return await ctx.send("A prefix can not be only spaces.")
     if bot.config['BOT_PREFIX'] == new_prefix: return await ctx.send(
         "Why are you trying to make the new prefix the same "
-        "as the previous one?")
+        "as the previous one? Oh yeah, if you are trying to make a prefix"
+        "with a space at the end, for example `bb command` then do: "
+        "`.prefix bb{space_here}`")
     bot.config['BOT_PREFIX'] = new_prefix
     dataIOa.save_json("config.json", bot.config)
     global Prefix
@@ -150,19 +187,19 @@ async def on_message(message):
     if not message.guild and message.author.id != bot.config['CLIENT_ID']:
         print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
 
+    pfx = str(get_pre(bot, message))
     if message.content == f'<@!{bot.config["CLIENT_ID"]}>': return await message.channel.send(
         embed=(
-            Embed(title='My prefix is', description=bot.config['BOT_PREFIX']).set_footer(text='You can change it with '
-                                                                                              f'{bot.config["BOT_PREFIX"]}prefix')))
+            Embed(title='My prefix here is', description=pfx).set_footer(text='You can change it with '
+                                                                              f'{pfx}prefix')))
 
-    if message.content.startswith(bot.config['BOT_PREFIX']) or message.content.split(' ')[0] == \
-            f'<@!{bot.config["CLIENT_ID"]}>':
+    if message.content.startswith(pfx) or message.content.split(' ')[0] == f'<@!{bot.config["CLIENT_ID"]}>':
 
         if message.author.id in bot.banlist:
             return
 
-        pfx_len = len(bot.config['BOT_PREFIX']) if message.content.startswith(bot.config['BOT_PREFIX']) else len(
-            f'<@!{bot.config["CLIENT_ID"]}>') + 1
+        pfx_len = len(pfx) if message.content.startswith(pfx) else (len(
+            f'<@!{bot.config["CLIENT_ID"]}>') + 1)
         possible_cmd = message.content[pfx_len:].split(' ')[0]
 
         if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
@@ -205,7 +242,7 @@ async def on_message(message):
                     await message.channel.send(f'💢 {message.author.mention} you have been blacklisted from the bot '
                                                f'for spamming. You may remove yourself from the blacklist '
                                                f'once in a certain period. '
-                                               f'To do that you can use `{bot.config["BOT_PREFIX"]}unblacklistme`')
+                                               f'To do that you can use `{pfx}unblacklistme`')
                 else:
                     out2 = f"{str(message.author)} {datetime.datetime.now().strftime('%c')}" \
                            f" source: {message.jump_url}"

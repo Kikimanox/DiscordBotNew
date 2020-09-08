@@ -18,6 +18,20 @@ from discord import File
 from models.moderation import (Mutes, Actions, Blacklist, ModManager)
 
 
+def bot_pfx(bot, _message):
+    """
+    :param bot: The bot
+    :param _message: Preferrably mesage,
+    if there is none use something that has the guild in it under .guild
+    :return: prefix
+    """
+    prefix = bot.config['BOT_PREFIX']
+    if hasattr(_message, 'channel') and isinstance(_message.channel, discord.DMChannel): return prefix
+    gid = str(_message.guild.id)
+    if gid not in bot.config['B_PREF_GUILD']: return prefix
+    return bot.config['B_PREF_GUILD'][gid]
+
+
 async def getChannel(ctx, arg):
     channels = []
     channel = arg.strip()
@@ -218,7 +232,7 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         await regular_ch.send(embed=embed, content=content)
     if not hook_ok:
         await regular_ch.send("⚠**Logging hook and channel id mismatch, please fix!**⚠\n"
-                              f"(tip: run the command `{bot.config['BOT_PREFIX']}sup cur`)")
+                              f"(tip: run the command `{bot_pfx(bot, regular_ch)}sup cur`)")
         bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
                          f"{guild.id})**")
 
@@ -287,7 +301,7 @@ async def mute_user(ctx, member, length, reason, no_dm=False):
         seconds = 0
         match = re.findall("([0-9]+[smhd])", length)  # Thanks to 3dshax server's former bot
         if not match:
-            p = ctx.bot.config['BOT_PREFIX']
+            p = bot_pfx(ctx.bot, ctx.message)
             return await ctx.send(f"Could not parse mute length. Are you sure you're "
                                   f"giving it in the right format? Ex: `{p}mute @user 30m`, "
                                   f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
@@ -378,7 +392,7 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str=None,
     responsb = ctx.author
     if not reason: reason = "*No reason provided.\n" \
                             "Can still be supplied with:\n" \
-                            f"`{ctx.bot.config['BOT_PREFIX']}case {act_id} reason here`*"
+                            f"`{bot_pfx(ctx.bot, ctx.message)}case {act_id} reason here`*"
 
     em.add_field(name='Responsible', value=f'{responsb.mention}\n{responsb}', inline=True)
     if offender:

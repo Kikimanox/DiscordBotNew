@@ -111,9 +111,9 @@ class ServerSetup(commands.Cog):
                 val = '\n'.join([f'{c.mention} (id: {c.id})' for c in chs])
             em.add_field(name='Logging ingores these channels', value=val, inline=False)
 
-            val = f"❌ __**Welcome message not setup**__ (see `{ctx.bot.config['BOT_PREFIX']}sup wm`)"
+            val = f"❌ __**Welcome message not setup**__ (see `{dutils.bot_pfx(ctx.bot, ctx.message)}sup wm`)"
             if 'welcomemsg' in data:
-                val = f"✅ __**Welcome message is setup**__ (see `{ctx.bot.config['BOT_PREFIX']}sup wm cur`)"
+                val = f"✅ __**Welcome message is setup**__ (see `{dutils.bot_pfx(ctx.bot, ctx.message)}sup wm cur`)"
             em.add_field(name='Welcome message status', value=val, inline=False)
 
             em.description = desc
@@ -157,7 +157,7 @@ class ServerSetup(commands.Cog):
         await ctx.send("Done!! As for the muted role, it's stored but...\n"
                        "This doesn't mean the channel permissions are setup though.\n"
                        "If they weren't set by hand yet, you can use:\n"
-                       f"`{ctx.bot.config['BOT_PREFIX']}setup muterolechperms <role_id>/<role_name>`")
+                       f"`{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolechperms <role_id>/<role_name>`")
 
     @commands.check(checks.admin_check)
     @setup.group()
@@ -237,7 +237,7 @@ class ServerSetup(commands.Cog):
         await ctx.send("Stored/updated the muted role in the database.\n"
                        "This doesn't mean the channel permissions are setup though.\n"
                        "If they weren't set by hand yet, you can use:\n"
-                       f"`{ctx.bot.config['BOT_PREFIX']}setup muterolechperms <role_id>/<role_name>`\n")
+                       f"`{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolechperms <role_id>/<role_name>`\n")
 
     @commands.check(checks.admin_check)
     @setup.command()
@@ -431,7 +431,7 @@ class ServerSetup(commands.Cog):
                 except:
                     await ctx.send("**(*This message* will auto delete in 20 seconds)"
                                    "\nYou failed to input a correct color format, keeping the default bot color.\n"
-                                   f"Can still be changed with `{ctx.bot.config['BOT_PREFIX']}setup welcomemsg "
+                                   f"Can still be changed with `{dutils.bot_pfx(ctx.bot, ctx.message)}setup welcomemsg "
                                    f"color color_here`\n**"
                                    f"▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
                                    delete_after=20)
@@ -464,7 +464,7 @@ class ServerSetup(commands.Cog):
                     if not i.startswith('http'):
                         await ctx.send(
                             "One of the image links doesn't start with `http`...\n"
-                            f"Try adding them again with `{ctx.bot.config['BOT_PREFIX']}"
+                            f"Try adding them again with `{dutils.bot_pfx(ctx.bot, ctx.message)}"
                             f"setup welcomemsg images <pics>`",
                             delete_after=20)
                         images = ""
