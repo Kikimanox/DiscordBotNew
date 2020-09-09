@@ -729,24 +729,6 @@ class Moderation(commands.Cog):
         act_id = await dutils.moderation_action(ctx, "", "blacklist", bs)
         await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
 
-    @commands.check(checks.owner_check)
-    @commands.command(aliases=["gwi", "gwinit"])
-    async def groupwatchinit(self, ctx):
-        """Gives a role to everyone in the same vc as the owner"""
-        role = discord.utils.get(ctx.guild.roles, id=670826041631178761)
-        rm = 0
-        ad = 0
-        for u in ctx.guild.members:
-            if u not in ctx.author.voice.channel.members and role in u.roles:
-                await u.remove_roles(role)
-                rm += 1
-        for u in [m for m in ctx.author.voice.channel.members]:
-            if role not in u.roles:
-                await u.add_roles(role)
-                ad += 1
-        await ctx.send(f"Done! Removed the role from **{rm}** people and added to **{ad}**.\n"
-                       f"**Everyone watching head to <#670827054916435968>**")
-
     @commands.check(checks.manage_messages_check)
     @commands.command(aliases=['clearwarn'])
     async def clearwans(self, ctx, user, *, reason):
