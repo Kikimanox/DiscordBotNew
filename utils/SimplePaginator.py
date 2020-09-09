@@ -5,16 +5,16 @@ Paginator class, credit goes to: appu1232
 import discord
 import asyncio
 
+
 async def pager(entries, chunk: int):
     for x in range(0, len(entries), chunk):
         yield entries[x:x + chunk]
 
 
 class SimplePaginator:
-
     __slots__ = ('entries', 'extras', 'title', 'description', 'colour', 'footer', 'length', 'prepend', 'append',
                  'fmt', 'timeout', 'ordered', 'controls', 'controller', 'pages', 'current', 'previous', 'eof', 'base',
-                 'names')
+                 'names', 'other_target')
 
     def __init__(self, **kwargs):
         self.entries = kwargs.get('entries', None)
@@ -31,6 +31,8 @@ class SimplePaginator:
         self.fmt = kwargs.get('fmt', '')
         self.timeout = kwargs.get('timeout', 90)
         self.ordered = kwargs.get('ordered', False)
+
+        self.other_target = kwargs.get('other_target', None)
 
         self.controller = None
         self.pages = []
@@ -59,7 +61,10 @@ class SimplePaginator:
         bot = ctx.bot
         author = ctx.author
 
-        self.base = await ctx.send(embed=self.pages[0])
+        if self.other_target:
+            self.base = await self.other_target.send(embed=self.pages[0])
+        else:
+            self.base = await ctx.send(embed=self.pages[0])
 
         if len(self.pages) == 1:
             await self.base.add_reaction('⏹')

@@ -42,6 +42,7 @@ async def manage_emojis_check(ctx):
 
 async def moderator_check(ctx):
     if ctx.author.id == ctx.bot.config['OWNER_ID']: return True
+    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator: return True
     if ctx.bot.from_serversetup:
         if ctx.guild.id in ctx.bot.from_serversetup:
             if 'modrole' in ctx.bot.from_serversetup[ctx.guild.id]:

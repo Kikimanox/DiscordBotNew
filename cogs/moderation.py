@@ -76,22 +76,22 @@ class Moderation(commands.Cog):
         pass
 
     @commands.cooldown(1, 4, commands.BucketType.user)
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_check)
     @commands.command(aliases=["listcase", "lsc", 'showcase', 'showcases'])
     async def listcases(self, ctx, case_id: int = 0, limit=10, *, extra: str = ""):
         """List case(s), see help to see command usage
         Use this command to see a case or multiple caes
 
-        Use case examples:
+        Use case examples (newest first = reverse sorting):
 
         **See a list of recent caes**
         `[p]lsc` (will simply show the last 10 cases)
-        `[p]lsc -1 30` <- use `-1` there to view **any** querry reversed
+        `[p]lsc -1 30` <- use `-1` to use reversed sorting
 
         **See one specific case by id**
         `[p]lsc case_id`
 
-        **See 40 cases before/after a date**
+        **See 40 cases before/after a date (exclusive)**
         snyax: (YEAR, MONTH, DAY, HOUR, MINUTE, SECOND)
         `[p]lsc 0 40 warn before=(2020, 10, 8, 23, 50, 0) ban`
         `[p]lsc 0 40 after=(2020, 5, 5) before=(2020, 5, 3)`
@@ -110,28 +110,35 @@ class Moderation(commands.Cog):
 
         **Other extra agruments:** `compact`, `dm_me`
         """
+        if isinstance(ctx.channel, discord.DMChannel): return await ctx.send("Can not use this cmmand in dms.")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
                  'blacklist', 'warn', 'mute', 'unmute', '*ban*']
         q = None
         reverse = True if case_id == -1 else False
         af_date = None
         bf_date = None
-        resp = None
-        offeners = None
-        got_types = []
+        resp = []
+        offe = []
+        got_t = []
         dm_me = bool('dm_me' in extra)
         compact = bool('compact' in extra)
 
-        if case_id == 0 and limit == 10 and not extra:
-            q = Actions.select().limit(limit)
+        if case_id == 0 and limit > 0 and not extra:
+            q = Actions.select().where(Actions.guild == ctx.guild.id).order_by(-Actions.case_id_on_g).limit(limit)
+        elif case_id == -1 and limit > 0 and not extra:
+            q = Actions.select().where(Actions.guild == ctx.guild.id).order_by(+Actions.case_id_on_g).limit(limit)
         elif case_id > 0 and limit == 10 and not extra:
-            q = Actions.select().where(Actions.id == case_id)
-        elif case_id > -2 and limit > 0 and extra:
+            q = Actions.select().where(Actions.guild == ctx.guild.id, Actions.case_id_on_g == case_id)
+        elif case_id > -2 and limit > 0 and extra:  # TODO: Doli nekje za -1
             possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen'})
             was_eq = False
             near = ""
             for ex in extra.split():
-                if ')' in ex and not was_eq: return await ctx.send("Invalid syntax. You forgot a `(` somewhere")
+                if ')' in ex and not was_eq and '(' not in ex:
+                    return await ctx.send("Invalid syntax. You either forgot a `(` "
+                                          "somewhere **or** "
+                                          "you have a "
+                                          "space before or after `=`")
                 if was_eq:
                     if '(' in ex: break
                     if ')' not in ex: continue
@@ -150,6 +157,7 @@ class Moderation(commands.Cog):
                                                             "you have a "
                                                             "space before or after `=`")
                     was_eq = True
+                    if '(' in ex and ')' in ex: was_eq = False
                     candidate = ex.split('=')[0]
                     if candidate not in possible:
                         inv = candidate.replace('@', '@\u200b')
@@ -169,9 +177,11 @@ class Moderation(commands.Cog):
                     bf = tuple(map(int, re.findall(r'\d+', '' if not bb else bb.group(1))))[:6]
                     parsing_now = "after"
                     try:
-                        af_date = datetime.datetime(*af)
+                        if af:
+                            af_date = datetime.datetime(*af)
                         parsing_now = "before"
-                        bf_date = datetime.datetime(*bf)
+                        if bf:
+                            bf_date = datetime.datetime(*bf)
                     except Exception as e:
                         trace = traceback.format_exc()
                         ctx.bot.logger.error(trace)
@@ -194,7 +204,7 @@ class Moderation(commands.Cog):
                 if 'offen=' in extra:
                     rr = re.search(r'offen=(.*)\)', extra)
                     rr_ids = list(map(int, re.findall(r'\d+', '' if not rr else rr.group(1))))
-                    if rr_ids: offenders = rr_ids
+                    if rr_ids: offe = rr_ids
             except Exception as e:
                 ee = str(e).replace('@', '@\u200b')
                 return await ctx.send("Something went wrong when parsing **{parsing_now}** arguments. Exception:\n"
@@ -203,10 +213,21 @@ class Moderation(commands.Cog):
                 types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
                          'blacklist', 'warn', 'mute', 'unmute', '*ban*']
                 b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban']
-                got_types = list(set(types) & set(extra.split()))
-                if '*ban*' in got_types:
-                    got_types = list(set(got_types) - {*b_types, '*ban*'})
-                    got_types = list(set(got_types) | set(b_types))
+                got_t = list(set(types) & set(extra.split()))
+                if '*ban*' in got_t:
+                    got_t = list(set(got_t) - {*b_types, '*ban*'})
+                    got_t = list(set(got_t) | set(b_types))
+
+            if not af_date: af_date = datetime.datetime.min
+            if not bf_date: bf_date = datetime.datetime.max
+
+            q = Actions.select().where(Actions.guild == ctx.guild.id,
+                                       af_date < Actions.date < bf_date,
+                                       (Actions.responsible << resp) if resp else (Actions.responsible.not_in(resp)),
+                                       (Actions.offender << offe) if offe else (Actions.offender.not_in(offe)),
+                                       (Actions.type << got_t) if got_t else (Actions.type.not_in(got_t))
+                                       ).order_by((+Actions.case_id_on_g) if reverse else (-Actions.case_id_on_g)
+                                                  ).limit(limit)
 
             # TODO: setup a querry
         else:
@@ -216,16 +237,85 @@ class Moderation(commands.Cog):
             try:
                 cases = [c for c in q.dicts()]
                 await ctx.send("Le list")
-                if not compact:
-                    pass
 
+                title = f"Moderation actions"
+                txt = []
+                le_max = 1200
+                for act in cases:
+                    responsible = ctx.guild.get_member(int(act['responsible']))
+                    if not responsible:
+                        responsible = f"{act['responsible']} (left server)"
+                    else:
+                        f"{responsible.mention} ({responsible.id})"
+                    offender = None
+                    offtxt = ""
+                    if act['offender']:
+                        offender = ctx.guild.get_member(int(act['offender']))
+                        offtxt = f"*-offender: {act['offender']} (left server)*\n"
+                    if offender:
+                        offtxt = f"*-offender: {offender.mention} ({offender.id})*\n"
 
+                    p = dutils.bot_pfx(ctx.bot, ctx.message)
+                    rr = act['reason']
+                    reason = f"{f'Not provided. (To add: {p}case {case_id} reason here)' if not rr else rr}"
+
+                    if not compact:
+                        txt.append(f"[**Case {act['case_id_on_g']} ({act['type']})**]({act['jump_url']})\n"
+                                   f"*-responsible: {responsible}*\n"
+                                   f"*-on: {act['date'].strftime('%c')}*\n"
+                                   f"{offtxt}"
+                                   f"**-Reason:\n**"
+                                   f"```\n{reason}```\n")
+                    else:
+                        le_max = 1900
+                        rr = act['reason']
+                        reason = f"{f'Not provided.' if not rr else f'{rr[:30]}'}"
+                        reason = reason.replace('`', '\`')
+                        if len(rr) > 30: reason += '...'
+                        txt.append(f"[**Case {act['case_id_on_g']} ({act['type']})**]({act['jump_url']}) | "
+                                   f"`{reason}`\n"
+                                   f"**Offender: {act['user_display_name']}, on: "
+                                   f"{act['date'].strftime('%Y-%m-%d_%H:%M:%S')}\n**")
+
+                txt = txt[::-1]
+                desc = ""
+                desc_arr = []
+                while len(txt) > 0:
+                    desc += txt.pop()
+                    if len(txt) == 0: break
+                    if len(desc) > le_max or len(desc) + len(txt[-1]) > 2000:
+                        desc_arr.append(desc)
+                        desc = ""
+                if desc: desc_arr.append(desc)
+
+                embeds = []
+                for i in range(len(desc_arr)):
+                    em = Embed(title=title + f'\nPage {i + 1}/{len(desc_arr)}',
+                               description=desc_arr[i], color=0x48daf7)
+                    em.set_footer(text='Times are in UTC')
+                    embeds.append(em)
+
+                if not dm_me:
+                    if len(embeds) == 1:
+                        embeds[0].title = "Moderation action"
+                        return await ctx.send(embed=embeds[0])
+                    else:
+                        return await SimplePaginator(extras=embeds).paginate(ctx)
+
+                else:
+                    if len(embeds) < 4:
+                        for e in embeds: await ctx.author.send(embed=e)
+                    else:
+                        await SimplePaginator(extras=embeds, other_target=ctx.author).paginate(ctx)
+                        await ctx.author.send("Sent as a paginator because there are more than 3 pages")
+                    return await ctx.send("Sent to dms")
 
             except:
+                traceback.print_exc()
                 await ctx.send("Something weird went wrong when executing querry.")
                 ctx.bot.logger.error('listcases execution ERROR:\n' + traceback.format_exc())
         else:
-            return await ctx.send("No records found with the provided arguments.")
+            return await ctx.send("No cases found with the provided arguments.")
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
@@ -553,6 +643,7 @@ class Moderation(commands.Cog):
                 embeds.append(em)
 
             if len(embeds) == 1:
+                embeds[0].title = title
                 await ctx.send(embed=embeds[0])
             else:
                 await SimplePaginator(extras=embeds).paginate(ctx)
