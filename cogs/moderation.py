@@ -82,7 +82,7 @@ class Moderation(commands.Cog):
         """List case(s), see help to see command usage
         Use this command to see a case or multiple caes
 
-        Use case examples (newest first = reverse sorting):
+        Use case examples (newest first = default sorting):
 
         **See a list of recent caes**
         `[p]lsc` (will simply show the last 10 cases)
@@ -105,7 +105,7 @@ class Moderation(commands.Cog):
         `[p]lsc 0 15 offen=(ID1, ID2, ID3) compact`
 
         **Possible types?**
-        `*ban*` <- for any ban action, `ban`, `banish`, `softban`,
+        `*ban*` <- for any ban action, `ban`, `banish`, `softban`, `kick`
         `softbanish`, `massban`, `blacklist`, `warn`, `mute`, `unmute`
 
         **Other extra agruments:** `compact`, `dm_me`
