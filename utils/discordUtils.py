@@ -580,3 +580,4 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None):
 def get_icon_url_for_member(member):
     return member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else \
         str(member.avatar_url_as(format="png"))
+

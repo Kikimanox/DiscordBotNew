@@ -729,6 +729,52 @@ class Moderation(commands.Cog):
         act_id = await dutils.moderation_action(ctx, "", "blacklist", bs)
         await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
 
+    @commands.check(checks.owner_check)
+    @commands.command(aliases=["gwi", "gwinit"])
+    async def groupwatchinit(self, ctx):
+        """Gives a role to everyone in the same vc as the owner"""
+        role = discord.utils.get(ctx.guild.roles, id=670826041631178761)
+        rm = 0
+        ad = 0
+        for u in ctx.guild.members:
+            if u not in ctx.author.voice.channel.members and role in u.roles:
+                await u.remove_roles(role)
+                rm += 1
+        for u in [m for m in ctx.author.voice.channel.members]:
+            if role not in u.roles:
+                await u.add_roles(role)
+                ad += 1
+        await ctx.send(f"Done! Removed the role from **{rm}** people and added to **{ad}**.\n"
+                       f"**Everyone watching head to <#670827054916435968>**")
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command(aliases=['clearwarn'])
+    async def clearwans(self, ctx, user, *, reason):
+        """Clear warnings of a user"""
+        if ctx.message.mentions:
+            member = ctx.message.mentions[0]
+        elif user and user.isdigit():
+            member = ctx.guild.get_member(int(user))
+        else:
+            member = None
+        if not member: # TODO: STUFF
+            member = discord.utils.get(ctx.guild.members, name=user)
+        if not member and not user.isdigit():
+            return await ctx.send("Could not find this user.\n"
+                                  "If the user left the server then "
+                                  "the argument has to be an integer "
+                                  "(user id basically) "
+                                  "to view the left user's warns")
+        if member:
+            m_id = member.id
+        else:
+            m_id = user
+            await ctx.send("User by provided id is not on the server anymore.")
+
+        warns = [*(Actions.select(Actions.type == 'warn',
+                                  Actions.guild == ctx.guild.id,
+                                  Actions.offender == user.id))]
+
     @commands.check(checks.manage_messages_check)
     @commands.command()
     async def warn(self, ctx, user: discord.Member, *, reason):
