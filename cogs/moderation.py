@@ -116,6 +116,7 @@ class Moderation(commands.Cog):
         if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
                  'blacklist', 'warn', 'mute', 'unmute', '*ban*']
+        possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen', 'hcw'})
         q = None
         reverse = True if case_id == -1 else False
         af_date = None
@@ -133,7 +134,6 @@ class Moderation(commands.Cog):
         elif case_id > 0 and limit == 10 and not extra:
             q = Actions.select().where(Actions.guild == ctx.guild.id, Actions.case_id_on_g == case_id)
         elif case_id > -2 and limit > 0 and extra:
-            possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen', 'hcw'})
             was_eq = False
             near = ""
             for ex in extra.split():
@@ -174,8 +174,8 @@ class Moderation(commands.Cog):
             if was_eq: return await ctx.send(f"You forgot to close a `)` at `{near}`")
             if 'after=' in extra or 'before=' in extra:
                 try:
-                    aa = re.search(r'after=(.*)\)', extra)
-                    bb = re.search(r'before=(.*)\)', extra)
+                    aa = re.search(r'after=(.*?)\)', extra)
+                    bb = re.search(r'before=(.*?)\)', extra)
                     af = tuple(map(int, re.findall(r'\d+', '' if not aa else aa.group(1))))[:6]
                     bf = tuple(map(int, re.findall(r'\d+', '' if not bb else bb.group(1))))[:6]
                     parsing_now = "after"
@@ -200,12 +200,13 @@ class Moderation(commands.Cog):
             try:
                 parsing_now = 'resp'
                 if 'resp=' in extra:
-                    rr = re.search(r'resp=(.*)\)', extra)
+                    rr = re.search(r'resp=(.*?)\)', extra)
                     rr_ids = list(map(int, re.findall(r'\d+', '' if not rr else rr.group(1))))
                     if rr_ids: resp = rr_ids
 
                 if 'offen=' in extra:
-                    rr = re.search(r'offen=(.*)\)', extra)
+                    rr = re.search(r'offen=(.*?)\)', extra)
+                    b = rr.group(1)
                     rr_ids = list(map(int, re.findall(r'\d+', '' if not rr else rr.group(1))))
                     if rr_ids: offe = rr_ids
             except Exception as e:
@@ -213,18 +214,14 @@ class Moderation(commands.Cog):
                 return await ctx.send("Something went wrong when parsing **{parsing_now}** arguments. Exception:\n"
                                       f"```\n{ee}```")
             if extra:
-                types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
-                         'blacklist', 'warn', 'mute', 'unmute', '*ban*']
                 b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban']
                 got_t = list(set(types) & set(extra.split()))
+                got_t2 = list(set(possible) & set(extra.split()))
                 if '*ban*' in got_t:
                     got_t = list(set(got_t) - {*b_types, '*ban*'})
                     got_t = list(set(got_t) | set(b_types))
 
-                if 'hcw' in got_t:
-                    got_t.remove('hcw')
-                else:
-                    got_t.remove('hcw')
+                if 'hcw' not in got_t2:
                     got_t.append('warn(cleared)')
 
             if not af_date: af_date = datetime.datetime.min
@@ -283,9 +280,9 @@ class Moderation(commands.Cog):
                         reason = reason.replace('`', '\`')
                         if len(rr) > 30: reason += '...'
                         txt.append(f"{cr}[**Case {cid} ({typ})**]({act['jump_url']}) | "
-                                   f"`{reason}`\n"
-                                   f"**Offender: {act['user_display_name']}, on: "
-                                   f"{act['date'].strftime('%Y-%m-%d %H:%M:%S')}{cr}\n**")
+                                   f"`{reason}`{cr}\n"
+                                   f"{cr}**Offender: {act['user_display_name']}, on: "
+                                   f"{act['date'].strftime('%Y-%m-%d %H:%M:%S')}\n**{cr}")
 
                 txt = txt[::-1]
                 desc = ""
@@ -731,7 +728,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command(aliases=['clearwarn'])
-    async def clearwans(self, ctx, user, *, reason):
+    async def clearwarns(self, ctx, user, *, reason):
         """Clear warnings of a user"""
         if ctx.message.mentions:
             member = ctx.message.mentions[0]
@@ -739,23 +736,31 @@ class Moderation(commands.Cog):
             member = ctx.guild.get_member(int(user))
         else:
             member = None
-        if not member: # TODO: STUFF
+        if not member:  # TODO: STUFF
             member = discord.utils.get(ctx.guild.members, name=user)
         if not member and not user.isdigit():
             return await ctx.send("Could not find this user.\n"
                                   "If the user left the server then "
                                   "the argument has to be an integer "
                                   "(user id basically) "
-                                  "to view the left user's warns")
+                                  "to clear the left user's warns")
         if member:
             m_id = member.id
         else:
             m_id = user
             await ctx.send("User by provided id is not on the server anymore.")
 
-        warns = [*(Actions.select(Actions.type == 'warn',
-                                  Actions.guild == ctx.guild.id,
-                                  Actions.offender == user.id))]
+        w_len = Actions.select().where(Actions.type == 'warn',
+                                       Actions.guild == ctx.guild.id,
+                                       Actions.offender == m_id).count()
+        if w_len == 0:
+            return await ctx.send("User has no warnings to clear.")
+
+        Actions.update(type='warn(cleared)').where(Actions.type == 'warn',
+                                                   Actions.guild == ctx.guild.id,
+                                                   Actions.offender == m_id).execute()
+
+        return await ctx.send(f"Cleared **{w_len}** warnings.")
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
