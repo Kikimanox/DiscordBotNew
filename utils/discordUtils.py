@@ -497,7 +497,7 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
 
     if log_type == 'kick':
         title = f"User kicked"
-        em.colour = 0xc43b49
+        em.colour = 0xe1717d
 
     # em.set_thumbnail(url=get_icon_url_for_member(ctx.author))
     if offender:

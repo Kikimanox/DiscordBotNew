@@ -221,12 +221,13 @@ class Moderation(commands.Cog):
                     got_t = list(set(got_t) - {*b_types, '*ban*'})
                     got_t = list(set(got_t) | set(b_types))
 
-                if 'hcw' not in got_t2:
+                if 'hcw' not in got_t2 and got_t:
                     got_t.append('warn(cleared)')
 
             if not af_date: af_date = datetime.datetime.min
             if not bf_date: bf_date = datetime.datetime.max
 
+            #  The big q
             q = Actions.select().where(Actions.guild == ctx.guild.id,
                                        af_date < Actions.date < bf_date,
                                        (Actions.responsible << resp) if resp else (Actions.responsible.not_in(resp)),
@@ -341,6 +342,7 @@ class Moderation(commands.Cog):
         Example: `[p]sban @user` will ban the user but
         will not dm them that they were banned.
         """
+        raise commands.errors.BadArgument
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
@@ -510,7 +512,7 @@ class Moderation(commands.Cog):
             await user.kick(reason=reason)
             return_msg = f"Kicked the user {user.mention} (id: {user.id})"
             if reason:
-                return_msg += f" for reason: {reason}"
+                return_msg += f" for reason: `{reason}`"
             await ctx.send(embed=Embed(description=return_msg, color=0xed7e00))
             try:
                 await user.send(f'You have been kicked from the {str(ctx.guild)} '
@@ -535,7 +537,7 @@ class Moderation(commands.Cog):
             await user.kick(reason=reason)
             return_msg = f"Kicked the user {user.mention} (id: {user.id})"
             if reason:
-                return_msg += f" for reason: {reason}"
+                return_msg += f" for reason: `{reason}`"
             await ctx.send(embed=Embed(description=return_msg, color=0xed7e00))
             act_id = await dutils.moderation_action(ctx, reason, 'kick', user, no_dm=True)
             await dutils.post_mod_log_based_on_type(ctx, 'kick', act_id, offender=user, reason=reason)
@@ -678,7 +680,7 @@ class Moderation(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.ban_members_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def massbantest(self, ctx, delete_messages_days: int, *users):
         """Test if massban would work with these arguments"""
         if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("**delete_messages_days**"
