@@ -340,11 +340,11 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
-    async def unmute(self, ctx, user: discord.Member, *, reason=""):
+    async def sunmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted.
 
-        `[p]unmute @user`
-        `[p]unmute USER_ID`"""
+        `[p]sunmute @user`
+        `[p]sunmute USER_ID`"""
         can_even_execute = True
         if ctx.guild.id in ctx.bot.from_serversetup:
             sup = ctx.bot.from_serversetup[ctx.guild.id]
@@ -587,7 +587,7 @@ class Moderation(commands.Cog):
         await ctx.send("Done.")
         bs = ', '.join([str(u) for u in user_ids])
         act_id = await dutils.moderation_action(ctx, "", "blacklist", bs)
-        await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs, )
+        await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
