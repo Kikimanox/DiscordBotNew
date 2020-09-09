@@ -86,6 +86,7 @@ class Moderation(commands.Cog):
 
         **See a list of recent caes**
         `[p]lsc` (will simply show the last 10 cases)
+        `[p]lsc 0 30`
         `[p]lsc -1 30` <- use `-1` to use reversed sorting
 
         **See one specific case by id**
@@ -111,6 +112,8 @@ class Moderation(commands.Cog):
         **Other extra agruments:** `compact`, `dm_me`
         """
         if isinstance(ctx.channel, discord.DMChannel): return await ctx.send("Can not use this cmmand in dms.")
+        if limit > 0x7FFFFFFF: return await ctx.send("Limit too big, breaking int limits!")
+        if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
                  'blacklist', 'warn', 'mute', 'unmute', '*ban*']
         q = None
