@@ -16,11 +16,13 @@ class BotBlacklist(BaseModel):
     meta = CharField()
     when = DateTimeField(default=datetime.utcnow)
 
+
 class BotBanlist(BaseModel):
     guild = IntegerField()
     user = IntegerField(primary_key=True)
     meta = CharField()
     when = DateTimeField(default=datetime.utcnow)
+
 
 # db.drop_tables([BotBlacklist, BotBanlist])
 db.create_tables([BotBlacklist, BotBanlist])

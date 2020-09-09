@@ -42,6 +42,7 @@ _mention_pattern = re.compile('|'.join(_mentions_transforms.keys()))
 orig_help = None
 wiki_link = '\nList of all available commands'
 
+
 class Help(DefaultHelpCommand):
 
     def __init__(self, **options):

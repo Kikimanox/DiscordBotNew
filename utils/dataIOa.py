@@ -4,6 +4,7 @@ from os import replace
 from os.path import splitext
 import os
 
+
 class DataIOa():
 
     def save_json(self, filename, data):
@@ -11,20 +12,20 @@ class DataIOa():
         path, _ = splitext(filename)
         tmp_file = "{}.{}.tmp".format(path, randint(1000, 9999))
         with open(tmp_file, 'w', encoding='utf-8') as f:
-            dump(data, f, indent=4,sort_keys=True,separators=(',',' : '))
+            dump(data, f, indent=4, sort_keys=True, separators=(',', ' : '))
         try:
             with open(tmp_file, 'r', encoding='utf-8') as f:
                 data = load(f)
         except decoder.JSONDecodeError:
             print("Attempted to write file {} but JSON "
-                                  "integrity check on tmp file has failed. "
-                                  "The original file is unaltered."
-                                  "".format(filename))
+                  "integrity check on tmp file has failed. "
+                  "The original file is unaltered."
+                  "".format(filename))
             return False
         except Exception as e:
             print('A issue has occured saving ' + filename + '.\n'
-                  'Traceback:\n'
-                  '{0} {1}'.format(str(e), e.args))
+                                                             'Traceback:\n'
+                                                             '{0} {1}'.format(str(e), e.args))
             return False
 
         replace(tmp_file, filename)
@@ -38,8 +39,8 @@ class DataIOa():
             return data
         except Exception as e:
             print('A issue has occured loading ' + filename + '.\n'
-                  'Traceback:\n'
-                  '{0} {1}'.format(str(e), e.args))
+                                                              'Traceback:\n'
+                                                              '{0} {1}'.format(str(e), e.args))
             return {}
 
     def append_json(self, filename, data):
@@ -49,33 +50,33 @@ class DataIOa():
                 file = load(f)
         except Exception as e:
             print('A issue has occured loading ' + filename + '.\n'
-                  'Traceback:\n'
-                  '{0} {1}'.format(str(e), e.args))
+                                                              'Traceback:\n'
+                                                              '{0} {1}'.format(str(e), e.args))
             return False
         try:
             file.append(data)
         except Exception as e:
             print('A issue has occured updating ' + filename + '.\n'
-                  'Traceback:\n'
-                  '{0} {1}'.format(str(e), e.args))
+                                                               'Traceback:\n'
+                                                               '{0} {1}'.format(str(e), e.args))
             return False
         path, _ = splitext(filename)
         tmp_file = "{}.{}.tmp".format(path, randint(1000, 9999))
         with open(tmp_file, 'w', encoding='utf-8') as f:
-            dump(file, f, indent=4,sort_keys=True,separators=(',',' : '))
+            dump(file, f, indent=4, sort_keys=True, separators=(',', ' : '))
         try:
             with open(tmp_file, 'r', encoding='utf-8') as f:
                 data = load(f)
         except decoder.JSONDecodeError:
             print("Attempted to write file {} but JSON "
-                                  "integrity check on tmp file has failed. "
-                                  "The original file is unaltered."
-                                  "".format(filename))
+                  "integrity check on tmp file has failed. "
+                  "The original file is unaltered."
+                  "".format(filename))
             return False
         except Exception as e:
             print('A issue has occured saving ' + filename + '.\n'
-                  'Traceback:\n'
-                  '{0} {1}'.format(str(e), e.args))
+                                                             'Traceback:\n'
+                                                             '{0} {1}'.format(str(e), e.args))
             return False
 
         replace(tmp_file, filename)
@@ -91,12 +92,13 @@ class DataIOa():
             return False
         except Exception as e:
             print('A issue has occured validating ' + filename + '.\n'
-                  'Traceback:\n'
-                  '{0} {1}'.format(str(e), e.args))
+                                                                 'Traceback:\n'
+                                                                 '{0} {1}'.format(str(e), e.args))
             return False
 
     def create_file_if_doesnt_exist(self, filename, whatToWriteIntoIt):
         if not os.path.exists(filename):
             with open(filename, 'w') as f: f.write(whatToWriteIntoIt)
+
 
 dataIOa = DataIOa()

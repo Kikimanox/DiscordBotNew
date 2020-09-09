@@ -5,6 +5,7 @@ import utils.checks as checks
 import utils.timeStuff as tutils
 import utils.discordUtils as dutils
 
+
 class Quoting(commands.Cog):
 
     def __init__(self, bot):
@@ -226,6 +227,7 @@ class Quoting(commands.Cog):
     async for msg in ctx.channel.history().filter(lambda m: m.author == ctx.author):
         print(msg)
 '''
+
 
 def setup(bot):
     ext = Quoting(bot)

@@ -26,8 +26,10 @@ import utils.discordUtils as dutils
 '''Module for the python interpreter as well as saving, loading, viewing, etc. the cmds/_scripts ran with the 
 interpreter. '''
 
+
 def owner_check(ctx):
     return ctx.author.id == ctx.bot.config['OWNER_ID']
+
 
 class Debugger(commands.Cog):
 
@@ -146,7 +148,7 @@ class Debugger(commands.Cog):
         if os.path.exists('%s/_scripts/save/%s.txt' % (os.getcwd(), msg)):
             await ctx.send('``%s.txt`` already exists. Overwrite? ``y/n``.' % msg)
             reply = await self.bot.wait_for('message', check=lambda m: m.author == ctx.message.author and (
-                        m.content.lower() == 'y' or m.content.lower() == 'n'))
+                    m.content.lower() == 'y' or m.content.lower() == 'n'))
             if reply.content.lower().strip() != 'y':
                 return await ctx.send('Cancelled.')
             if os.path.exists('%s/_scripts/save/%s.txt' % (os.getcwd(), msg)):
