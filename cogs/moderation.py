@@ -129,7 +129,7 @@ class Moderation(commands.Cog):
             q = Actions.select().where(Actions.guild == ctx.guild.id).order_by(+Actions.case_id_on_g).limit(limit)
         elif case_id > 0 and limit == 10 and not extra:
             q = Actions.select().where(Actions.guild == ctx.guild.id, Actions.case_id_on_g == case_id)
-        elif case_id > -2 and limit > 0 and extra:  # TODO: Doli nekje za -1
+        elif case_id > -2 and limit > 0 and extra:
             possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen'})
             was_eq = False
             near = ""
@@ -229,7 +229,6 @@ class Moderation(commands.Cog):
                                        ).order_by((+Actions.case_id_on_g) if reverse else (-Actions.case_id_on_g)
                                                   ).limit(limit)
 
-            # TODO: setup a querry
         else:
             return await ctx.send("Invalid provided arguments.")
 
