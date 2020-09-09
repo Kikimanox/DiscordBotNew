@@ -728,15 +728,15 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command(aliases=['clearwarn'])
-    async def clearwarns(self, ctx, user, *, reason):
-        """Clear warnings of a user"""
+    async def clearwarns(self, ctx, user, *, reason=""):
+        """Clear warnings of a user (optional reason)"""
         if ctx.message.mentions:
             member = ctx.message.mentions[0]
         elif user and user.isdigit():
             member = ctx.guild.get_member(int(user))
         else:
             member = None
-        if not member:  # TODO: STUFF
+        if not member:
             member = discord.utils.get(ctx.guild.members, name=user)
         if not member and not user.isdigit():
             return await ctx.send("Could not find this user.\n"
@@ -760,7 +760,13 @@ class Moderation(commands.Cog):
                                                    Actions.guild == ctx.guild.id,
                                                    Actions.offender == m_id).execute()
 
-        return await ctx.send(f"Cleared **{w_len}** warnings.")
+        await ctx.send(f"Cleared **{w_len}** warnings.")
+        if member:
+            off = member
+        else:
+            off = m_id
+        act_id = await dutils.moderation_action(ctx, reason, 'clearwarn', off)
+        await dutils.post_mod_log_based_on_type(ctx, 'clearwarn', act_id, offender=off, reason=reason)
 
     @commands.check(checks.manage_messages_check)
     @commands.command()

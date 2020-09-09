@@ -424,7 +424,7 @@ async def moderation_action(ctx, reason, action_type, offender, no_dm=False, act
     :return: insert id or None if fails
     """
     try:
-        disp_n = ""
+        disp_n = "(left server)"
         if offender and hasattr(offender, 'id'):
             disp_n = offender.display_name
             offender = offender.id
@@ -458,12 +458,21 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
                             f"`{bot_pfx(ctx.bot, ctx.message)}case {act_id} reason here`*"
 
     em.add_field(name='Responsible', value=f'{responsb.mention}\n{responsb}', inline=True)
-    if offender:
+    off_left_id = -1  # -1 means that offender exists on the server
+    if offender and not hasattr(offender, 'id'):
+        off_left_id = offender
+
+    if offender and off_left_id == -1:
         em.add_field(name='Offender', value=f'{offender.mention}\n{offender}\n{offender.id}', inline=True)
-    if log_type != 'blacklist':
+    if offender and off_left_id != -1:
+        em.add_field(name='Offender', value=f'{off_left_id}\n(left server)', inline=True)
+
+    if log_type == 'blacklist':
+        em.add_field(name='Offenders', value=reason, inline=True if offender else False)
+    # these above have to be the ones in the bottom array
+    if log_type not in ['blacklist']:
         em.add_field(name='Reason', value=reason, inline=True if offender else False)
-    else:
-        em.add_field(name='offender', value=reason, inline=True if offender else False)
+
     title = ""
     if log_type == 'mute':
         title = "User muted indefinitely" if mute_time_str == 'indefinitely' else f'User muted for {mute_time_str}'
@@ -580,4 +589,3 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None):
 def get_icon_url_for_member(member):
     return member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else \
         str(member.avatar_url_as(format="png"))
-
