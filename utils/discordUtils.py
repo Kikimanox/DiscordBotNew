@@ -241,8 +241,8 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         await regular_ch.send(embed=embed, content=content)
 
 
-async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
-                      no_dm=False, softban=False, actually_resp=None):
+async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
+                       no_dm=False, softban=False, actually_resp=None):
     member = user
     if not member:
         if massbanning: return -1
@@ -270,7 +270,6 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 await ctx.send(embed=Embed(description=return_msg, color=0xdd0000))
             if not massbanning:
                 typ = "ban"
-                if removeMsgs > 0: typ = f"ban ({removeMsgs})"
                 if removeMsgs == 7: typ = "banish"
                 if softban and removeMsgs == 0: typ = "softban"
                 if softban and removeMsgs == 7: typ = "softbanish"
@@ -326,7 +325,7 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
         await ctx.send("💢 I don't have permission to do this.")
 
 
-async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None):
+async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None, new_mute=False):
     can_even_execute = True
     if ctx.guild.id in ctx.bot.from_serversetup:
         sup = ctx.bot.from_serversetup[ctx.guild.id]
@@ -335,8 +334,9 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         can_even_execute = False
     if not can_even_execute: return ctx.send("Mute role not setup, can not complete mute.")
     mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
-    if mute_role in ctx.guild.get_member(member.id).roles:
-        return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
+    if not new_mute:
+        if mute_role in ctx.guild.get_member(member.id).roles:
+            return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
     unmute_time = None
     # thanks Luc#5653
     if length:
@@ -386,13 +386,14 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
     #       f' {str(ctx.author)} ({ctx.author.id}) muted '
     #       f'the user {str(member)} ({member.id}).{" Length: " + length if length else " Length: indefinitely "} '
     #       f'Reason: {reason}')
-
+    new_reason = reason
     try:
         mute = Mutes.get(Mutes.user_id == member.id, Mutes.guild == ctx.guild.id)
         mute.len_str = 'indefinitely ' if not length else length
         mute.expires_on = unmute_time if length else datetime.datetime.max
         mute.muted_by = ctx.author.id
         mute.reason = mute.reason + ' ||| ' + reason
+        new_reason = mute.reason + ' ||| ' + reason
         mute.save()
     except:
         Mutes.insert(guild=ctx.guild.id, reason=reason, user_id=member.id,
@@ -402,9 +403,9 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
     await ctx.send(embed=Embed(
         description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
         color=0x6785da))
-    act_id = await moderation_action(ctx, reason, "mute", member, no_dm=no_dm, actually_resp=actually_resp)
+    act_id = await moderation_action(ctx, new_reason, "mute", member, no_dm=no_dm, actually_resp=actually_resp)
     await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
-                                     offender=member, reason=reason, actually_resp=actually_resp)
+                                     offender=member, reason=new_reason, actually_resp=actually_resp)
     # dataIOa.save_json(self.modfilePath, modData)
     # await dutils.mod_log(f"Mod log: Mute", f"**offender:** {str(member)} ({member.id})\n"
     #                                       f"**Reason:** {reason}\n"
@@ -428,8 +429,10 @@ async def moderation_action(ctx, reason, action_type, offender, no_dm=False, act
             disp_n = offender.display_name
             offender = offender.id
         resp = None
-        if actually_resp: resp = actually_resp
-        else: resp = ctx.author
+        if actually_resp:
+            resp = actually_resp
+        else:
+            resp = ctx.author
         ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
                                 jump_url=ctx.message.jump_url, responsible=resp.id,
                                 offender=offender, user_display_name=disp_n, no_dm=no_dm).execute()
@@ -480,8 +483,12 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         em.colour = 0xfa8507
 
     if log_type == 'unmute':
-        title = f"User unmuted {mute_time_str}"  # todo mute_time_str for early unmute
+        title = f"User unmuted"
         em.colour = 0x62f07f
+
+    if log_type == 'kick':
+        title = f"User kicked"
+        em.colour = 0xc43b49
 
     # em.set_thumbnail(url=get_icon_url_for_member(ctx.author))
     if offender:

@@ -109,7 +109,7 @@ class Moderation(commands.Cog):
         `*ban*` <- for any ban action, `ban`, `banish`, `softban`, `kick`
         `softbanish`, `massban`, `blacklist`, `warn`, `mute`, `unmute`
 
-        **Other extra agruments:** `compact`, `dm_me`
+        **Other extra agruments:** `compact`, `dm_me`, `hcw` (hide clear warns)
         """
         if isinstance(ctx.channel, discord.DMChannel): return await ctx.send("Can not use this cmmand in dms.")
         if limit > 0x7FFFFFFF: return await ctx.send("Limit too big, breaking int limits!")
@@ -133,7 +133,7 @@ class Moderation(commands.Cog):
         elif case_id > 0 and limit == 10 and not extra:
             q = Actions.select().where(Actions.guild == ctx.guild.id, Actions.case_id_on_g == case_id)
         elif case_id > -2 and limit > 0 and extra:
-            possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen'})
+            possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen', 'hcw'})
             was_eq = False
             near = ""
             for ex in extra.split():
@@ -221,6 +221,12 @@ class Moderation(commands.Cog):
                     got_t = list(set(got_t) - {*b_types, '*ban*'})
                     got_t = list(set(got_t) | set(b_types))
 
+                if 'hcw' in got_t:
+                    got_t.remove('hcw')
+                else:
+                    got_t.remove('hcw')
+                    got_t.append('warn(cleared)')
+
             if not af_date: af_date = datetime.datetime.min
             if not bf_date: bf_date = datetime.datetime.max
 
@@ -238,7 +244,6 @@ class Moderation(commands.Cog):
         if q:
             try:
                 cases = [c for c in q.dicts()]
-                await ctx.send("Le list")
 
                 title = f"Moderation actions"
                 txt = []
@@ -259,25 +264,28 @@ class Moderation(commands.Cog):
 
                     p = dutils.bot_pfx(ctx.bot, ctx.message)
                     rr = act['reason']
-                    reason = f"{f'Not provided. (To add: {p}case {case_id} reason here)' if not rr else rr}"
-
+                    cid = act["case_id_on_g"]
+                    reason = f"{f'Not provided. (To add: {p}case {cid} reason here)' if not rr else rr}"
+                    typ = act['type'] if act['no_dm'] is False else f"s{act['type']}"
+                    cr = ""
+                    if typ == 'warn(cleared)': cr = "~~"
                     if not compact:
-                        txt.append(f"[**Case {act['case_id_on_g']} ({act['type']})**]({act['jump_url']})\n"
+                        txt.append(f"{cr}[**Case {cid} ({typ})**]({act['jump_url']})\n"
                                    f"*-responsible: {responsible}*\n"
                                    f"*-on: {act['date'].strftime('%c')}*\n"
                                    f"{offtxt}"
                                    f"**-Reason:\n**"
-                                   f"```\n{reason}```\n")
+                                   f"```\n{reason}```{cr}\n")
                     else:
                         le_max = 1900
                         rr = act['reason']
                         reason = f"{f'Not provided.' if not rr else f'{rr[:30]}'}"
                         reason = reason.replace('`', '\`')
                         if len(rr) > 30: reason += '...'
-                        txt.append(f"[**Case {act['case_id_on_g']} ({act['type']})**]({act['jump_url']}) | "
+                        txt.append(f"{cr}[**Case {cid} ({typ})**]({act['jump_url']}) | "
                                    f"`{reason}`\n"
                                    f"**Offender: {act['user_display_name']}, on: "
-                                   f"{act['date'].strftime('%Y-%m-%d_%H:%M:%S')}\n**")
+                                   f"{act['date'].strftime('%Y-%m-%d %H:%M:%S')}{cr}\n**")
 
                 txt = txt[::-1]
                 desc = ""
@@ -321,6 +329,24 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
+    async def s_(self, ctx):
+        """Run me if you don't know what this is. Use; `[p]s_`
+        Silent commands
+        In case you haven't known, most of the commands in this module
+        can be executed in two ways. Normally, or by prefixing with `s`.
+
+        If they are prefixed, they will be executed "silently".
+        Which means that the offender will **not recieve a DM of the action**
+
+        Commands that can be ran in silend mode are:
+        `ban`, `banish`, `softban`, `softbanish`, `mute`, `kick`
+
+        Example: `[p]sban @user` will ban the user but
+        will not dm them that they were banned.
+        """
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command()
     async def unmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted.
 
@@ -339,7 +365,7 @@ class Moderation(commands.Cog):
         await dutils.unmute_user(ctx, user, reason)
 
     @commands.check(checks.manage_messages_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def sunmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted.
 
@@ -380,6 +406,56 @@ class Moderation(commands.Cog):
         await dutils.mute_user(ctx, user, length, reason)
 
     @commands.check(checks.manage_messages_check)
+    @commands.command(name='nmute')
+    async def newmute(self, ctx, user: discord.Member, length="", *, reason=""):
+        """Same as mute, but will also work on already muted users
+        (nmute = newmute)
+        When muting an already muted user their old timeout will be
+        replaced with the new provided timeout (length)
+
+        Supply a #d#h#m#s for a timed mute. Examples:
+        `[p]nmute @user` - will mute the user indefinitely
+        `[p]nmute USER_ID` - can also use id instead of mention
+        `[p]nmute @user 2h30m Optional reason goes here`
+        `[p]nmute @user 10d Muted for ten days for that and this`"""
+        can_even_execute = True
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            sup = ctx.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
+                                                       f"<role>`")
+
+        await dutils.mute_user(ctx, user, length, reason, new_mute=True)
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command(name='snmute', hidden=True)
+    async def snewmute(self, ctx, user: discord.Member, length="", *, reason=""):
+        """Same as mute, but will also work on already muted users (nodm)
+
+        When muting an already muted user their old timeout will be
+        replaced with the new provided timeout (length)
+
+        Supply a #d#h#m#s for a timed mute. Examples:
+        `[p]snmute @user` - will mute the user indefinitely
+        `[p]snmute USER_ID` - can also use id instead of mention
+        `[p]snmute @user 2h30m Optional reason goes here`
+        `[p]snmute @user 10d Muted for ten days for that and this`"""
+        can_even_execute = True
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            sup = ctx.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
+                                                       f"<role>`")
+
+        await dutils.mute_user(ctx, user, length, reason, new_mute=True, no_dm=True)
+
+    @commands.check(checks.manage_messages_check)
     @commands.command(hidden=True)
     async def smute(self, ctx, user: discord.Member, length="", *, reason=""):
         """Mutes a user. Check usage with .help smute (no dm)
@@ -410,7 +486,8 @@ class Moderation(commands.Cog):
 
         Tip:
 
-        **Every ban/banish/softban/softbanish command (except massban)
+        **Every ban/banish/softban/softbanish/mute/kick
+        command (except massban)
         has another copy of it but with a `s` prefix**
         For example: `[p]sban @user` will ban them but
         will not dm them that they were banned.
@@ -422,7 +499,52 @@ class Moderation(commands.Cog):
         `[p]ban @user`
         `[p]ban USER_ID`
         `[p]ban USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason)
+        await dutils.ban_function(ctx, user, reason)
+
+    @commands.check(checks.ban_members_check)
+    @commands.command()
+    async def kick(self, ctx, user: discord.Member, *, reason=""):
+        """Kick a user from the server
+
+        `[p]sban @user`
+        `[p]sban USER_ID`
+        `[p]sban USER_ID optional reason goes here here`"""
+        try:
+            await user.kick(reason=reason)
+            return_msg = f"Kicked the user {user.mention} (id: {user.id})"
+            if reason:
+                return_msg += f" for reason: {reason}"
+            await ctx.send(embed=Embed(description=return_msg, color=0xed7e00))
+            try:
+                await user.send(f'You have been kicked from the {str(ctx.guild)} '
+                                f'server {"" if not reason else f", reason: {reason}"}')
+            except:
+                print(f"Member {'' if not user else user.id} disabled dms")
+            act_id = await dutils.moderation_action(ctx, reason, 'kick', user, no_dm=False)
+            await dutils.post_mod_log_based_on_type(ctx, 'kick', act_id, offender=user, reason=reason)
+
+        except discord.Forbidden:
+            await ctx.send('Could not kick user. Not enough permissions.')
+
+    @commands.check(checks.ban_members_check)
+    @commands.command(hidden=True)
+    async def skick(self, ctx, user: discord.Member, *, reason=""):
+        """Kick a user from the server (no dm)
+
+        `[p]sban @user`
+        `[p]sban USER_ID`
+        `[p]sban USER_ID optional reason goes here here`"""
+        try:
+            await user.kick(reason=reason)
+            return_msg = f"Kicked the user {user.mention} (id: {user.id})"
+            if reason:
+                return_msg += f" for reason: {reason}"
+            await ctx.send(embed=Embed(description=return_msg, color=0xed7e00))
+            act_id = await dutils.moderation_action(ctx, reason, 'kick', user, no_dm=True)
+            await dutils.post_mod_log_based_on_type(ctx, 'kick', act_id, offender=user, reason=reason)
+
+        except discord.Forbidden:
+            await ctx.send('Could not kick user. Not enough permissions.')
 
     @commands.check(checks.ban_members_check)
     @commands.command(hidden=True)
@@ -432,7 +554,7 @@ class Moderation(commands.Cog):
         `[p]sban @user`
         `[p]sban USER_ID`
         `[p]sban USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, no_dm=True)
+        await dutils.ban_function(ctx, user, reason, no_dm=True)
 
     @commands.check(checks.ban_members_check)
     @commands.command()
@@ -442,7 +564,7 @@ class Moderation(commands.Cog):
         `[p]banish @user`
         `[p]banish USER_ID`
         `[p]banish USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, removeMsgs=7)
+        await dutils.ban_function(ctx, user, reason, removeMsgs=7)
 
     @commands.check(checks.ban_members_check)
     @commands.command(hidden=True)
@@ -452,27 +574,45 @@ class Moderation(commands.Cog):
         `[p]sbanish @user`
         `[p]sbanish USER_ID`
         `[p]sbanish USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, removeMsgs=7, no_dm=True)
+        await dutils.ban_function(ctx, user, reason, removeMsgs=7, no_dm=True)
 
     @commands.check(checks.ban_members_check)
     @commands.command()
-    async def softban(self, ctx, user: discord.Member, *, reason=""):
-        """Ban, but unban right away
+    async def softban(self, ctx, clear_messages_days: int, user: discord.Member, *, reason=""):
+        """Ban then unban (see help for details)
+
+        This command allows you to specifiy the amount of days worth
+        of messages to clear when banning the user. (Min=0, Max=7)
+
+        (command similarities)
+        `kick` = `softban 0` (kind of)
+        `softbanish` = `softban 7`
 
         `[p]softban @user`
         `[p]softban USER_ID`
         `[p]softban USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, softban=True)
+        if clear_messages_days < 0: return await ctx.send("**Min=0**, Max=7 for `clear_messages_days`")
+        if clear_messages_days > 7: return await ctx.send("Min=0, **Max=7** for `clear_messages_days`")
+        await dutils.ban_function(ctx, user, reason, softban=True, removeMsgs=clear_messages_days)
 
     @commands.check(checks.ban_members_check)
     @commands.command(hidden=True)
-    async def ssoftban(self, ctx, user: discord.Member, *, reason=""):
-        """Ban, but unban right away (won't dm them)
+    async def ssoftban(self, ctx, clear_messages_days: int, user: discord.Member, *, reason=""):
+        """Ban then unban right away (won't dm them)
+
+         This command allows you to specifiy the amount of days worth
+        of messages to clear when banning the user. (Min=0, Max=7)
+
+        (command similarities)
+        `skick` = `ssoftban 0` (kind of)
+        `ssoftbanish` = `ssoftban 7`
 
         `[p]ssoftban @user`
         `[p]ssoftban USER_ID`
         `[p]ssoftban USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, softban=True, no_dm=True)
+        if clear_messages_days < 0: return await ctx.send("**Min=0**, Max=7 for `clear_messages_days`")
+        if clear_messages_days > 7: return await ctx.send("Min=0, **Max=7** for `clear_messages_days`")
+        await dutils.ban_function(ctx, user, reason, softban=True, no_dm=True, removeMsgs=clear_messages_days)
 
     @commands.check(checks.ban_members_check)
     @commands.command()
@@ -482,7 +622,7 @@ class Moderation(commands.Cog):
         `[p]softbanish @user`
         `[p]softbanish USER_ID`
         `[p]softbanish USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, removeMsgs=7, softban=True)
+        await dutils.ban_function(ctx, user, reason, removeMsgs=7, softban=True)
 
     @commands.check(checks.ban_members_check)
     @commands.command(hidden=True)
@@ -492,7 +632,7 @@ class Moderation(commands.Cog):
         `[p]ssoftbanish @user`
         `[p]ssoftbanish USER_ID`
         `[p]ssoftbanish USER_ID optional reason goes here here`"""
-        await dutils.banFunction(ctx, user, reason, removeMsgs=7, softban=True, no_dm=True)
+        await dutils.ban_function(ctx, user, reason, removeMsgs=7, softban=True, no_dm=True)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.ban_members_check)
@@ -520,8 +660,8 @@ class Moderation(commands.Cog):
         m = await ctx.send("Massbanning...")
         rets = []
         for user in users:
-            rets.append(await dutils.banFunction(ctx, user, removeMsgs=delete_messages_days,
-                                                 massbanning=True, no_dm=True, reason="massban"))
+            rets.append(await dutils.ban_function(ctx, user, removeMsgs=delete_messages_days,
+                                                  massbanning=True, no_dm=True, reason="massban"))
         orig_msg = f"Massban complete! Banned **{len([r for r in rets if r])}** users"
         ret_msg = orig_msg
         for i in range(len(rets)):
