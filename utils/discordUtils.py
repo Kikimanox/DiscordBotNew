@@ -289,6 +289,10 @@ async def banFunction(ctx, user, reason="", removeMsgs=0, massbanning=False,
         return await ctx.send('Could not find user.')
 
 
+async def unmute_user(ctx, member, reason, no_dm=False):
+    pass
+
+
 async def mute_user(ctx, member, length, reason, no_dm=False):
     mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
     if mute_role in ctx.guild.get_member(member.id).roles:

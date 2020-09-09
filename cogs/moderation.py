@@ -321,6 +321,44 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
+    async def unmute(self, ctx, user: discord.Member, *, reason=""):
+        """Unmutes a user if they are muted.
+
+        `[p]unmute @user`
+        `[p]unmute USER_ID`"""
+        can_even_execute = True
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            sup = ctx.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
+                                                       f"<role>`")
+
+        await dutils.unmute_user(ctx, user, reason)
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command()
+    async def unmute(self, ctx, user: discord.Member, *, reason=""):
+        """Unmutes a user if they are muted.
+
+        `[p]unmute @user`
+        `[p]unmute USER_ID`"""
+        can_even_execute = True
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            sup = ctx.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
+                                                       f"<role>`")
+
+        await dutils.unmute_user(ctx, user, reason, no_dm=True)
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command()
     async def mute(self, ctx, user: discord.Member, length="", *, reason=""):
         """Mutes a user. Please check usage with .help mute
 
