@@ -217,7 +217,7 @@ class Terminal(commands.Cog):
         if message.channel.id in self.sessions and self.enabled and message.author.id == self.bot.config['OWNER_ID']:
             # DO NOT DEL
 
-            # TODO:
+            # TO DO:
             #  Whitelist & Blacklists that cant be modified by the bot
 
             if not dataIO.is_valid_json(abspath(dirname(argv[0])) +
