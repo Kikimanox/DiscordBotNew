@@ -73,7 +73,7 @@ class Moderation(commands.Cog):
     @commands.command()
     async def case(self, ctx, case_id: int, *, reason):
         """Supply a reason to a moderation action witht out one"""
-        pass
+        if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
 
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.check(checks.moderator_check)
