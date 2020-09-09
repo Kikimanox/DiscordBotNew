@@ -45,7 +45,7 @@ class Blacklist(BaseModel):
     user_id = IntegerField()
 
 
-# db.drop_tables([Mutes, Actions, Blacklist])
+db.drop_tables([Mutes, Actions, Blacklist])
 db.create_tables([Mutes, Actions, Blacklist])
 
 
