@@ -24,6 +24,7 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.tried_setup = False
+        # todo if unban remove, removing multi word cmds, cross out unavail inh cmd
 
     async def set_server_stuff(self):
         if not self.tried_setup:
@@ -114,8 +115,8 @@ class Moderation(commands.Cog):
         `[p]lsc 0 15 offen=(ID1, ID2, ID3) compact`
 
         **Possible types?**
-        `*ban*` <- for any ban action, `ban`, `banish`, `softban`, `kick`
-        `softbanish`, `massban`, `blacklist`, `warn`, `mute`, `unmute`, `massmute`
+        `*ban*` <- for any ban action; `ban`, `banish`, `kick`, `rcb` (right clicka ban), `unban`
+        `softbanish`, `massban`, `blacklist`, `softban`, `warn`, `mute`, `unmute`, `massmute`
 
         **Other extra agruments:** `compact`, `dm_me`, `hcw` (hide clear warns)
         """
@@ -123,7 +124,8 @@ class Moderation(commands.Cog):
         if limit > 0x7FFFFFFF: return await ctx.send("Limit too big, breaking int limits!")
         if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
-                 'blacklist', 'warn', 'mute', 'unmute', '*ban*', 'massmute']
+                 'blacklist', 'warn', 'mute', 'unmute', '*ban*', 'massmute', 'rcb', 'unban']
+        b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban', 'rcb', 'unban']
         possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen', 'hcw'})
         q = None
         reverse = True if case_id == -1 else False
@@ -222,7 +224,6 @@ class Moderation(commands.Cog):
                 return await ctx.send("Something went wrong when parsing **{parsing_now}** arguments. Exception:\n"
                                       f"```\n{ee}```")
             if extra:
-                b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban']
                 got_t = list(set(types) & set(extra.split()))
                 got_t2 = list(set(possible) & set(extra.split()))
                 if '*ban*' in got_t:
@@ -231,6 +232,10 @@ class Moderation(commands.Cog):
 
                 if 'hcw' not in got_t2 and got_t:
                     got_t.append('warn(cleared)')
+
+                if 'rcb' in got_t:
+                    got_t.remove('rcb')
+                    got_t.append('Right click ban')
 
             if not af_date: af_date = datetime.datetime.min
             if not bf_date: bf_date = datetime.datetime.max
@@ -353,6 +358,69 @@ class Moderation(commands.Cog):
         raise commands.errors.BadArgument
 
     @commands.Cog.listener()
+    async def on_member_ban(self, guild, member):
+        if self.bot.banned_cuz_blacklist and f'{member.id}_{member.guild.id}' in self.bot.banned_cuz_blacklist:
+            self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] -= \
+                self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+            if self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] == 0:
+                del self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+            return
+
+        if self.bot.just_banned_by_bot and f'{member.id}_{member.guild.id}' in self.bot.just_banned_by_bot:
+            del self.bot.just_banned_by_bot[f'{member.id}_{member.guild.id}']
+            return
+
+        limit = 5
+        found_entry = None
+        tries = 3
+        while tries >= 0:
+            async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
+                if entry.target.id != member.id: continue
+                now = datetime.datetime.utcnow()
+                if (now - entry.created_at).total_seconds() >= 20: continue
+                found_entry = entry
+                break
+            if found_entry:
+                act_id = await dutils.moderation_action(None, '', 'Right click ban', member,
+                                                        actually_resp=found_entry.user,
+                                                        guild=guild, bot=self.bot)
+                await dutils.post_mod_log_based_on_type(None, 'Right click ban', act_id, offender=member,
+                                                        reason='',
+                                                        actually_resp=found_entry.user,
+                                                        guild=guild, bot=self.bot)
+                return
+            else:
+                limit += 20
+                tries -= 1
+                await asyncio.sleep(2)
+
+    @commands.Cog.listener()
+    async def on_member_unban(self, guild, user):
+        limit = 5
+        found_entry = None
+        tries = 3
+        while tries >= 0:
+            async for entry in guild.audit_logs(action=discord.AuditLogAction.unban, limit=limit):
+                if entry.target.id != user.id: continue
+                now = datetime.datetime.utcnow()
+                if (now - entry.created_at).total_seconds() >= 20: continue
+                found_entry = entry
+                break
+            if found_entry:
+                act_id = await dutils.moderation_action(None, '', 'unban', user, no_dm=True,
+                                                        actually_resp=found_entry.user,
+                                                        guild=guild, bot=self.bot)
+                await dutils.post_mod_log_based_on_type(None, 'unban', act_id, offender=user,
+                                                        reason='',
+                                                        actually_resp=found_entry.user,
+                                                        guild=guild, bot=self.bot)
+                return
+            else:
+                limit += 20
+                tries -= 1
+                await asyncio.sleep(2)
+
+    @commands.Cog.listener()
     async def on_member_update(self, before, after):
         if not self.bot.from_serversetup:
             if not self.tried_setup:
@@ -366,7 +434,7 @@ class Moderation(commands.Cog):
         if can_even_execute:
             mute_role = discord.utils.get(before.guild.roles, id=self.bot.from_serversetup[before.guild.id]['muterole'])
             if mute_role not in after.roles and mute_role in before.roles:
-                print("I am here now LISTENER!")
+                # unmute logic time
                 try:
                     muted = Reminderstbl.get(Reminderstbl.guild == before.guild.id, Reminderstbl.user_id == before.id)
                     muted.delete_instance()
@@ -405,6 +473,11 @@ class Moderation(commands.Cog):
                     await dutils.post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
                                                             reason=reason, actually_resp=actually_resp,
                                                             guild=before.guild, bot=self.bot)
+            if mute_role in after.roles and mute_role not in before.roles:
+                if self.bot.just_muted_by_bot and f'{before.id}_{before.guild.id}' in self.bot.just_muted_by_bot:
+                    del self.bot.just_muted_by_bot[f'{before.id}_{before.guild.id}']
+                    return
+                print("Someone muted without using the bot")
 
     @commands.check(checks.manage_messages_check)
     @commands.command()

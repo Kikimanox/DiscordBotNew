@@ -255,6 +255,10 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
         return await ctx.send('Could not find this user in this server')
     if member:
         try:
+            if massbanning:
+                ctx.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 2
+            if not massbanning:
+                ctx.bot.just_banned_by_bot[f'{member.id}_{member.guild.id}'] = 1
             await member.ban(reason=reason, delete_message_days=removeMsgs)
             if softban:
                 await member.unban(reason='Softbanned')
@@ -269,9 +273,6 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
             if reason:
                 return_msg += f" for reason: `{reason}`"
 
-            # print(f'{datetime.datetime.now().strftime("%c")} ({ctx.guild.id} | {str(ctx.guild)}) MOD LOG (ban): '
-            #      f'{str(ctx.author)} ({ctx.author.id}) banned '
-            #      f'the user {str(member)} ({member.id}). Reason: {reason}')
             if not massbanning:
                 await ctx.send(embed=Embed(description=return_msg, color=0xdd0000))
             if not massbanning:
@@ -282,12 +283,10 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 act_id = await moderation_action(ctx, reason, typ, member, no_dm=no_dm, actually_resp=actually_resp)
                 await post_mod_log_based_on_type(ctx, typ, act_id, offender=member,
                                                  reason=reason, actually_resp=actually_resp)
-            # await dutils.mod_log(f"Mod log: Ban", f"**offender:** {str(member)} ({member.id})\n"
-            #                                      f"**Reason:** {reason}\n"
-            #                                      f"**Responsible:** {str(ctx.author)} ({ctx.author.id})",
-            #                     colorr=0x33d8f0, author=ctx.author)
             return member.id
         except discord.Forbidden:
+            if massbanning:
+                del ctx.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
             if massbanning: return -100  # special return
             await ctx.send('Could not ban user. Not enough permissions.')
     else:
@@ -407,11 +406,8 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
                 return 9001
         unmute_time = timestamp + delta
 
-        # modData[str(ctx.guild.id)]["muted_users"][str(member.id)] = {"until": unmute_time.timestamp(),
-        #                                                             "muted_member": str(member),
-        #                                                             "reason": reason,
-        #                                                             "until_ver2": unmute_time.strftime('%c')}
     try:
+        ctx.bot.just_muted_by_bot[f'{member.id}_{member.guild.id}'] = 1
         await member.add_roles(mute_role, reason=reason)
         try:
             if not no_dm:
@@ -421,19 +417,11 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         except:
             print(f"Member {'' if not member else member.id} disabled dms")
     except discord.errors.Forbidden:
+        del ctx.bot.just_muted_by_bot[f'{member.id}_{member.guild.id}']
         if not batch:
             return await ctx.send("💢 I don't have permission to do this.")
         else:
             return -19
-    # if not length:
-    # modData[str(ctx.guild.id)]["muted_users"][str(member.id)] = {"until": 999999999999,
-    #                                                             "muted_member": str(member),
-    #                                                             "reason": reason,
-    #                                                            "until_ver2": 'indefinitely '}
-    # print(f'{datetime.datetime.now().strftime("%c")} ({ctx.guild.id} | {str(ctx.guild)}) MOD LOG (mute):'
-    #       f' {str(ctx.author)} ({ctx.author.id}) muted '
-    #       f'the user {str(member)} ({member.id}).{" Length: " + length if length else " Length: indefinitely "} '
-    #       f'Reason: {reason}')
     new_reason = reason  # deleted this functionality to not spam db
     reminder = ctx.bot.get_cog('Reminders')
     if reminder is None:
@@ -542,13 +530,14 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
 
     em = Embed()
     responsb = None
+    le_none = "*No reason provided.\n" \
+              "Can still be supplied with:\n" \
+              f"`{p}case {act_id} reason here`*"
     if actually_resp:
         responsb = actually_resp
     else:
         responsb = ctx.author
-    if not reason: reason = "*No reason provided.\n" \
-                            "Can still be supplied with:\n" \
-                            f"`{p}case {act_id} reason here`*"
+    if not reason: reason = le_none
 
     em.add_field(name='Responsible', value=f'{responsb.mention}\n{responsb}', inline=True)
     off_left_id = -1  # -1 means that offender exists on the server
@@ -561,7 +550,7 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         em.add_field(name='Offender', value=f'{off_left_id}\n(left server)', inline=True)
 
     if log_type == 'blacklist':
-        em.add_field(name='Offenders', value=reason, inline=True if offender else False)
+        em.add_field(name='Reason', value=f'{le_none}\n**Ofenders:**\n{reason}', inline=True if offender else False)
     # these above have to be the ones in the bottom array
     if log_type not in ['blacklist']:
         em.add_field(name='Reason', value=reason, inline=True if offender else False)
@@ -571,9 +560,13 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         title = "User muted indefinitely" if mute_time_str == 'indefinitely' else f'User muted for {mute_time_str}'
         em.colour = 0xbf5b30
 
-    if 'ban' in log_type:
+    if 'ban' in log_type and log_type != 'unban':
         title = log_type.capitalize()
         em.colour = 0xe62d10
+
+    if log_type == 'unban':
+        title = "User unbanned"
+        em.colour = 0x45ed9c
 
     if log_type == 'blacklist':
         title = "Blacklist"

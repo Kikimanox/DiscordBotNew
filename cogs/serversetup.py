@@ -644,13 +644,13 @@ class ServerSetup(commands.Cog):
         do_wel_msg = True
         if member.guild.id in smb and member.id in smb[member.guild.id]:
             try:
-                self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 1
+                self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 2
                 await member.ban(reason="User joined when they were blacklisted. Removed the user from "
                                         "the datbase blacklist", delete_message_days=0)
                 Blacklist.delete().where(Blacklist.user_id == member.id, Blacklist.guild == member.guild.id).execute()
                 self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
             except:
-                pass
+                self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
             do_wel_msg = False
 
         if do_wel_msg:
@@ -715,8 +715,12 @@ class ServerSetup(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         if self.bot.banned_cuz_blacklist and f'{member.id}_{member.guild.id}' in self.bot.banned_cuz_blacklist:
-            del self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+            self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] -= \
+                self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+            if self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] == 0:
+                del self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
             return
+
         if member.guild.id in self.bot.from_serversetup:
             try:  # log it
                 sup = self.bot.from_serversetup[member.guild.id]
