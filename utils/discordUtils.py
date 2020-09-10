@@ -555,8 +555,11 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
 
     if log_type == 'blacklist':
         em.add_field(name='Reason', value=f'{le_none}\n**Ofenders:**\n{reason}', inline=True if offender else False)
+    if log_type == 'whitelist':
+        em.add_field(name='Reason', value=f'{le_none}\n**Command:**\n{reason.split("|")[0]}'
+                                          f'\n**Result:**\n{reason.split("|")[-1]}', inline=True if offender else False)
     # these above have to be the ones in the bottom array
-    if log_type not in ['blacklist']:
+    if log_type not in ['blacklist', 'whitelist']:
         em.add_field(name='Reason', value=reason, inline=True if offender else False)
 
     title = ""
@@ -579,6 +582,10 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
     if log_type == 'blacklist':
         title = "Blacklist"
         em.colour = 0x050100
+
+    if log_type == 'whitelist':
+        title = "whitelist"
+        em.colour = 0xfcf7f7
 
     if log_type == 'warn':
         tim = 'times already' if warn_number > 1 else 'time'
