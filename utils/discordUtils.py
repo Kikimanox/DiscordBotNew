@@ -560,6 +560,10 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         title = "User muted indefinitely" if mute_time_str == 'indefinitely' else f'User muted for {mute_time_str}'
         em.colour = 0xbf5b30
 
+    if log_type == 'Right click mute':
+        title = "User right click muted"
+        em.colour = 0xbf5b30
+
     if 'ban' in log_type and log_type != 'unban':
         title = log_type.capitalize()
         em.colour = 0xe62d10

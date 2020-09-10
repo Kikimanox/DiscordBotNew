@@ -115,8 +115,10 @@ class Moderation(commands.Cog):
         `[p]lsc 0 15 offen=(ID1, ID2, ID3) compact`
 
         **Possible types?**
-        `*ban*` <- for any ban action; `ban`, `banish`, `kick`, `rcb` (right clicka ban), `unban`
-        `softbanish`, `massban`, `blacklist`, `softban`, `warn`, `mute`, `unmute`, `massmute`
+        `*ban*` <- for any ban action; `ban`, `banish`,
+        `kick`, `rcb`, `rcm` (right clicka ban/mute),
+        `unban`, `softbanish`, `massban`, `blacklist`,
+        `softban`, `warn`, `mute`, `unmute`, `massmute`
 
         **Other extra agruments:** `compact`, `dm_me`, `hcw` (hide clear warns)
         """
@@ -124,7 +126,7 @@ class Moderation(commands.Cog):
         if limit > 0x7FFFFFFF: return await ctx.send("Limit too big, breaking int limits!")
         if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
-                 'blacklist', 'warn', 'mute', 'unmute', '*ban*', 'massmute', 'rcb', 'unban']
+                 'blacklist', 'warn', 'mute', 'unmute', '*ban*', 'massmute', 'rcb', 'unban', 'rcm']
         b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban', 'rcb', 'unban']
         possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen', 'hcw'})
         q = None
@@ -231,11 +233,16 @@ class Moderation(commands.Cog):
                     got_t = list(set(got_t) | set(b_types))
 
                 if 'hcw' not in got_t2 and got_t:
-                    got_t.append('warn(cleared)')
+                    if 'warn' in got_t:
+                        got_t.append('warn(cleared)')
 
                 if 'rcb' in got_t:
                     got_t.remove('rcb')
                     got_t.append('Right click ban')
+
+                if 'rcm' in got_t:
+                    got_t.remove('rcm')
+                    got_t.append('Right click mute')
 
             if not af_date: af_date = datetime.datetime.min
             if not bf_date: bf_date = datetime.datetime.max
@@ -477,7 +484,31 @@ class Moderation(commands.Cog):
                 if self.bot.just_muted_by_bot and f'{before.id}_{before.guild.id}' in self.bot.just_muted_by_bot:
                     del self.bot.just_muted_by_bot[f'{before.id}_{before.guild.id}']
                     return
-                print("Someone muted without using the bot")
+
+                limit = 5
+                tries = 3
+                found_entry = None
+                while tries >= 0:
+                    async for entry in after.guild.audit_logs(action=discord.AuditLogAction.member_role_update,
+                                                              limit=limit):
+                        if entry.target.id != after.id: continue
+                        now = datetime.datetime.utcnow()
+                        if (now - entry.created_at).total_seconds() >= 20: continue
+                        found_entry = entry
+                        break
+                    if found_entry:
+                        act_id = await dutils.moderation_action(None, '', 'Right click mute', after,
+                                                                actually_resp=found_entry.user,
+                                                                guild=after.guild, bot=self.bot)
+                        await dutils.post_mod_log_based_on_type(None, 'Right click mute', act_id, offender=after,
+                                                                reason='',
+                                                                actually_resp=found_entry.user,
+                                                                guild=after.guild, bot=self.bot)
+                        return
+                    else:
+                        limit += 20
+                        tries -= 1
+                        await asyncio.sleep(2)
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
