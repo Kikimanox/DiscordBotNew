@@ -116,7 +116,7 @@ class Moderation(commands.Cog):
 
         **Possible types?**
         `*ban*` <- for any ban action; `ban`, `banish`,
-        `kick`, `rcb`, `rcm` (right clicka ban/mute),
+        `kick`, `rcb`, `rcm` (right click ban/mute),
         `unban`, `softbanish`, `massban`, `blacklist`,
         `softban`, `warn`, `mute`, `unmute`, `massmute`
 
