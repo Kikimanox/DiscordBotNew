@@ -19,17 +19,17 @@ class ClassName(commands.Cog):
         """Desc here"""
         await ctx.send("Something")
 
-    async def if_you_need_loop(self):
-        await self.bot.wait_until_ready()
-        while True:
-            try:
-                print("Code here")
-            except:
-                pass
-            await asyncio.sleep(10)  # sleep here
+    # async def if_you_need_loop(self):
+    #     await self.bot.wait_until_ready()
+    #     while True:
+    #         try:
+    #             print("Code here")
+    #         except:
+    #             pass
+    #         await asyncio.sleep(10)  # sleep here
 
 
 def setup(bot):
     ext = ClassName(bot)
-    bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))
+    #bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))
     bot.add_cog(ext)

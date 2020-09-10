@@ -684,7 +684,7 @@ class ServerSetup(commands.Cog):
 
                     embed = Embed(color=0x5ace47, title=f'{str(member.name)} has joined.',
                                   description=f'📈 {member.mention} (id: {member.id})')
-                    embed.set_footer(text=f"{datetime.datetime.now().strftime('%c')} | "
+                    embed.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')} | "
                                           f"Member count: {len(member.guild.members)}")
                     embed.set_author(name=f"{str(member)}", icon_url=icon_url)
                     embed.add_field(name="Joined", value=tutils.convertTimeToReadable1(member.joined_at), inline=True)
@@ -722,7 +722,7 @@ class ServerSetup(commands.Cog):
                 sup = self.bot.from_serversetup[member.guild.id]
                 if sup['leavejoin']:
                     embed = Embed(color=0xFF2244, description=f'📉 {str(member)} (id: {member.id}) has left the server',
-                                  timestamp=datetime.datetime.utcfromtimestamp(datetime.datetime.now().timestamp()))
+                                  timestamp=datetime.datetime.utcfromtimestamp(datetime.datetime.utcnow().timestamp()))
                     embed.set_footer(text=f'New member count: {str(len(member.guild.members))}')
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed)
@@ -747,7 +747,7 @@ class ServerSetup(commands.Cog):
         msgs = payload.cached_messages
         ch_id = payload.channel_id
         g_id = payload.guild_id
-        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.now().strftime('%c')} -- Displaying cached messages\n" \
+        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')} -- Displaying cached messages\n" \
               f"(ch: {ch_id}) (guild: {g_id})\n\n"
         for message in msgs:
             if isinstance(message.channel, discord.DMChannel) or message.author.bot or \

@@ -229,7 +229,7 @@ async def on_message(message):
                 # await self.add_to_blacklist(author_id)
 
                 if possible_cmd != 'unblacklistme':
-                    bot.blacklist[author_id] = f"{str(message.author)} {datetime.datetime.now().strftime('%c')}" \
+                    bot.blacklist[author_id] = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
                                                f" source: {message.jump_url}"
                     del bot._auto_spam_count[author_id]
                     # await self.log_spammer(ctx, message, retry_after, autoblock=True)
@@ -249,7 +249,7 @@ async def on_message(message):
                                                f'once in a certain period. '
                                                f'To do that you can use `{pfx}unblacklistme`')
                 else:
-                    out2 = f"{str(message.author)} {datetime.datetime.now().strftime('%c')}" \
+                    out2 = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
                            f" source: {message.jump_url}"
                     out = f'SPAMMER BANNED FROM BOT: {author_id} | {retry_after} |' \
                           f' {message.content} | {message.jump_url}'
@@ -452,9 +452,9 @@ if __name__ == '__main__':
             loop = asyncio.get_event_loop()
             config = dataIOa.load_json("config.json")
             loop.run_until_complete(bot.login(config['BOT_TOKEN']))
-            print(f'Connected: ---{datetime.datetime.now().strftime("%c")}---')
+            print(f'Connected: ---{datetime.datetime.utcnow().strftime("%c")}---')
             loop.run_until_complete(bot.connect())
-            print(f'Disconected: ---{datetime.datetime.now().strftime("%c")}---')
+            print(f'Disconected: ---{datetime.datetime.utcnow().strftime("%c")}---')
         except Exception as e:
             traceback.print_exc()
         print("Waiting for restart (30 seconds)")

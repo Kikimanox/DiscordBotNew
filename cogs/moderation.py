@@ -8,6 +8,7 @@ from discord import Member, Embed, File, utils
 import os
 import traceback
 
+from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 import utils.checks as checks
@@ -16,12 +17,19 @@ import utils.timeStuff as tutils
 import datetime
 from columnar import columnar
 from operator import itemgetter
-from models.moderation import (Mutes, Actions, Blacklist, ModManager)
+from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
 
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.tried_setup = False
+
+    async def set_server_stuff(self):
+        if not self.tried_setup:
+            if not self.bot.from_serversetup:
+                self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
+                self.tried_setup = True
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.check(checks.ban_members_check)
@@ -107,7 +115,7 @@ class Moderation(commands.Cog):
 
         **Possible types?**
         `*ban*` <- for any ban action, `ban`, `banish`, `softban`, `kick`
-        `softbanish`, `massban`, `blacklist`, `warn`, `mute`, `unmute`
+        `softbanish`, `massban`, `blacklist`, `warn`, `mute`, `unmute`, `massmute`
 
         **Other extra agruments:** `compact`, `dm_me`, `hcw` (hide clear warns)
         """
@@ -115,7 +123,7 @@ class Moderation(commands.Cog):
         if limit > 0x7FFFFFFF: return await ctx.send("Limit too big, breaking int limits!")
         if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
-                 'blacklist', 'warn', 'mute', 'unmute', '*ban*']
+                 'blacklist', 'warn', 'mute', 'unmute', '*ban*', 'massmute']
         possible = list(set(types) | {'compact', 'dm_me', 'after', 'before', 'resp', 'offen', 'hcw'})
         q = None
         reverse = True if case_id == -1 else False
@@ -351,6 +359,7 @@ class Moderation(commands.Cog):
 
         `[p]unmute @user`
         `[p]unmute USER_ID`"""
+        if not self.tried_setup: await self.set_server_stuff()
         can_even_execute = True
         if ctx.guild.id in ctx.bot.from_serversetup:
             sup = ctx.bot.from_serversetup[ctx.guild.id]
@@ -364,34 +373,45 @@ class Moderation(commands.Cog):
         await dutils.unmute_user(ctx, user, reason)
 
     @commands.check(checks.manage_messages_check)
-    @commands.command(hidden=True)
-    async def sunmute(self, ctx, user: discord.Member, *, reason=""):
-        """Unmutes a user if they are muted.
-
-        `[p]sunmute @user`
-        `[p]sunmute USER_ID`"""
-        can_even_execute = True
-        if ctx.guild.id in ctx.bot.from_serversetup:
-            sup = ctx.bot.from_serversetup[ctx.guild.id]
-            if not sup['muterole']: can_even_execute = False
-        else:
-            can_even_execute = False
-        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
-                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
-                                                       f"<role>`")
-
-        await dutils.unmute_user(ctx, user, reason, no_dm=True)
-
-    @commands.check(checks.manage_messages_check)
     @commands.command()
-    async def mute(self, ctx, user: discord.Member, length="", *, reason=""):
-        """Mutes a user. Please check usage with .help mute
+    async def mute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
+        """Mutes users. Please check usage with .help mute
 
         Supply a #d#h#m#s for a timed mute. Examples:
         `[p]mute @user` - will mute the user indefinitely
         `[p]mute USER_ID` - can also use id instead of mention
         `[p]mute @user 2h30m Optional reason goes here`
-        `[p]mute @user 10d Muted for ten days for that and this`"""
+        `[p]mute @user @user2 @user3 10d Muted for ten days for that and this`
+
+        Only this command (and smute) can mute multiple users at once (max 10)"""
+        users = list(set(users))
+        if len(users) > 10: return await ctx.send("Max 10 users")
+        if len(users) > 1:
+            if not await dutils.prompt(ctx, "Are you sure you want to mass mute like this? (It will send a dm "
+                                            "to each muted user).\nI **suugest** using the `smute` command instedad."):
+                return
+        await self.el_mute(ctx, users, length, reason, False)
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command(hidden=True)
+    async def smute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
+        """Mutes a user. Check usage with .help smute (no dm)
+
+        Same as mute, but won't dm the muted user
+
+        Supply a #d#h#m#s for a timed mute. Examples:
+        `[p]smute @user` - will mute the user indefinitely
+        `[p]smute USER_ID` - can also use id instead of mention
+        `[p]smute @user 2h30m Optional reason goes here`
+        `[p]smute @user 10d Muted for ten days for that and this`
+
+        Only this command (and mute) can mute multiple users at once (max 10)"""
+        users = list(set(users))
+        if len(users) > 10: return await ctx.send("Max 10 users")
+        await self.el_mute(ctx, users, length, reason, True)
+
+    async def el_mute(self, ctx, users, length, reason, no_dm):
+        if not self.tried_setup: await self.set_server_stuff()
         can_even_execute = True
         if ctx.guild.id in ctx.bot.from_serversetup:
             sup = ctx.bot.from_serversetup[ctx.guild.id]
@@ -401,8 +421,35 @@ class Moderation(commands.Cog):
         if not can_even_execute: return await ctx.send(f"Mute role not setup. "
                                                        f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
                                                        f"<role>`")
-
-        await dutils.mute_user(ctx, user, length, reason)
+        rets = []
+        if len(users) == 1:
+            await dutils.mute_user(ctx, users[0], length, reason, no_dm=no_dm)
+        else:
+            p = dutils.bot_pfx(ctx.bot, ctx.message)
+            for u in users:
+                ret = await dutils.mute_user(ctx, u, length, reason, no_dm=no_dm, batch=True)
+                if ret == -1000: return ctx.send("Mute role not setup, can not complete mute.")
+                if ret == -35: return await ctx.send(f"Could not parse mute length. Are you sure you're "
+                                                     f"giving it in the right format? Ex: `{p}mute @user 30m`, "
+                                                     f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
+                if ret == 9001: return await ctx.send("**Overflow!** Mute time too long. "
+                                                      "Please input a shorter mute time.")
+                if ret == -989: return await ctx.send('Can not load remidners cog! (Weird error)')
+                # if ret == -10 (user already muted)
+                # if ret == -19 (no perms)
+                # if ret == 10 (OK)
+                rets.append(str(ret))
+            desc = ""
+            for i in range(len(rets)):
+                rets[i] = rets[i].replace('-10', '(user already muted) ⚠')
+                rets[i] = rets[i].replace('-19', '(no perms) 💢')
+                rets[i] = rets[i].replace('10', '(muted) \N{WHITE HEAVY CHECK MARK}')
+                rets[i] = rets[i] = f"{users[i]} - {rets[i]}"
+            await ctx.send(embed=Embed(color=0x5e77bd, title="Mass mute",
+                                       description='\n'.join(rets)))
+            rsn = reason + '\nOffenders: ' + ', '.join([f'{u} ({str(u.id)})' for u in users])
+            act_id = await dutils.moderation_action(ctx, rsn, "massmute", None)
+            await dutils.post_mod_log_based_on_type(ctx, 'massmute', act_id)
 
     @commands.check(checks.manage_messages_check)
     @commands.command(name='nmute')
@@ -453,30 +500,6 @@ class Moderation(commands.Cog):
                                                        f"<role>`")
 
         await dutils.mute_user(ctx, user, length, reason, new_mute=True, no_dm=True)
-
-    @commands.check(checks.manage_messages_check)
-    @commands.command(hidden=True)
-    async def smute(self, ctx, user: discord.Member, length="", *, reason=""):
-        """Mutes a user. Check usage with .help smute (no dm)
-
-        Same as mute, but won't dm the muted user
-
-        Supply a #d#h#m#s for a timed mute. Examples:
-        `[p]smute @user` - will mute the user indefinitely
-        `[p]smute USER_ID` - can also use id instead of mention
-        `[p]smute @user 2h30m Optional reason goes here`
-        `[p]smute @user 10d Muted for ten days for that and this`"""
-        can_even_execute = True
-        if ctx.guild.id in ctx.bot.from_serversetup:
-            sup = ctx.bot.from_serversetup[ctx.guild.id]
-            if not sup['muterole']: can_even_execute = False
-        else:
-            can_even_execute = False
-        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
-                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup "
-                                                       f"muterolenew <role>`")
-
-        await dutils.mute_user(ctx, user, length, reason, no_dm=True)
 
     @commands.check(checks.ban_members_check)
     @commands.command()
@@ -675,7 +698,7 @@ class Moderation(commands.Cog):
             await ctx.send("**F1** means that the user couldn't be found.\n"
                            "**F2** means that I couldn't ban the user because not enough permissions")
         await ctx.send(embed=Embed(description=ret_msg))
-        act_id = await dutils.moderation_action(ctx, "", "massban", None)
+        act_id = await dutils.moderation_action(ctx, ', '.join([u.id for u in users]), "massban", None)
         await dutils.post_mod_log_based_on_type(ctx, 'massban', act_id)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
@@ -704,15 +727,6 @@ class Moderation(commands.Cog):
             await ctx.send("✅ Arguments are ok, this should work")
         else:
             await ctx.send("❌ Displaying wrong/bad arguments:\n\n" + wrong)
-
-    async def if_you_need_loop(self):
-        await self.bot.wait_until_ready()
-        while True:
-            try:
-                print("Code here")
-            except:
-                pass
-            await asyncio.sleep(10)  # sleep here
 
     @commands.check(checks.ban_members_check)
     @commands.command()
@@ -920,5 +934,4 @@ class Moderation(commands.Cog):
 
 def setup(bot):
     ext = Moderation(bot)
-    bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))
     bot.add_cog(ext)

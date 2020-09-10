@@ -51,7 +51,7 @@ class Personal(commands.Cog):
         if not member: member = ctx.author
 
         embed = Embed(color=member.color, description=member.mention,
-                      timestamp=datetime.datetime.utcfromtimestamp(datetime.datetime.now().timestamp()))
+                      timestamp=datetime.datetime.utcfromtimestamp(datetime.datetime.utcnow().timestamp()))
 
         embed.set_thumbnail(url=member.avatar_url)
         embed.set_author(name=member.name,

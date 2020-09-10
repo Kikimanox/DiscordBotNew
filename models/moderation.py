@@ -16,13 +16,20 @@ class BaseModel(Model):
         database = db
 
 
-class Mutes(BaseModel):
+class Reminderstbl(BaseModel):
+    id = AutoField()
+    meta = CharField()
     guild = IntegerField()
     reason = CharField()
     user_id = IntegerField()
     len_str = CharField()
     expires_on = DateTimeField()
-    muted_by = IntegerField()
+    executed_by = IntegerField()
+
+
+class Mutes(BaseModel):
+    id = AutoField()
+    # todo delete this when dropping on ppt once
 
 
 class Actions(BaseModel):
@@ -45,8 +52,9 @@ class Blacklist(BaseModel):
     user_id = IntegerField()
 
 
-# db.drop_tables([Mutes, Actions, Blacklist])
-db.create_tables([Mutes, Actions, Blacklist])
+# db.drop_tables([Mutes, Reminderstbl])
+# db.drop_tables([Reminderstbl, Actions, Blacklist, Mutes])
+db.create_tables([Reminderstbl, Actions, Blacklist, Mutes])
 
 
 class ModManager:

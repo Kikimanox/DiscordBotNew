@@ -15,7 +15,7 @@ import datetime
 import aiohttp
 import random
 from discord import File
-from models.moderation import (Mutes, Actions, Blacklist, ModManager)
+from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
 
 
 def bot_pfx(bot, _message):
@@ -28,6 +28,12 @@ def bot_pfx(bot, _message):
     prefix = bot.config['BOT_PREFIX']
     if hasattr(_message, 'channel') and isinstance(_message.channel, discord.DMChannel): return prefix
     gid = str(_message.guild.id)
+    if gid not in bot.config['B_PREF_GUILD']: return prefix
+    return bot.config['B_PREF_GUILD'][gid]
+
+
+def bot_pfx_by_gid(bot, gid):
+    prefix = bot.config['BOT_PREFIX']
     if gid not in bot.config['B_PREF_GUILD']: return prefix
     return bot.config['B_PREF_GUILD'][gid]
 
@@ -289,6 +295,31 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
         return await ctx.send('Could not find user.')
 
 
+async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, reason="Auto"):
+    try:
+        mute_role = discord.utils.get(guild.roles, id=bot.from_serversetup[guild.id]['muterole'])
+        if mute_role not in guild.get_member(member.id).roles:
+            return
+        await member.remove_roles(mute_role)
+        try:
+            muted = Reminderstbl.get(Reminderstbl.guild == guild.id, Reminderstbl.user_id == member.id)
+            muted.delete_instance()
+        except:
+            pass
+        try:
+            if not no_dm:
+                await member.send(f'You have been unmuted on the {str(guild)} server.'
+                                  f'{"" if not reason else f" Reason: **{reason}**"}')
+        except:
+            act_id = await moderation_action(None, reason, "unmute", member, no_dm=no_dm,
+                                             actually_resp=actually_resp, guild=guild, bot=bot)
+            await post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
+                                             reason=reason, actually_resp=actually_resp,
+                                             guild=guild, bot=bot)
+    except discord.errors.Forbidden:
+        bot.logger.error(f"can not auto unmute {guild} {guild.id}")
+
+
 async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
     try:
         can_even_execute = True
@@ -306,7 +337,7 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
 
         await member.remove_roles(mute_role)
         try:
-            muted = Mutes.get(Mutes.guild == ctx.guild.id, Mutes.user_id == member.id)
+            muted = Reminderstbl.get(Reminderstbl.guild == ctx.guild.id, Reminderstbl.user_id == member.id)
             muted.delete_instance()
         except:
             pass
@@ -325,18 +356,25 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
         await ctx.send("💢 I don't have permission to do this.")
 
 
-async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None, new_mute=False):
+async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None, new_mute=False, batch=False):
     can_even_execute = True
     if ctx.guild.id in ctx.bot.from_serversetup:
         sup = ctx.bot.from_serversetup[ctx.guild.id]
         if not sup['muterole']: can_even_execute = False
     else:
         can_even_execute = False
-    if not can_even_execute: return ctx.send("Mute role not setup, can not complete mute.")
+    if not can_even_execute:
+        if not batch:
+            return ctx.send("Mute role not setup, can not complete mute.")
+        else:
+            return -1000
     mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
     if not new_mute:
         if mute_role in ctx.guild.get_member(member.id).roles:
-            return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
+            if not batch:
+                return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
+            else:
+                return -10
     unmute_time = None
     # thanks Luc#5653
     if length:
@@ -350,16 +388,23 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         match = re.findall("([0-9]+[smhd])", length)  # Thanks to 3dshax server's former bot
         if not match:
             p = bot_pfx(ctx.bot, ctx.message)
-            return await ctx.send(f"Could not parse mute length. Are you sure you're "
-                                  f"giving it in the right format? Ex: `{p}mute @user 30m`, "
-                                  f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
+            if not batch:
+                return await ctx.send(f"Could not parse mute length. Are you sure you're "
+                                      f"giving it in the right format? Ex: `{p}mute @user 30m`, "
+                                      f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
+            else:
+                return -35
+
         try:
             for item in match:
                 seconds += int(item[:-1]) * units[item[-1]]
-            timestamp = datetime.datetime.now()
+            timestamp = datetime.datetime.utcnow()
             delta = datetime.timedelta(seconds=seconds)
         except OverflowError:
-            return await ctx.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
+            if not batch:
+                return await ctx.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
+            else:
+                return 9001
         unmute_time = timestamp + delta
 
         # modData[str(ctx.guild.id)]["muted_users"][str(member.id)] = {"until": unmute_time.timestamp(),
@@ -376,7 +421,10 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         except:
             print(f"Member {'' if not member else member.id} disabled dms")
     except discord.errors.Forbidden:
-        return await ctx.send("💢 I don't have permission to do this.")
+        if not batch:
+            return await ctx.send("💢 I don't have permission to do this.")
+        else:
+            return -19
     # if not length:
     # modData[str(ctx.guild.id)]["muted_users"][str(member.id)] = {"until": 999999999999,
     #                                                             "muted_member": str(member),
@@ -386,26 +434,50 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
     #       f' {str(ctx.author)} ({ctx.author.id}) muted '
     #       f'the user {str(member)} ({member.id}).{" Length: " + length if length else " Length: indefinitely "} '
     #       f'Reason: {reason}')
-    new_reason = reason
+    new_reason = reason  # deleted this functionality to not spam db
+    reminder = ctx.bot.get_cog('Reminders')
+    if reminder is None:
+        if not batch:
+            return await ctx.send('Can not load remidners cog! (Weird error)')
+        else:
+            return -989
     try:
-        mute = Mutes.get(Mutes.user_id == member.id, Mutes.guild == ctx.guild.id)
+        mute = Reminderstbl.get(Reminderstbl.user_id == member.id, Reminderstbl.guild == ctx.guild.id)
         mute.len_str = 'indefinitely ' if not length else length
         mute.expires_on = unmute_time if length else datetime.datetime.max
-        mute.muted_by = ctx.author.id
-        mute.reason = mute.reason + ' ||| ' + reason
-        new_reason = mute.reason + ' ||| ' + reason
+        mute.executed_by = ctx.author.id
+        mute.reason = new_reason
+
         mute.save()
+        tim = await reminder.create_timer(
+            expires_on=unmute_time,
+            meta='mute_nodm' if no_dm else 'mute',
+            gid=ctx.guild.id,
+            reason=new_reason,
+            uid=member.id,
+            len_str='indefinitely ' if not length else length,
+            author_id=ctx.author.id,
+            unmute_user=True,
+            orig_id=mute.id
+        )
     except:
-        Mutes.insert(guild=ctx.guild.id, reason=reason, user_id=member.id,
-                     len_str='indefinitely ' if not length else length,
-                     expires_on=unmute_time if length else datetime.datetime.max,
-                     muted_by=ctx.author.id).execute()
-    await ctx.send(embed=Embed(
-        description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
-        color=0x6785da))
-    act_id = await moderation_action(ctx, new_reason, "mute", member, no_dm=no_dm, actually_resp=actually_resp)
-    await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
-                                     offender=member, reason=new_reason, actually_resp=actually_resp)
+        tim = await reminder.create_timer(
+            expires_on=unmute_time,
+            meta='mute_nodm' if no_dm else 'mute',
+            gid=ctx.guild.id,
+            reason=reason,
+            uid=member.id,
+            len_str='indefinitely ' if not length else length,
+            author_id=ctx.author.id
+        )
+    if not batch:
+        await ctx.send(embed=Embed(
+            description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
+            color=0x6785da))
+        act_id = await moderation_action(ctx, new_reason, "mute", member, no_dm=no_dm, actually_resp=actually_resp)
+        await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
+                                         offender=member, reason=new_reason, actually_resp=actually_resp)
+    return 10
     # dataIOa.save_json(self.modfilePath, modData)
     # await dutils.mod_log(f"Mod log: Mute", f"**offender:** {str(member)} ({member.id})\n"
     #                                       f"**Reason:** {reason}\n"
@@ -413,16 +485,28 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
     #                     colorr=0x33d8f0, author=ctx.author)
 
 
-async def moderation_action(ctx, reason, action_type, offender, no_dm=False, actually_resp=None):
+async def moderation_action(ctx, reason, action_type, offender, no_dm=False,
+                            actually_resp=None, guild=None, bot=None):
     """
     :param ctx: ctx
     :param reason: reason
     :param action_type: mute, warn, ban, blacklist
     :param offender: offender member
     :param no_dm: did the member recieve a dm of the action
-    :param actually_resp: in case the responsible isn't the one in the ctx
+    :param actually_resp: in case the responsible isn't the one in the ctx (has to be filled if ctx is None)
+    :param guild: has to be filled if ctx is None
+    :param bot: has to be filled if ctx is None
     :return: insert id or None if fails
     """
+    chan = 0
+    jump = "(auto)"
+    if ctx:
+        guild = ctx.guild
+        bot = ctx.bot
+        author = ctx.author
+        p = bot_pfx(bot, ctx.message)
+        chan = ctx.channel.id
+        jump = ctx.message.jump_url
     try:
         disp_n = "(left server)"
         if offender and hasattr(offender, 'id'):
@@ -433,20 +517,29 @@ async def moderation_action(ctx, reason, action_type, offender, no_dm=False, act
             resp = actually_resp
         else:
             resp = ctx.author
-        ins_id = Actions.insert(guild=ctx.guild.id, reason=reason, type=action_type, channel=ctx.channel.id,
-                                jump_url=ctx.message.jump_url, responsible=resp.id,
+        ins_id = Actions.insert(guild=guild.id, reason=reason, type=action_type, channel=chan,
+                                jump_url=jump, responsible=resp.id,
                                 offender=offender, user_display_name=disp_n, no_dm=no_dm).execute()
-        case_id = Actions.select().where(Actions.guild == ctx.guild.id).count()
+        case_id = Actions.select().where(Actions.guild == guild.id).count()
         Actions.update(case_id_on_g=case_id).where(Actions.id == ins_id).execute()
         return case_id
     except:
-        ctx.bot.logger.error(f"Failed to insert mod action: {ctx.message.jump_url}")
+        bot.logger.error(f"Failed to insert mod action: {jump}")
         return None
 
 
 async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
                                      offender=None, reason=None, warn_number=1,
-                                     actually_resp=None):
+                                     actually_resp=None, guild=None, bot=None):
+    # Make CTX None if it doesnt exist, but do make guild and bot and actually_resp are something
+    if ctx:
+        guild = ctx.guild
+        bot = ctx.bot
+        author = ctx.author
+        p = bot_pfx(bot, ctx.message)
+    else:
+        p = bot_pfx_by_gid(bot, guild.id)
+
     em = Embed()
     responsb = None
     if actually_resp:
@@ -455,7 +548,7 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         responsb = ctx.author
     if not reason: reason = "*No reason provided.\n" \
                             "Can still be supplied with:\n" \
-                            f"`{bot_pfx(ctx.bot, ctx.message)}case {act_id} reason here`*"
+                            f"`{p}case {act_id} reason here`*"
 
     em.add_field(name='Responsible', value=f'{responsb.mention}\n{responsb}', inline=True)
     off_left_id = -1  # -1 means that offender exists on the server
@@ -499,14 +592,17 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         title = f"User kicked"
         em.colour = 0xe1717d
 
+    if log_type == 'massmute':
+        pass # TODO
+
     # em.set_thumbnail(url=get_icon_url_for_member(ctx.author))
     if offender:
         em.set_author(name=title, icon_url=get_icon_url_for_member(offender))
     else:
         em.title = title
-    em.set_footer(text=f"{datetime.datetime.now().strftime('%c')} | "
+    em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')} | "
                        f'Case id: {act_id}')
-    await log(ctx.bot, this_embed=em, this_hook_type='modlog', guild=ctx.guild)
+    await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
 
 
 async def log(bot, title=None, txt=None, author=None,
@@ -546,7 +642,7 @@ async def log(bot, title=None, txt=None, author=None,
                     icon_url = author.avatar_url if 'gif' in str(author.avatar_url).split('.')[-1] else str(
                         author.avatar_url_as(format="png"))
                     em.set_author(name=f"{title}", icon_url=icon_url)
-                em.set_footer(text=f"{datetime.datetime.now().strftime('%c')}")
+                em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')}")
                 if imageUrl:
                     try:
                         em.set_thumbnail(url=imageUrl)

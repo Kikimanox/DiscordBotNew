@@ -10,7 +10,7 @@ def appendToFile(fileName, *args):
        canJoin, canJoinSooner: userID, guildID, timestamp"""
     with open(fileName, 'a+') as f:
         [f.write(str(l) + '\n') for l in args]
-        f.write(str(int(datetime.datetime.now().timestamp())) + '\n')
+        f.write(str(int(datetime.datetime.utcnow().timestamp())) + '\n')
 
 
 def reverseListby(arr, by):
