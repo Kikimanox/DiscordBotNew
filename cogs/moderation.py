@@ -1,5 +1,6 @@
 import asyncio
 import re
+import sys
 import time
 
 import discord
@@ -79,10 +80,11 @@ class Moderation(commands.Cog):
             await ctx.send("Something went wrong! Could not purge.")
 
     @commands.check(checks.manage_channels_check)
-    @commands.command()
+    @commands.command(aliases=["c"])
     async def case(self, ctx, case_id: int, *, reason):
         """Supply a reason to a moderation action witht out one"""
-        if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
+        if case_id > sys.maxsize: return await ctx.send("Case id too big, breaking system limits!")
+
 
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.check(checks.moderator_check)
@@ -123,8 +125,8 @@ class Moderation(commands.Cog):
         **Other extra agruments:** `compact`, `dm_me`, `hcw` (hide clear warns)
         """
         if isinstance(ctx.channel, discord.DMChannel): return await ctx.send("Can not use this cmmand in dms.")
-        if limit > 0x7FFFFFFF: return await ctx.send("Limit too big, breaking int limits!")
-        if case_id > 0x7FFFFFFF: return await ctx.send("Case id too big, breaking int limits!")
+        if limit > sys.maxsize: return await ctx.send("Limit too big, breaking system limits!")
+        if case_id > sys.maxsize: return await ctx.send("Case id too big, breaking system limits!")
         types = ['ban', 'banish', 'softban', 'softbanish', 'massban',
                  'blacklist', 'whitelist', 'warn', 'mute', 'unmute', '*ban*', 'massmute', 'rcb', 'unban', 'rcm']
         b_types = ['ban', 'banish', 'softban', 'softbanish', 'massban', 'rcb', 'unban']
@@ -909,7 +911,7 @@ class Moderation(commands.Cog):
         self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
         await ctx.send("Done.")
         bs = ', '.join([str(u) for u in user_ids])
-        act_id = await dutils.moderation_action(ctx, "", "blacklist", bs)
+        act_id = await dutils.moderation_action(ctx, bs, "blacklist", None)
         await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
 
     @commands.cooldown(1, 20, commands.BucketType.user)

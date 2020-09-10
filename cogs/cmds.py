@@ -147,6 +147,8 @@ class Cmds(commands.Cog):
                 return await ctx.send(
                     '- When adding an **image** custom command please provide a direct link to the image\n'
                     '- When adding a **text** command please start and end your text with \`\n'
+                    f'- When adding a multi word trigger command use: '
+                    f'`{dutils.bot_pfx(ctx.bot, ctx.message)}add "multi words here" <other args>\n'
                     '- For examples check help (`.add` or `.help add`)')
 
             if len(args) == 3:
