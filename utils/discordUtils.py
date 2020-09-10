@@ -95,30 +95,34 @@ def cleanUpBannedWords(bannerWordsArr, text):
     return text
 
 
-async def getHasteBinLinkOrMakeFileRet(ctx, result):
-    m = await ctx.send('Trying to upload to hastebin, this might take a bit')
-    async with aiohttp.ClientSession() as session:
-        async with session.post("https://hastebin.com/documents", data=str(result).encode('utf-8')) as resp:
-            if resp.status == 200:
-                haste_out = await resp.json()
-                url = "https://hastebin.com/" + haste_out["key"]
-            else:
-                with open("tmp/quote_output.txt", "w") as f:
-                    f.write(str(result))
-                with open("tmp/quote_output.txt", "rb") as f:
-                    py_output = File(f, "quote_output.txt")
-                    await ctx.send(
-                        content="Error posting to hastebin. Uploaded output to file instead.",
-                        file=py_output)
-                    try:
-                        os.remove("tmp/quote_output.txt")
-                    except:
-                        ctx.bot.logger.error("Failed to remove tmp/quote_output.txt")
+async def print_hastebin_or_file(ctx, result):
+    if len(result) > 1950:
+        m = await ctx.send('Trying to upload to hastebin, this might take a bit')
+        async with aiohttp.ClientSession() as session:
+            async with session.post("https://hastebin.com/documents", data=str(result).encode('utf-8')) as resp:
+                if resp.status == 200:
+                    haste_out = await resp.json()
+                    url = "https://hastebin.com/" + haste_out["key"]
+                    result = 'Large output. Posted to Hastebin: %s' % url
                     await m.delete()
-                    return ''
-    result = url
-    await m.delete()
-    return result
+                    return await ctx.send(result)
+                else:
+                    file = str(int(datetime.datetime.utcnow().timestamp()) - random.randint(100, 100000))
+                    with open(f"tmp/{file}.txt", "w") as f:
+                        f.write(str(result))
+                    with open(f"tmp/{file}.txt", "rb") as f:
+                        py_output = File(f, f"{file}.txt")
+                        await ctx.send(
+                            content="Error posting to hastebin. Uploaded output to file instead.",
+                            file=py_output)
+                        try:
+                            os.remove(f"tmp/{file}.txt")
+                        except:
+                            ctx.bot.logger.error("Failed to remove tmp/quote_output.txt")
+                        await m.delete()
+                        return
+    else:
+        return await ctx.send(result)
 
 
 async def result_printer(ctx, result):

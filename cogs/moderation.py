@@ -24,7 +24,7 @@ class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.tried_setup = False
-        # todo if unban remove, removing multi word cmds, cross out unavail inh cmd
+        # removing multi word cmds, cross out unavail inh cmd
 
     async def set_server_stuff(self):
         if not self.tried_setup:
@@ -686,7 +686,7 @@ class Moderation(commands.Cog):
         `[p]ban USER_ID optional reason goes here here`"""
         await dutils.ban_function(ctx, user, reason)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.kick_members_check)
     @commands.command()
     async def kick(self, ctx, user: discord.Member, *, reason=""):
         """Kick a user from the server
@@ -711,7 +711,7 @@ class Moderation(commands.Cog):
         except discord.Forbidden:
             await ctx.send('Could not kick user. Not enough permissions.')
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.kick_members_check)
     @commands.command(hidden=True)
     async def skick(self, ctx, user: discord.Member, *, reason=""):
         """Kick a user from the server (no dm)
@@ -894,16 +894,45 @@ class Moderation(commands.Cog):
     @commands.check(checks.ban_members_check)
     @commands.command()
     async def blacklist(self, ctx, *user_ids: int):
-        """Blacklist a user or users by id"""
+        """Blacklist a user or users by id
+
+        Use `blacklistshow` to see current blacklist
+        Use `blacklistremove` to remove ids from it"""
         user_ids = list(set(user_ids))  # remove dupes
         if len(user_ids) > 90: return await ctx.send("Can only blacklist up to 90 at once")
         data = [{'guild': ctx.guild.id, 'user_id': uid} for uid in user_ids]
+        de = Blacklist.delete().where(Blacklist.guild == ctx.guild.id, Blacklist.user_id << user_ids).execute()
+        if de > 0:
+            await ctx.send("Why did you try to insert ids that were already blacklisted? You can see "
+                           f"already blacklisted ids by using `{dutils.bot_pfx(ctx.bot, ctx.message)}blacklistshow`")
         Blacklist.insert_many(data).execute()
         self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
         await ctx.send("Done.")
         bs = ', '.join([str(u) for u in user_ids])
         act_id = await dutils.moderation_action(ctx, "", "blacklist", bs)
         await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
+
+    @commands.cooldown(1, 20, commands.BucketType.user)
+    @commands.check(checks.ban_members_check)
+    @commands.command(hidden=True)
+    async def blacklistshow(self, ctx):
+        # bs = [b for b in Blacklist.select().dicts()]
+        # if not bs: return await ctx.send("Blacklist is empty.")
+        # ret = ' '.join([b[''] for b in bs])
+        if -1 in self.bot.moderation_blacklist:
+            self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
+        if ctx.guild.id in self.bot.moderation_blacklist:
+            smb = self.bot.moderation_blacklist[ctx.guild.id]
+            if smb:
+                ret = f"```\n{' '.join([str(b) for b in smb])}```"
+                return await dutils.print_hastebin_or_file(ctx, ret)
+
+        await ctx.send("Blacklist is empty.")
+
+    @commands.check(checks.ban_members_check)
+    @commands.command(hidden=True)
+    async def blacklistremove(self, ctx, *user_ids: int):
+        pass
 
     @commands.check(checks.manage_messages_check)
     @commands.command(aliases=['clearwarn'])
