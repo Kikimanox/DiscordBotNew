@@ -59,10 +59,13 @@ class Reminders(commands.Cog):
         print("k")
 
     async def set_server_stuff(self):
+        print("We here 1")
         if not self.tried_setup:
+            self.tried_setup = True
             if not self.bot.from_serversetup:
+                print("We here 2")
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
-                self.tried_setup = True
+        print("We here 3")
 
     async def execute_reminder(self, timer: Timer):
         if timer.meta.startswith('mute'):
@@ -72,7 +75,6 @@ class Reminders(commands.Cog):
                 if user:
                     can_even_execute = True
                     sup = None
-                    if not self.tried_setup: await self.set_server_stuff()
                     if guild.id in self.bot.from_serversetup:
                         sup = self.bot.from_serversetup[guild.id]
                         if not sup['muterole']: can_even_execute = False
@@ -85,6 +87,9 @@ class Reminders(commands.Cog):
 
     async def short_timer_optimisation(self, seconds, timer):
         await asyncio.sleep(seconds)
+        if not self.bot.from_serversetup:
+            if not self.tried_setup:
+                await self.set_server_stuff()
         await self.execute_reminder(timer)
 
     async def call_timer(self, timer: Timer):
@@ -93,6 +98,9 @@ class Reminders(commands.Cog):
             rm.delete_instance()
         except:
             pass
+        if not self.bot.from_serversetup:
+            if not self.tried_setup:
+                await self.set_server_stuff()
         await self.execute_reminder(timer)
 
     async def dispatch_timers(self):

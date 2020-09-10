@@ -27,9 +27,9 @@ class Moderation(commands.Cog):
 
     async def set_server_stuff(self):
         if not self.tried_setup:
+            self.tried_setup = True
             if not self.bot.from_serversetup:
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
-                self.tried_setup = True
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.check(checks.ban_members_check)
@@ -352,6 +352,60 @@ class Moderation(commands.Cog):
         """
         raise commands.errors.BadArgument
 
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        if not self.bot.from_serversetup:
+            if not self.tried_setup:
+                await self.set_server_stuff()
+        can_even_execute = True
+        if before.guild.id in self.bot.from_serversetup:
+            sup = self.bot.from_serversetup[before.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if can_even_execute:
+            mute_role = discord.utils.get(before.guild.roles, id=self.bot.from_serversetup[before.guild.id]['muterole'])
+            if mute_role not in after.roles and mute_role in before.roles:
+                print("I am here now LISTENER!")
+                try:
+                    muted = Reminderstbl.get(Reminderstbl.guild == before.guild.id, Reminderstbl.user_id == before.id)
+                    muted.delete_instance()
+                except:
+                    pass
+                entry_found = False
+                en = None
+                async for entry in after.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=3):
+                    if entry.target.id != after.id: continue
+                    entry_found = True
+                    en = entry
+                    break
+                if not entry_found:
+                    await asyncio.sleep(3)  # if discord is laggy with uptating logs I guess
+                    async for entry in after.guild.audit_logs(action=discord.AuditLogAction.member_role_update,
+                                                              limit=10):
+                        if entry.target.id != after.id: continue
+                        entry_found = True
+                        en = entry
+                        break
+                if entry_found:
+                    reason = en.reason
+                    actually_resp = en.user
+                    member = en.target
+                    no_dm = True
+                    if reason and '|' in reason:
+                        no_dm = True if reason.split('|')[-1] == 'True' else False
+                        aa = reason.split('|')[:-1]
+                        if len(aa) > 1:
+                            reason = '|'.join(aa)
+                        else:
+                            reason = aa[0]
+                    act_id = await dutils.moderation_action(None, reason, "unmute", member, no_dm=no_dm,
+                                                            actually_resp=actually_resp,
+                                                            guild=before.guild, bot=self.bot)
+                    await dutils.post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
+                                                            reason=reason, actually_resp=actually_resp,
+                                                            guild=before.guild, bot=self.bot)
+
     @commands.check(checks.manage_messages_check)
     @commands.command()
     async def unmute(self, ctx, user: discord.Member, *, reason=""):
@@ -359,7 +413,9 @@ class Moderation(commands.Cog):
 
         `[p]unmute @user`
         `[p]unmute USER_ID`"""
-        if not self.tried_setup: await self.set_server_stuff()
+        if not self.bot.from_serversetup:
+            if not self.tried_setup:
+                await self.set_server_stuff()
         can_even_execute = True
         if ctx.guild.id in ctx.bot.from_serversetup:
             sup = ctx.bot.from_serversetup[ctx.guild.id]
@@ -411,7 +467,9 @@ class Moderation(commands.Cog):
         await self.el_mute(ctx, users, length, reason, True)
 
     async def el_mute(self, ctx, users, length, reason, no_dm):
-        if not self.tried_setup: await self.set_server_stuff()
+        if not self.bot.from_serversetup:
+            if not self.tried_setup:
+                await self.set_server_stuff()
         can_even_execute = True
         if ctx.guild.id in ctx.bot.from_serversetup:
             sup = ctx.bot.from_serversetup[ctx.guild.id]
@@ -447,9 +505,10 @@ class Moderation(commands.Cog):
                 rets[i] = rets[i] = f"{users[i]} - {rets[i]}"
             await ctx.send(embed=Embed(color=0x5e77bd, title="Mass mute",
                                        description='\n'.join(rets)))
-            rsn = reason + '\nOffenders: ' + ', '.join([f'{u} ({str(u.id)})' for u in users])
+            rsn = reason + '\n**Offenders:** ' + ', '.join([f'{u} ({str(u.id)})' for u in users])
             act_id = await dutils.moderation_action(ctx, rsn, "massmute", None)
-            await dutils.post_mod_log_based_on_type(ctx, 'massmute', act_id)
+            await dutils.post_mod_log_based_on_type(ctx, 'massmute', act_id, reason=rsn,
+                                                    mute_time_str='indefinitely' if not length else length)
 
     @commands.check(checks.manage_messages_check)
     @commands.command(name='nmute')

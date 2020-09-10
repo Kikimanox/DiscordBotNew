@@ -300,22 +300,23 @@ async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, 
         mute_role = discord.utils.get(guild.roles, id=bot.from_serversetup[guild.id]['muterole'])
         if mute_role not in guild.get_member(member.id).roles:
             return
-        await member.remove_roles(mute_role)
-        try:
-            muted = Reminderstbl.get(Reminderstbl.guild == guild.id, Reminderstbl.user_id == member.id)
-            muted.delete_instance()
-        except:
-            pass
+        await member.remove_roles(mute_role, reason=f'{reason}|{no_dm}')
+        # try: done in listener
+        #     muted = Reminderstbl.get(Reminderstbl.guild == guild.id, Reminderstbl.user_id == member.id)
+        #     muted.delete_instance()
+        # except:
+        #     pass
         try:
             if not no_dm:
                 await member.send(f'You have been unmuted on the {str(guild)} server.'
                                   f'{"" if not reason else f" Reason: **{reason}**"}')
         except:
-            act_id = await moderation_action(None, reason, "unmute", member, no_dm=no_dm,
-                                             actually_resp=actually_resp, guild=guild, bot=bot)
-            await post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
-                                             reason=reason, actually_resp=actually_resp,
-                                             guild=guild, bot=bot)
+            pass
+        # act_id = await moderation_action(None, reason, "unmute", member, no_dm=no_dm,
+        #                                  actually_resp=actually_resp, guild=guild, bot=bot)
+        # await post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
+        #                                  reason=reason, actually_resp=actually_resp,
+        #                                  guild=guild, bot=bot)
     except discord.errors.Forbidden:
         bot.logger.error(f"can not auto unmute {guild} {guild.id}")
 
@@ -335,23 +336,22 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
         if mute_role not in ctx.guild.get_member(member.id).roles:
             return await ctx.send("User is not muted")
 
-        await member.remove_roles(mute_role)
-        try:
-            muted = Reminderstbl.get(Reminderstbl.guild == ctx.guild.id, Reminderstbl.user_id == member.id)
-            muted.delete_instance()
-        except:
-            pass
+        await member.remove_roles(mute_role, reason=f'{reason}|{no_dm}')
+        # try: (now done in the listener)
+        #     muted = Reminderstbl.get(Reminderstbl.guild == ctx.guild.id, Reminderstbl.user_id == member.id)
+        #     muted.delete_instance()
+        # except:
+        #     pass
         await ctx.send(embed=Embed(description=f"{member.mention} has been unmuted.", color=0x76dfe3))
-
         try:
             if not no_dm:
                 await member.send(f'You have been unmuted on the {str(ctx.guild)} server.'
                                   f'{"" if not reason else f" Reason: **{reason}**"}')
         except:
             print(f"Member {'' if not member else member.id} disabled dms")
-            act_id = await moderation_action(ctx, reason, "unmute", member, no_dm=no_dm, actually_resp=actually_resp)
-            await post_mod_log_based_on_type(ctx, "unmute", act_id, offender=member,
-                                             reason=reason, actually_resp=actually_resp)
+            # act_id = await moderation_action(ctx, reason, "unmute", member, no_dm=no_dm, actually_resp=actually_resp)
+            # await post_mod_log_based_on_type(ctx, "unmute", act_id, offender=member,
+            #                                  reason=reason, actually_resp=actually_resp)
     except discord.errors.Forbidden:
         await ctx.send("💢 I don't have permission to do this.")
 
@@ -412,7 +412,7 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         #                                                             "reason": reason,
         #                                                             "until_ver2": unmute_time.strftime('%c')}
     try:
-        await member.add_roles(mute_role)
+        await member.add_roles(mute_role, reason=reason)
         try:
             if not no_dm:
                 await member.send(f'You have been muted on the {str(ctx.guild)} server '
@@ -593,7 +593,8 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         em.colour = 0xe1717d
 
     if log_type == 'massmute':
-        pass # TODO
+        title = "Users muted indefinitely" if mute_time_str == 'indefinitely' else f'Users muted for {mute_time_str}'
+        em.colour = 0x9e4b28
 
     # em.set_thumbnail(url=get_icon_url_for_member(ctx.author))
     if offender:
