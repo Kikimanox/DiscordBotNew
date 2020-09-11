@@ -370,7 +370,7 @@ class Moderation(commands.Cog):
                         rr = act['reason']
                         reason = f"{f'Not provided.' if not rr else f'{rr[:30]}'}"
                         reason = reason.replace('`', '\`')
-                        if len(rr) > 30: reason += '...'
+                        if rr and len(rr) > 30: reason += '...'
                         txt.append(f"{cr}[**Case {cid} ({typ})**]({act['jump_url']}) | "
                                    f"`{reason}`{cr}\n"
                                    f"{cr}**Offender: {act['user_display_name']}, on: "
