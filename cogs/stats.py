@@ -45,7 +45,7 @@ class Stats(commands.Cog):
 
         # [`hash`](url) message (offset)
         offset = tutils.human_timedelta(commit_time.astimezone(datetime.timezone.utc).replace(tzinfo=None), accuracy=1)
-        return f'[`{short_sha2}`](https://github.com/Kikimanox/DiscordBot/commit/{commit.hex}) {short} ({offset})'
+        return f'[`{short_sha2}`](https://github.com/Kikimanox/DiscordBotNew/commit/{commit.hex}) {short} ({offset})'
 
     def get_last_commits(self, count=5):
         repo = pygit2.Repository('.git')
