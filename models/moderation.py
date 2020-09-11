@@ -27,11 +27,6 @@ class Reminderstbl(BaseModel):
     executed_by = IntegerField()
 
 
-class Mutes(BaseModel):
-    id = AutoField()
-    # todo delete this when dropping on ppt once
-
-
 class Actions(BaseModel):
     id = AutoField()
     case_id_on_g = IntegerField(default=-1)
