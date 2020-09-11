@@ -20,7 +20,7 @@ class Cmds(commands.Cog):
     def set_commands(self):
         self.bot.all_cmds = CmdsManager.get_commands_formatted()
 
-    @commands.check(checks.admin_check)
+    @commands.check(checks.moderator_check)
     @commands.group()
     async def add(self, ctx, *, args):
         """Add a custom embedded command
@@ -39,6 +39,8 @@ class Cmds(commands.Cog):
         first_arg = args.split(' ')[0]
         if first_arg in ctx.command.all_commands:
             c = ctx.command.all_commands[first_arg]
+            if first_arg in ['raw', 'remove', 'inheritcmds', 'icmds'] and not await checks.admin_check(ctx):
+                raise commands.MissingPermissions(['Admin'])
             return await ctx.invoke(c, args)  # unsafe, becareful where you use this
         await self.add_cmd_fun(ctx, args)
         self.set_commands()
