@@ -142,7 +142,7 @@ def exit_bot(self):
 
 @commands.check(admin_check)
 @bot.command()
-async def prefix(ctx, new_prefix=""):
+async def prefix(ctx, *, new_prefix=""):
     """Check or change the prefix"""
     if '@' in new_prefix: return await ctx.send("The character `@` is not allowed in "
                                                 "the bot's prefix. Try again.")
@@ -165,7 +165,7 @@ async def prefix(ctx, new_prefix=""):
 
 @commands.check(owner_check)
 @bot.command(aliases=['gprefix'], hidden=True)
-async def globalprefix(ctx, new_prefix=""):
+async def globalprefix(ctx, *, new_prefix=""):
     """Check or change the main default prefix
 
     If you need spaces, do {space_here}
