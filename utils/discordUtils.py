@@ -35,7 +35,7 @@ def bot_pfx(bot, _message):
 def bot_pfx_by_gid(bot, gid):
     prefix = bot.config['BOT_PREFIX']
     if str(gid) not in bot.config['B_PREF_GUILD']: return prefix
-    return bot.config['B_PREF_GUILD'][gid]
+    return bot.config['B_PREF_GUILD'][str(gid)]
 
 
 def escape_at(content):
