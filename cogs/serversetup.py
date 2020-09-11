@@ -848,7 +848,7 @@ class Serversetup(commands.Cog):
 
                     if not do_wel_msg:
                         cnt = "💥 **User was banned right away because they were on the blacklist**"
-                        embed.color = 0x338026
+                        embed.colour = 0x338026
 
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed, content=cnt)
