@@ -971,7 +971,6 @@ class Moderation(commands.Cog):
                                                     reason=f'{ctx.message.content}|'
                                                            f'Removed **{de}** ids from the blacklist.')
 
-
     @commands.check(checks.manage_messages_check)
     @commands.command(aliases=['clearwarn'])
     async def clearwarns(self, ctx, user, *, reason=""):
@@ -1014,7 +1013,6 @@ class Moderation(commands.Cog):
         act_id = await dutils.moderation_action(ctx, reason, 'clearwarn', off)
         await dutils.post_mod_log_based_on_type(ctx, 'clearwarn', act_id, offender=off, reason=reason)
 
-
     @commands.check(checks.manage_messages_check)
     @commands.command()
     async def warn(self, ctx, user: discord.Member, *, reason):
@@ -1039,7 +1037,6 @@ class Moderation(commands.Cog):
                             f'server, reason: {reason}')
         except:
             print(f"Member {'' if not user else user.id} disabled dms")
-
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
@@ -1154,7 +1151,6 @@ class Moderation(commands.Cog):
                 await ctx.send(embed=embeds[0])
             else:
                 await SimplePaginator(extras=embeds).paginate(ctx)
-
 
     @staticmethod
     def ws_to_usr_dict(ws):
