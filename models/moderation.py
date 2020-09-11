@@ -50,7 +50,6 @@ class Blacklist(BaseModel):
 
 
 # db.drop_tables([Reminderstbl, Actions, Blacklist, Mutes])
-db.drop_tables([Reminderstbl])
 db.create_tables([Reminderstbl, Actions, Blacklist])
 
 
