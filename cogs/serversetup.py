@@ -901,7 +901,7 @@ class Serversetup(commands.Cog):
         ch_id = payload.channel_id
         g_id = payload.guild_id
         if g_id not in self.bot.from_serversetup: return
-        if str(ch_id) in self.bot.from_serversetup[gid]['ignored_chs_at_log']: return
+        if str(ch_id) in self.bot.from_serversetup[g_id]['ignored_chs_at_log']: return
         ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
               f"(ch: {ch_id}) (guild: {g_id})"
         # for message in msgs: Don't display them
