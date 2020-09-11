@@ -239,7 +239,7 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         hook_ok = regular_ch.id == hook.channel_id
     if hook and hook_ok:
         try:
-            return await hook.send(embed=embed, content=content)
+            await hook.send(embed=embed, content=content)
         except:
             return await regular_ch.send(embed=embed, content=content)
     else:
@@ -615,10 +615,16 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         em.title = title
     em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')} | "
                        f'Case id: {act_id}')
-    msg = await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
-    if msg:
-        Actions.update(logged_at=msg.jump_url).where(Actions.case_id_on_g == act_id,
-                                                     Actions.guild == guild.id).execute()
+    now = datetime.datetime.utcnow()
+    await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
+    if not bot.from_serversetup:
+        bot.from_serversetup = await SSManager.get_setup_formatted(bot)
+    if guild.id not in bot.from_serversetup: return
+    chan = bot.from_serversetup[guild.id]['modlog']
+    if chan:
+        Actions.update(logged_after=now, logged_in_ch=chan.id
+                       ).where(Actions.case_id_on_g == act_id,
+                               Actions.guild == guild.id).execute()
 
 
 async def log(bot, title=None, txt=None, author=None,

@@ -106,8 +106,51 @@ class Moderation(commands.Cog):
                                 f"Old reason: {old_reason}\n"
                                 f"New reason: {reason}")
             try:
-                pass
+                if not ctx.bot.from_serversetup:
+                    ctx.bot.from_serversetup = await SSManager.get_setup_formatted(ctx.bot)
+                if ctx.guild.id not in ctx.bot.from_serversetup: return
+                chan = ctx.bot.from_serversetup[ctx.guild.id]['modlog']
+                log_in_chan = None
+                if chan.id != case.logged_in_ch:
+                    log_in_chan = ctx.guild.get_channel(case.logged_in_ch)
+                else:
+                    log_in_chan = chan
+                if not log_in_chan:
+                    return
+                msg = None
+                d = case.logged_after - datetime.timedelta(minutes=5)
+
+                stuff = await log_in_chan.history(limit=2000, after=d).filter(
+                    lambda m: len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
+                        m.embeds[0].footer.text)).flatten()
+                if not stuff:
+                    return
+                msg = stuff[-1]
+                if msg:
+                    em = msg.embeds[0]
+                    em = em.copy()
+                    # cnt = msg.content
+                    old_rsn = ""
+                    i = -1
+                    for f in em.fields:
+                        i += 1
+                        if f.name == 'Reason':
+                            old_rsn = f.value
+                            break
+                    if em.fields[i].name == 'Reason':
+                        em.set_field_at(i, value=reason, name='Reason')
+                    cnt = f'**Case {case_id} reason updated by {ctx.author} ({ctx.author.id}).**\n' \
+                          f'Old reason: ```\n{dutils.escape_at(old_rsn)}```' \
+                          f'Edited case log:'
+                    sup = self.bot.from_serversetup[ctx.guild.id]
+                    case.logged_after = datetime.datetime.utcnow()
+                    case.logged_in_ch = log_in_chan.id
+                    case.save()
+                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_modlog'],
+                                               regular_ch=sup['modlog'], embed=em, content=cnt)
+                    # await chan.send(content=cnt, embed=Embed)
             except:
+                traceback.print_exc()
                 ctx.bot.logger.error(f"Something went wrong when trying to update case {case_id} message\n")
         except:
             await ctx.send("There is no case with that id.")
