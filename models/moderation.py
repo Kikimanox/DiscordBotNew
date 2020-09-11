@@ -45,6 +45,7 @@ class Actions(BaseModel):
     user_display_name = CharField(null=True)
     type = CharField()  # mute, warn, ban(types) blacklist
     jump_url = CharField()
+    logged_at = CharField(null=True)
 
 
 class Blacklist(BaseModel):
@@ -52,7 +53,7 @@ class Blacklist(BaseModel):
     user_id = IntegerField()
 
 
-# db.drop_tables([Mutes, Reminderstbl])
+# db.drop_tables([Actions])
 # db.drop_tables([Reminderstbl, Actions, Blacklist, Mutes])
 db.create_tables([Reminderstbl, Actions, Blacklist, Mutes])
 

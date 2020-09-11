@@ -38,6 +38,10 @@ def bot_pfx_by_gid(bot, gid):
     return bot.config['B_PREF_GUILD'][gid]
 
 
+def escape_at(content):
+    return content.replace('@', '@\u200b')
+
+
 async def getChannel(ctx, arg):
     channels = []
     channel = arg.strip()
@@ -235,9 +239,9 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         hook_ok = regular_ch.id == hook.channel_id
     if hook and hook_ok:
         try:
-            await hook.send(embed=embed, content=content)
+            return await hook.send(embed=embed, content=content)
         except:
-            await regular_ch.send(embed=embed, content=content)
+            return await regular_ch.send(embed=embed, content=content)
     else:
         if not hook_ok:
             warn = "⚠**Logging hook and channel id mismatch, please fix!**⚠\n" \
@@ -248,7 +252,7 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
             bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
                              f"{guild.id})**")
             content = f"{'' if not content else content}\n\n{warn}"
-        await regular_ch.send(embed=embed, content=content)
+        return await regular_ch.send(embed=embed, content=content)
 
 
 async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
@@ -611,7 +615,10 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         em.title = title
     em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')} | "
                        f'Case id: {act_id}')
-    await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
+    msg = await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
+    if msg:
+        Actions.update(logged_at=msg.jump_url).where(Actions.case_id_on_g == act_id,
+                                                     Actions.guild == guild.id).execute()
 
 
 async def log(bot, title=None, txt=None, author=None,
@@ -664,13 +671,13 @@ async def log(bot, title=None, txt=None, author=None,
                     cnt = content
                     i += 1
 
-                await try_send_hook(guild, bot, hook=sup[f'hook_{hook_typ}'],
-                                    regular_ch=sup[hook_typ], embed=em, content=cnt)
+                return await try_send_hook(guild, bot, hook=sup[f'hook_{hook_typ}'],
+                                           regular_ch=sup[hook_typ], embed=em, content=cnt)
         else:
-            await try_send_hook(guild, bot,
-                                hook=sup[f'hook_{hook_typ}'],
-                                regular_ch=sup[hook_typ], embed=this_embed,
-                                content=this_content)
+            return await try_send_hook(guild, bot,
+                                       hook=sup[f'hook_{hook_typ}'],
+                                       regular_ch=sup[hook_typ], embed=this_embed,
+                                       content=this_content)
 
     except:
         traceback.print_exc()
