@@ -60,17 +60,21 @@ class Quoting(commands.Cog):
             #                  f'[Jump to message]({msg.jump_url})'
 
         if len(msg.embeds) > 0:
-            if msg.content:
-                await ctx.send("**Content quote:**")
-                await ctx.send(embed=em)
+            e = msg.embeds[0]
+            b = (e.thumbnail and e.thumbnail.url in msg.content)
+            if not (b and not e.description and not e.title and not e.image):
+                if msg.content:
+                    await ctx.send("**Content quote:**")
+                    await ctx.send(embed=em)
+                else:
+                    await ctx.send(embed=Embed(description=f"*[This message]({msg.jump_url}) has no content*"))
+                await ctx.send("**Embed quote:**")
+                for emm in msg.embeds:
+                    await ctx.send(embed=emm)
             else:
-                await ctx.send(embed=Embed(description=f"*[This message]({msg.jump_url}) has no content*"))
-            await ctx.send("**Embed quote:**")
-            for emm in msg.embeds:
-                await ctx.send(embed=emm)
-            return
-
-        await ctx.send(embed=em)
+                await ctx.send(embed=em)
+        else:
+            await ctx.send(embed=em)
 
     @quote.error
     async def avatar_error(self, ctx, error):
