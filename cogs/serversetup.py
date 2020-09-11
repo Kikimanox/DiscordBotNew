@@ -887,20 +887,23 @@ class Serversetup(commands.Cog):
 
     @tasks.loop(seconds=4.0)
     async def check_bulk_msg_delete(self):
-        if self.bulk_deleted:
-            self.bulk_deleted_before = self.bulk_deleted.copy()
-            await asyncio.sleep(10)
-            for k, v in self.bulk_deleted.items():
-                if self.bulk_deleted_before[k] == self.bulk_deleted[k]:
-                    val = self.bulk_deleted_before[k]
-                    g_id, ch_id = k.split('_')
-                    del self.bulk_deleted_before[k]
-                    del self.bulk_deleted[k]
-                    g = self.bot.get_guild(int(g_id))
-                    await dutils.log(self.bot, "Bulk message delete detected", f"{val - 1} messages deleted in "
-                                                                               f"{(g.get_channel(int(ch_id))).mention}",
-                                     None, 0x960f0f, guild=g)
-                    d = 0
+        try:
+            if self.bulk_deleted:
+                self.bulk_deleted_before = self.bulk_deleted.copy()
+                await asyncio.sleep(10)
+                for k, v in self.bulk_deleted.items():
+                    if self.bulk_deleted_before[k] == self.bulk_deleted[k]:
+                        val = self.bulk_deleted_before[k]
+                        g_id, ch_id = k.split('_')
+                        del self.bulk_deleted[k]
+                        del self.bulk_deleted_before[k]
+                        g = self.bot.get_guild(int(g_id))
+                        await dutils.log(self.bot, "Bulk message delete detected", f"{val - 1} messages deleted in "
+                                                                                   f"{(g.get_channel(int(ch_id))).mention}",
+                                         None, 0x960f0f, guild=g)
+                        d = 0
+        except:
+            pass
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
