@@ -34,7 +34,7 @@ def bot_pfx(bot, _message):
 
 def bot_pfx_by_gid(bot, gid):
     prefix = bot.config['BOT_PREFIX']
-    if gid not in bot.config['B_PREF_GUILD']: return prefix
+    if str(gid) not in bot.config['B_PREF_GUILD']: return prefix
     return bot.config['B_PREF_GUILD'][gid]
 
 
