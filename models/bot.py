@@ -24,5 +24,5 @@ class BotBanlist(BaseModel):
     when = DateTimeField(default=datetime.utcnow)
 
 
-# db.drop_tables([BotBlacklist, BotBanlist])
+db.drop_tables([BotBlacklist, BotBanlist])
 db.create_tables([BotBlacklist, BotBanlist])

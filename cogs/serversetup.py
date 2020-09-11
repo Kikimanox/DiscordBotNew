@@ -386,12 +386,14 @@ class Serversetup(commands.Cog):
     @dontlogchannel.command()
     async def add(self, ctx, channel: discord.TextChannel):
         """Add chanenl to be ignore by the bot when logging"""
+        await ctx.message.delete()
         await self.do_setup(add_ignore=str(channel.id), ctx=ctx)
 
     @commands.check(checks.admin_check)
     @dontlogchannel.command()
     async def remove(self, ctx, channel: discord.TextChannel):
         """Remove chanenl from ignored channels when loggin"""
+        await ctx.message.delete()
         await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
 
     @commands.check(checks.admin_check)
