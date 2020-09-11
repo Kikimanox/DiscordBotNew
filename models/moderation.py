@@ -19,12 +19,12 @@ class BaseModel(Model):
 class Reminderstbl(BaseModel):
     id = AutoField()
     meta = CharField()
-    guild = IntegerField()
-    reason = CharField()
-    user_id = IntegerField()
-    len_str = CharField()
     expires_on = DateTimeField()
-    executed_by = IntegerField()
+    executed_by = IntegerField(null=True)
+    guild = IntegerField(null=True)
+    reason = CharField(null=True)
+    user_id = IntegerField(null=True)
+    len_str = CharField(null=True)
 
 
 class Actions(BaseModel):
@@ -50,6 +50,7 @@ class Blacklist(BaseModel):
 
 
 # db.drop_tables([Reminderstbl, Actions, Blacklist, Mutes])
+db.drop_tables([Reminderstbl])
 db.create_tables([Reminderstbl, Actions, Blacklist])
 
 
