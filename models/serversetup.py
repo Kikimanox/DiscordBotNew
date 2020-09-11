@@ -35,6 +35,7 @@ class WelcomeMsg(BaseModel):
     title = CharField(default='')
     color = IntegerField(default=int(f"0x{dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16))
     target_ch = IntegerField()  # target channel
+    backup_hook_id = IntegerField()  # target channel
     display_mem_count = BooleanField(default=True)
 
 
@@ -54,6 +55,7 @@ class Logging(BaseModel):
 
 
 # db.drop_tables([Guild, WelcomeMsg, Logging, Webhook])
+db.drop_tables([WelcomeMsg])
 db.create_tables([Guild, WelcomeMsg, Logging, Webhook])
 
 
@@ -71,7 +73,7 @@ class SSManager:
         try:
             wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
         except Exception as e:
-            wm = WelcomeMsg.create(target_ch=chid, guild=g)
+            wm = WelcomeMsg.create(target_ch=chid, guild=g, backup_hook_id=0)
         return wm
 
     @staticmethod

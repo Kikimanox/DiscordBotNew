@@ -411,6 +411,9 @@ class Serversetup(commands.Cog):
         `[p]sup wm m`
         or
         `[p]setup welcomemessage mainsetup`
+        In case of activating raid mode, the welcome message
+        welcoming will be changed to a webhook that the bot
+        will create right after running this command.
         """
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
@@ -428,9 +431,34 @@ class Serversetup(commands.Cog):
         The only requiered argument is the welcome channel id, you will be querried for the rest of the data
         during this comamnd's execution. Example below will set the channel with the following id to be the welcome one.
 
-        `[p]setup welcomemsg mainsetup 589190883857924154`"""
+        `[p]setup welcomemsg mainsetup 589190883857924154`
+
+        In case of activating raid mode, the welcome message
+        welcoming will be changed to a webhook that the bot
+        will create right after running this command."""
+
         db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
+
         db_wmsg = SSManager.get_or_create_and_get_welcomemsg(db_guild, target_channel.id, ctx.guild.id)
+        hook = None
+        if db_wmsg.backup_hook_id != 0:
+            hook = db_wmsg.backup_hook_id
+        if not hook:
+            try:
+                hook = await target_channel.create_webhook(name=f'Tmp name', reason="Backup hook "
+                                                                                    "for welcoming "
+                                                                                    "in case of a "
+                                                                                    "raid")
+                db_wmsg.backup_hook_id = hook.id
+                db_wmsg.save()
+                url = str(ctx.bot.user.avatar_url).replace('.webp', '.png')
+                tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
+                fnn = await dutils.saveFile(url, 'tmp', tf)  # copy from dutils because circular import
+                with open(fnn, 'rb') as fp:
+                    await hook.edit(name=f'{ctx.bot.user.display_name}'[:32], avatar=fp.read())
+                os.remove(fnn)
+            except discord.errors.Forbidden:
+                return await ctx.send("Please give me manage webhooks permissions first to even run this command.")
 
         # This code is copy pasted from the old bot code, didn't feel like it needed to be changed
         # (even though it's pretty spaghetti code)
