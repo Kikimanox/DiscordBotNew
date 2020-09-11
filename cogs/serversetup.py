@@ -157,13 +157,13 @@ class Serversetup(commands.Cog):
                 return await ctx.send(rr)
         if hook_leavejoin_id == -10:
             try:
-                h = await logging_leavejoin_channel.create_webhook(name="log_hook_tmp_name")
+                h = await logging_leavejoin_channel.create_webhook(name="joinlog_hook_tmp_name")
                 hook_leavejoin_id = h.id
             except:
                 return await ctx.send(rr)
         if hook_modlog_id == -10:
             try:
-                h = await logging_modlog_channel.create_webhook(name="log_hook_tmp_name")
+                h = await logging_modlog_channel.create_webhook(name="modlog_hook_tmp_name")
                 hook_modlog_id = h.id
             except:
                 return await ctx.send(rr)
