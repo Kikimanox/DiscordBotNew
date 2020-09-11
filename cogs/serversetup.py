@@ -387,20 +387,20 @@ class Serversetup(commands.Cog):
     @dontlogchannel.command()
     async def add(self, ctx, channels: commands.Greedy[discord.Role]):
         """Add chanenls (max 3 at once) to be ignore by the bot when logging"""
-        await ctx.message.delete()
         if len(channels) > 3: return await ctx.send("Command takes up to 3 channels at once for a batch update.")
         for channel in channels:
             await self.do_setup(add_ignore=str(channel.id), ctx=ctx)
+        await ctx.message.delete()
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @dontlogchannel.command()
     async def remove(self, ctx, channels: commands.Greedy[discord.Role]):
         """Remove chanenls (max 3 at once) from ignored channels when loggin"""
-        await ctx.message.delete()
         if len(channels) > 3: return await ctx.send("Command takes up to 3 channels at once for a batch update.")
         for channel in channels:
             await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
+        await ctx.message.delete()
 
     @commands.check(checks.admin_check)
     @setup.group(aliases=['wm'])
