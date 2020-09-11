@@ -143,47 +143,50 @@ class Serversetup(commands.Cog):
         If you don't want to setup webhooks by hand.
         You can just leave the webhook parameters empty
         and the bot will make the webhooks."""
-        await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
-        await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
-        await self.do_setup(ctx=ctx, logging_modlog=logging_modlog_channel, quiet_succ=True)
-        rr = ("Could not create logging webhook, missing perms, "
-              "please update my perms so I can "
-              "make webhooks.")
-        if hook_logging_id == 0:
-            try:
-                h = await logging_regular_channel.create_webhook(name="log_hook_tmp_name")
-                hook_logging_id = h.id
-            except:
-                return await ctx.send(rr)
-        if hook_leavejoin_id == 0:
-            try:
-                h = await logging_leavejoin_channel.create_webhook(name="joinlog_hook_tmp_name")
-                hook_leavejoin_id = h.id
-            except:
-                return await ctx.send(rr)
-        if hook_modlog_id == 0:
-            try:
-                h = await logging_modlog_channel.create_webhook(name="modlog_hook_tmp_name")
-                hook_modlog_id = h.id
-            except:
-                return await ctx.send(rr)
-
-        await self.do_setup(hook_reg=hook_logging_id, hook_reg_target=logging_regular_channel, ctx=ctx,
-                            quiet_succ=True)
-        await self.do_setup(hook_leavejoin=hook_leavejoin_id, hook_leavejoin_target=logging_leavejoin_channel, ctx=ctx,
-                            quiet_succ=True)
-        await self.do_setup(hook_modlog=hook_modlog_id, hook_modlog_target=logging_modlog_channel, ctx=ctx,
-                            quiet_succ=True)
-        await self.do_setup(mod_role=moderator_role, ctx=ctx, quiet_succ=True)
-        await self.do_setup(mute_role=mute_role, ctx=ctx, quiet_succ=True)
-        await ctx.send("--------------\n"
-                       "*The following message always appears.\n"
-                       "If you didn't get any errors during the setup it actually worked.\n"
-                       "If you got errors ignore the following msg...*")
-        await ctx.send("Done!! As for the muted role, it's stored but...\n"
-                       "This doesn't mean the channel permissions are setup though.\n"
-                       "If they weren't set by hand yet, you can use:\n"
-                       f"`{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolechperms <role_id>/<role_name>`")
+        m = await ctx.send("Setup started")
+        async with ctx.typing():
+            await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
+            await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
+            await self.do_setup(ctx=ctx, logging_modlog=logging_modlog_channel, quiet_succ=True)
+            rr = ("Could not create logging webhook, missing perms, "
+                  "please update my perms so I can "
+                  "make webhooks.")
+            if hook_logging_id == 0:
+                try:
+                    h = await logging_regular_channel.create_webhook(name="log_hook_tmp_name")
+                    hook_logging_id = h.id
+                except:
+                    return await ctx.send(rr)
+            if hook_leavejoin_id == 0:
+                try:
+                    h = await logging_leavejoin_channel.create_webhook(name="joinlog_hook_tmp_name")
+                    hook_leavejoin_id = h.id
+                except:
+                    return await ctx.send(rr)
+            if hook_modlog_id == 0:
+                try:
+                    h = await logging_modlog_channel.create_webhook(name="modlog_hook_tmp_name")
+                    hook_modlog_id = h.id
+                except:
+                    return await ctx.send(rr)
+            await self.do_setup(hook_reg=hook_logging_id, hook_reg_target=logging_regular_channel, ctx=ctx,
+                                quiet_succ=True)
+            await self.do_setup(hook_leavejoin=hook_leavejoin_id, hook_leavejoin_target=logging_leavejoin_channel,
+                                ctx=ctx,
+                                quiet_succ=True)
+            await self.do_setup(hook_modlog=hook_modlog_id, hook_modlog_target=logging_modlog_channel, ctx=ctx,
+                                quiet_succ=True)
+            await self.do_setup(mod_role=moderator_role, ctx=ctx, quiet_succ=True)
+            await self.do_setup(mute_role=mute_role, ctx=ctx, quiet_succ=True)
+            await ctx.send("--------------\n"
+                           "*The following message always appears.\n"
+                           "If you didn't get any errors during the setup it actually worked.\n"
+                           "If you got errors ignore the following msg...*")
+            await ctx.send("Done!! As for the muted role, it's stored but...\n"
+                           "This doesn't mean the channel permissions are setup though.\n"
+                           "If they weren't set by hand yet, you can use:\n"
+                           f"`{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolechperms <role_id>/<role_name>`")
+            await m.delete()
 
     @commands.check(checks.admin_check)
     @setup.group()
