@@ -382,19 +382,23 @@ class Serversetup(commands.Cog):
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @dontlogchannel.command()
-    async def add(self, ctx, channel: discord.TextChannel):
-        """Add chanenl to be ignore by the bot when logging"""
+    async def add(self, ctx, channels: commands.Greedy[discord.Role]):
+        """Add chanenls to be ignore by the bot when logging"""
         await ctx.message.delete()
-        await self.do_setup(add_ignore=str(channel.id), ctx=ctx)
+        for channel in channels:
+            await self.do_setup(add_ignore=str(channel.id), ctx=ctx)
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @dontlogchannel.command()
-    async def remove(self, ctx, channel: discord.TextChannel):
-        """Remove chanenl from ignored channels when loggin"""
+    async def remove(self, ctx, channels: commands.Greedy[discord.Role]):
+        """Remove chanenls from ignored channels when loggin"""
         await ctx.message.delete()
-        await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
+        for channel in channels:
+            await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
 
     @commands.check(checks.admin_check)
     @setup.group(aliases=['wm'])
@@ -853,6 +857,7 @@ class Serversetup(commands.Cog):
         if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
                 message.guild.id not in self.bot.from_serversetup:
             return
+        if str(message.channel.id) in self.bot.from_serversetup['ignored_chs_at_log']: return
         txt = f"By: {message.author.mention} (id: {message.author.id}) in " \
               f"{message.channel.mention}\n\n{message.content}\n"
         if len(message.attachments) > 0:
@@ -865,6 +870,8 @@ class Serversetup(commands.Cog):
         msgs = payload.cached_messages
         ch_id = payload.channel_id
         g_id = payload.guild_id
+        if g_id not in self.bot.from_serversetup: return
+        if str(ch_id) in self.bot.from_serversetup['ignored_chs_at_log']: return
         ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
               f"(ch: {ch_id}) (guild: {g_id})"
         # for message in msgs: Don't display them
@@ -910,6 +917,7 @@ class Serversetup(commands.Cog):
         if isinstance(before.channel, discord.DMChannel) or before.author.bot or \
                 before.guild.id not in self.bot.from_serversetup:
             return
+        if str(after.channel.id) in self.bot.from_serversetup['ignored_chs_at_log']: return
         try:
             txt = f"By: {before.author.mention} (id: {before.author.id}) in {before.channel.mention}\n\n" \
                   f"**Before:**\n{before.content}\n\n**After:**\n{after.content}\n" \
@@ -969,7 +977,7 @@ class Serversetup(commands.Cog):
                     db_guild.ignored_chs_at_log = " ".join(arr)
                     db_guild.save()
                 else:
-                    await ctx.send("This channel is already being ignored")
+                    await ctx.send(f"<#{add_ignore}> is already being ignored.")
                     raise Exception("_fail")
             elif remove_ignore and len(kwargs) == 2:
                 if remove_ignore in db_guild.ignored_chs_at_log:
@@ -978,7 +986,7 @@ class Serversetup(commands.Cog):
                     db_guild.ignored_chs_at_log = " ".join(arr)
                     db_guild.save()
                 else:
-                    await ctx.send("This channel is not ignored")
+                    await ctx.send(f"<#{remove_ignore}> is not being ignored.")
                     raise Exception("_fail")
 
             else:
