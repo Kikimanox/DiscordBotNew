@@ -158,7 +158,7 @@ class SSManager:
     @staticmethod
     async def create_or_update_logging_hook(g, hook_id, tar_id, typ, raw_hook, ctx):
         if raw_hook.channel.id != tar_id:
-            await ctx.send(f"Setup failed! The webhook's actual target channel is {raw_hook.channel.mention}. "
+            await ctx.send(f"Setup failed! The webhook {hook_id} actual target channel is {raw_hook.channel.mention}. "
                            f"Please fix that by hand first or change your argument")
             raise Exception('_fail')
         h_url = raw_hook.url

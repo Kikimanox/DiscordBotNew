@@ -834,20 +834,21 @@ class Serversetup(commands.Cog):
         msgs = payload.cached_messages
         ch_id = payload.channel_id
         g_id = payload.guild_id
-        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')} -- Displaying cached messages\n" \
-              f"(ch: {ch_id}) (guild: {g_id})\n\n"
-        for message in msgs:
-            if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
-                    message.guild.id not in self.bot.from_serversetup:
-                continue
-            txt = f"{message.author.name} (id: {message.author.id}): {message.content}"
-            if len(message.attachments) > 0:
-                txt += '\n**Attachments:**\n'
-                txt += '\n'.join([a.filename for a in message.attachments])
-            # await dutils.log("Message deleted", txt, message.author, 0xd6260b)
-            ret += (txt + '\n')
-        if len(msgs) > 0:
-            print(ret)
+        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
+              f"(ch: {ch_id}) (guild: {g_id})"
+        # for message in msgs: Don't display them
+        #     if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
+        #             message.guild.id not in self.bot.from_serversetup:
+        #         continue
+        #     txt = f"{message.author.name} (id: {message.author.id}): {message.content}"
+        #     if len(message.attachments) > 0:
+        #         txt += '\n**Attachments:**\n'
+        #         txt += '\n'.join([a.filename for a in message.attachments])
+        #     # await dutils.log("Message deleted", txt, message.author, 0xd6260b)
+        #     ret += (txt + '\n')
+        # if len(msgs) > 0:
+        #     print(ret)
+        print(ret)
         kk = f'{g_id}_{ch_id}'
         if len(payload.message_ids) < 3: return
         if kk not in self.bulk_deleted: self.bulk_deleted[kk] = 0

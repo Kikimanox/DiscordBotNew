@@ -239,7 +239,7 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
         hook_ok = regular_ch.id == hook.channel_id
     if hook and hook_ok:
         try:
-            await hook.send(embed=embed, content=content)
+            await hook.send(embed=embed, content=content) #todo: nani (smthing wrong at bulk delete)
         except:
             return await regular_ch.send(embed=embed, content=content)
     else:
