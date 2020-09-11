@@ -17,7 +17,7 @@ from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
 import datetime
 
 
-class ServerSetup(commands.Cog):
+class Serversetup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.tryParseOnce = 0
@@ -227,22 +227,123 @@ class ServerSetup(commands.Cog):
         """Logging for moderation related actions"""
         await self.do_setup(ctx=ctx, logging_modlog=channel)
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @setup.command()
-    async def muterolenew(self, ctx, role: discord.Role):
+    async def muterolenew(self, ctx, *, role: discord.Role):
         """Setup muterole
         Note, this command may be used with any role, but it's main
         purpose/use is to setup the mute role perms on the channels."""
+        if role.is_default():
+            return await ctx.send('Cannot use the @\u200beveryone role.')
+        if role > ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+            return await ctx.send('This role is higher than your highest role.')
+        if role > ctx.me.top_role:
+            return await ctx.send('This role is higher than my highest role.')
+        old_mute_role = None
+        if ctx.guild.id in self.bot.from_serversetup:
+            sup = self.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']:
+                pass
+            else:
+                old_mute_role = discord.utils.get(ctx.guild.roles, id=sup['muterole'])
+                if old_mute_role and old_mute_role.id == role.id: return await ctx.send(
+                    "This role is already in use as "
+                    "the mute role.")
+                maxx = 10
+                some_owner = (ctx.author.id == ctx.guild.owner_id or ctx.author.id == ctx.bot.config['OWNER_ID'])
+                if len(old_mute_role.members) > maxx and not some_owner:
+                    return await ctx.send(f"More than {maxx} users have this role. Because of that only the server or "
+                                          f"bot owner may execute this command. Please contact them.")
+                prompt = await dutils.prompt(ctx, "Mute role already exists, are you sure you want to update it?")
+                if not prompt:
+                    await ctx.message.delete()
+                    return
+                if not old_mute_role: await ctx.send("It seems like the old mute role has been deleted from the server")
+                async with ctx.typing():
+                    m1 = await ctx.send("Automatically applying channel permissions and then "
+                                        "replacing the old mute role on every member.")
+                    m0 = await self.update_mute_role_perms(ctx, role)
+                    m2 = await ctx.send("Applied channel permissions.")
+                    good = 0
+                    m3 = None
+                    if old_mute_role:
+                        for m in old_mute_role.members:
+                            try:
+                                await m.add_roles(role, reason=f"{ctx.author} {ctx.author.id} updated the mute role")
+                                good += 1
+                            except:
+                                pass
+                        m3 = await ctx.send(f"Updated the role for {good}/{len(old_mute_role.members)} users")
+                    await self.do_setup(mute_role=role, ctx=ctx)
+                    m4 = None
+                    m5 = None
+                    if old_mute_role:
+                        m4 = await ctx.send("Removing old mute role from members")
+                        good = 0
+                        ll = len(old_mute_role.members)
+                        for m in old_mute_role.members:
+                            try:
+                                await m.remove_roles(old_mute_role,
+                                                     reason=f"{ctx.author} {ctx.author.id} updated the mute role")
+                                good += 1
+                            except:
+                                pass
+                        m5 = await ctx.send(f"Removed the old fole from from {good}/{ll} users")
+                    await asyncio.sleep(10)
+                    await m0.delete()
+                    await m1.delete()
+                    await m2.delete()
+                    if m3: await m3.delete()
+                    if m4: await m4.delete()
+                    if m5: await m5.delete()
+                    return
+
         await self.do_setup(mute_role=role, ctx=ctx)
-        await ctx.send("Stored/updated the muted role in the database.\n"
+        await ctx.send("Stored the muted role in the database.\n"
                        "This doesn't mean the channel permissions are setup though.\n"
                        "If they weren't set by hand yet, you can use:\n"
                        f"`{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolechperms <role_id>/<role_name>`\n")
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.admin_check)
+    @setup.group()
+    async def muterolechperms(self, ctx, *, role: discord.Role):
+        """Update channel perms for the mute role"""
+        if role.is_default():
+            return await ctx.send('Cannot use the @\u200beveryone role.')
+        if role > ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+            return await ctx.send('This role is higher than your highest role.')
+        if role > ctx.me.top_role:
+            return await ctx.send('This role is higher than my highest role.')
+        await self.update_mute_role_perms(ctx, role)
+
+    @staticmethod
+    async def update_mute_role_perms(ctx, role):
+        msg = await ctx.send('Applying channel permissions')
+        for ch in ctx.guild.text_channels:
+            overwrites_muted = ch.overwrites_for(role)
+            overwrites_muted.send_messages = False
+            overwrites_muted.add_reactions = False
+            await ch.set_permissions(role, overwrite=overwrites_muted)
+        for ch in ctx.guild.voice_channels:
+            overwrites_muted = ch.overwrites_for(role)
+            overwrites_muted.speak = False
+            overwrites_muted.connect = False
+            await ch.set_permissions(role, overwrite=overwrites_muted)
+        await msg.edit(content='Done, setup complete')
+        return msg
+
     @commands.check(checks.admin_check)
     @setup.command()
-    async def modrole(self, ctx, role: discord.Role):
+    async def modrole(self, ctx, *, role: discord.Role):
         """Setup moderator specific role"""
+        if role.is_default():
+            return await ctx.send('Cannot use the @\u200beveryone role.')
+        if role > ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+            return await ctx.send('This role is higher than your highest role.')
+        if role > ctx.me.top_role:
+            return await ctx.send('This role is higher than my highest role.')
         await self.do_setup(mod_role=role, ctx=ctx)
 
     @commands.check(checks.admin_check)
@@ -263,24 +364,6 @@ class ServerSetup(commands.Cog):
     async def remove(self, ctx, channel: discord.TextChannel):
         """Remove chanenl from ignored channels when loggin"""
         await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
-
-    @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.check(checks.admin_check)
-    @setup.group()
-    async def muterolechperms(self, ctx, role: discord.Role):
-        """Update channel perms for the mute role"""
-        msg = await ctx.send('Applying channel permissions')
-        for ch in ctx.guild.text_channels:
-            overwrites_muted = ch.overwrites_for(role)
-            overwrites_muted.send_messages = False
-            overwrites_muted.add_reactions = False
-            await ch.set_permissions(role, overwrite=overwrites_muted)
-        for ch in ctx.guild.voice_channels:
-            overwrites_muted = ch.overwrites_for(role)
-            overwrites_muted.speak = False
-            overwrites_muted.connect = False
-            await ch.set_permissions(role, overwrite=overwrites_muted)
-        await msg.edit(content='Done, setup complete')
 
     @commands.check(checks.admin_check)
     @setup.group(aliases=['wm'])
@@ -880,5 +963,5 @@ class ServerSetup(commands.Cog):
 
 
 def setup(bot):
-    ext = ServerSetup(bot)
+    ext = Serversetup(bot)
     bot.add_cog(ext)

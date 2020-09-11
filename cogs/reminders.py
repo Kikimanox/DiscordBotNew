@@ -59,13 +59,10 @@ class Reminders(commands.Cog):
         print("k")
 
     async def set_server_stuff(self):
-        print("We here 1")
         if not self.tried_setup:
             self.tried_setup = True
             if not self.bot.from_serversetup:
-                print("We here 2")
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
-        print("We here 3")
 
     async def execute_reminder(self, timer: Timer):
         if timer.meta.startswith('mute'):
