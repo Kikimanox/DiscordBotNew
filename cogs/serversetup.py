@@ -131,11 +131,11 @@ class Serversetup(commands.Cog):
                                logging_regular_channel: discord.TextChannel,
                                logging_leavejoin_channel: discord.TextChannel,
                                logging_modlog_channel: discord.TextChannel,
-                               hook_logging_id: int = -10,
+                               hook_logging_id: int = 0,
                                # hook_logging_target_ch: discord.TextChannel,
-                               hook_leavejoin_id: int = -10,
+                               hook_leavejoin_id: int = 0,
                                # hook_leavejoin_target_ch: discord.TextChannel,
-                               hook_modlog_id: int = -10
+                               hook_modlog_id: int = 0
                                # hook_modlog_target_ch: discord.TextChannel,
                                ):
         """Setup (almost) everything at once
