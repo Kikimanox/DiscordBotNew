@@ -143,7 +143,11 @@ def exit_bot(self):
 @commands.check(admin_check)
 @bot.command()
 async def prefix(ctx, *, new_prefix=""):
-    """Check or change the prefix"""
+    """Check or change the prefix ({space_here} for a space at the end)
+
+    If you need spaces, do {space_here}
+    and it will be replaced with spaces
+    ...Or just use spaces (usable if you need the mat the end)"""
     if '@' in new_prefix: return await ctx.send("The character `@` is not allowed in "
                                                 "the bot's prefix. Try again.")
     if not new_prefix:
@@ -169,7 +173,8 @@ async def globalprefix(ctx, *, new_prefix=""):
     """Check or change the main default prefix
 
     If you need spaces, do {space_here}
-    and it will be replaced with spaces"""
+    and it will be replaced with spaces
+    ...Or just use spaces (usable if you need the mat the end)"""
     if '@' in new_prefix: return await ctx.send("The character `@` is not allowed in "
                                                 "the bot's prefix. Try again.")
     if not new_prefix:
