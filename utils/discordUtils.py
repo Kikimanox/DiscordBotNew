@@ -233,7 +233,7 @@ async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=No
         return confirm
 
 
-async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
+async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None, log_logMismatch=True):
     hook_ok = False
     if hasattr(hook, 'channel_id'):
         hook_ok = regular_ch.id == hook.channel_id
@@ -244,14 +244,15 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None):
             return await regular_ch.send(embed=embed, content=content)
     else:
         if not hook_ok:
-            warn = "⚠**Logging hook and channel id mismatch, please fix!**⚠\n" \
-                   "Can probably be fiex by changing the hook's target channel.\n" \
-                   f"Or `{bot_pfx(bot, regular_ch)}setup webhooks` if there's something else wrong.\n" \
-                   f"Target channel has to be {regular_ch.mention}" \
-                   f"(tip: run the command `{bot_pfx(bot, regular_ch)}sup cur`)"
-            bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
-                             f"{guild.id})**")
-            content = f"{'' if not content else content}\n\n{warn}"
+            if log_logMismatch:
+                warn = "⚠**Logging hook and channel id mismatch, please fix!**⚠\n" \
+                       "Can probably be fiex by changing the hook's target channel.\n" \
+                       f"Or `{bot_pfx(bot, regular_ch)}setup webhooks` if there's something else wrong.\n" \
+                       f"Target channel has to be {regular_ch.mention}" \
+                       f"(tip: run the command `{bot_pfx(bot, regular_ch)}sup cur`)"
+                bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
+                                 f"{guild.id})**")
+                content = f"{'' if not content else content}\n\n{warn}"
         return await regular_ch.send(embed=embed, content=content)
 
 
