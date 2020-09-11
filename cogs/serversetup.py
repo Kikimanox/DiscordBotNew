@@ -149,19 +149,19 @@ class Serversetup(commands.Cog):
         rr = ("Could not create logging webhook, missing perms, "
               "please update my perms so I can "
               "make webhooks.")
-        if hook_logging_id == -10:
+        if hook_logging_id == 0:
             try:
                 h = await logging_regular_channel.create_webhook(name="log_hook_tmp_name")
                 hook_logging_id = h.id
             except:
                 return await ctx.send(rr)
-        if hook_leavejoin_id == -10:
+        if hook_leavejoin_id == 0:
             try:
                 h = await logging_leavejoin_channel.create_webhook(name="joinlog_hook_tmp_name")
                 hook_leavejoin_id = h.id
             except:
                 return await ctx.send(rr)
-        if hook_modlog_id == -10:
+        if hook_modlog_id == 0:
             try:
                 h = await logging_modlog_channel.create_webhook(name="modlog_hook_tmp_name")
                 hook_modlog_id = h.id
