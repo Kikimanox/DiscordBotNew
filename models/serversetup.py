@@ -35,7 +35,7 @@ class WelcomeMsg(BaseModel):
     title = CharField(default='')
     color = IntegerField(default=int(f"0x{dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16))
     target_ch = IntegerField()  # target channel
-    backup_hook_id = IntegerField()  # target channel
+    backup_hook = IntegerField()  # target channel
     display_mem_count = BooleanField(default=True)
 
 
@@ -73,7 +73,7 @@ class SSManager:
         try:
             wm = WelcomeMsg.get(WelcomeMsg.guild == gid)
         except Exception as e:
-            wm = WelcomeMsg.create(target_ch=chid, guild=g, backup_hook_id=0)
+            wm = WelcomeMsg.create(target_ch=chid, guild=g, backup_hook=0)
         return wm
 
     @staticmethod
@@ -228,6 +228,11 @@ class SSManager:
                         await bot.fetch_channel(ret[g['id']]['welcomemsg']['target_ch'])
                 except:
                     ret[g['id']]['welcomemsg'] = None
+                try:
+                    ret[g['id']]['welcomemsg']['backup_hook'] = \
+                        await bot.fetch_webhook(ret[g['id']]['welcomemsg']['backup_hook'])
+                except:
+                    ret[g['id']]['welcomemsg']['backup_hook'] = None
                 if not wel['content'] and not wel['desc'] and not wel['images'] and not wel['title']:
                     ret[g['id']]['welcomemsg'] = None
         return ret

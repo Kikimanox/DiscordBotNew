@@ -441,15 +441,15 @@ class Serversetup(commands.Cog):
 
         db_wmsg = SSManager.get_or_create_and_get_welcomemsg(db_guild, target_channel.id, ctx.guild.id)
         hook = None
-        if db_wmsg.backup_hook_id != 0:
-            hook = db_wmsg.backup_hook_id
+        if db_wmsg.backup_hook != 0:
+            hook = db_wmsg.backup_hook
         if not hook:
             try:
                 hook = await target_channel.create_webhook(name=f'Tmp name', reason="Backup hook "
                                                                                     "for welcoming "
                                                                                     "in case of a "
                                                                                     "raid")
-                db_wmsg.backup_hook_id = hook.id
+                db_wmsg.backup_hook = hook.id
                 db_wmsg.save()
                 url = str(ctx.bot.user.avatar_url).replace('.webp', '.png')
                 tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
