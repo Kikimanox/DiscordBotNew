@@ -85,8 +85,11 @@ class Moderation(commands.Cog):
         """Supply a reason to a moderation action witht out one"""
         if case_id > sys.maxsize: return await ctx.send("Case id too big, breaking system limits!")
         try:
+            was_empty = False
             old_reason = ""
             case = Actions.get(Actions.guild == ctx.guild.id, Actions.case_id_on_g == case_id)
+            if not case.reason:
+                was_empty = True
             if case.reason:
                 confirm = await dutils.prompt(ctx, "This case already has a reason:\n```\n"
                                                    f"{dutils.escape_at(case.reason)}```\n"
@@ -139,8 +142,9 @@ class Moderation(commands.Cog):
                             break
                     if em.fields[i].name == 'Reason':
                         em.set_field_at(i, value=reason, name='Reason')
+                    old_rsn = dutils.escape_at(old_rsn) if not was_empty else "No reason provided."
                     cnt = f'**Case {case_id} reason updated by {ctx.author} ({ctx.author.id}).**\n' \
-                          f'Old reason: ```\n{dutils.escape_at(old_rsn)}```' \
+                          f'Old reason: ```\n{old_rsn}```' \
                           f'Edited case log:'
                     sup = self.bot.from_serversetup[ctx.guild.id]
                     case.logged_after = datetime.datetime.utcnow()
