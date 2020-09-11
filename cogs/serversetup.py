@@ -131,17 +131,43 @@ class Serversetup(commands.Cog):
                                logging_regular_channel: discord.TextChannel,
                                logging_leavejoin_channel: discord.TextChannel,
                                logging_modlog_channel: discord.TextChannel,
-                               hook_logging_id: int,
+                               hook_logging_id: int = -10,
                                # hook_logging_target_ch: discord.TextChannel,
-                               hook_leavejoin_id: int,
+                               hook_leavejoin_id: int = -10,
                                # hook_leavejoin_target_ch: discord.TextChannel,
-                               hook_modlog_id: int
+                               hook_modlog_id: int = -10
                                # hook_modlog_target_ch: discord.TextChannel,
                                ):
-        """Setup (almost) everything at once"""
+        """Setup (almost) everything at once
+
+        If you don't want to setup webhooks by hand.
+        You can just leave the webhook parameters empty
+        and the bot will make the webhooks."""
         await self.do_setup(ctx=ctx, logging_reg=logging_regular_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_leavejoin=logging_leavejoin_channel, quiet_succ=True)
         await self.do_setup(ctx=ctx, logging_modlog=logging_modlog_channel, quiet_succ=True)
+        rr = ("Could not create logging webhook, missing perms, "
+              "please update my perms so I can "
+              "make webhooks.")
+        if hook_logging_id == -10:
+            try:
+                h = await logging_regular_channel.create_webhook(name="log_hook_tmp_name")
+                hook_logging_id = h.id
+            except:
+                return await ctx.send(rr)
+        if hook_leavejoin_id == -10:
+            try:
+                h = await logging_leavejoin_channel.create_webhook(name="log_hook_tmp_name")
+                hook_leavejoin_id = h.id
+            except:
+                return await ctx.send(rr)
+        if hook_modlog_id == -10:
+            try:
+                h = await logging_modlog_channel.create_webhook(name="log_hook_tmp_name")
+                hook_modlog_id = h.id
+            except:
+                return await ctx.send(rr)
+
         await self.do_setup(hook_reg=hook_logging_id, hook_reg_target=logging_regular_channel, ctx=ctx,
                             quiet_succ=True)
         await self.do_setup(hook_leavejoin=hook_leavejoin_id, hook_leavejoin_target=logging_leavejoin_channel, ctx=ctx,
