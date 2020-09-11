@@ -1034,6 +1034,10 @@ class Serversetup(commands.Cog):
             await ctx.send("Something went wrong." + info)
             return False
 
+    @commands.check(checks.moderator_check)
+    @commands.group(aliases=['r'])
+    async def raid(self, ctx):
+        pass
 
 def setup(bot):
     ext = Serversetup(bot)
