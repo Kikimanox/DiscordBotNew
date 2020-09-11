@@ -859,7 +859,7 @@ class Serversetup(commands.Cog):
         if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
                 message.guild.id not in self.bot.from_serversetup:
             return
-        if str(message.channel.id) in self.bot.from_serversetup['ignored_chs_at_log']: return
+        if str(message.channel.id) in self.bot.from_serversetup[message.guild.id]['ignored_chs_at_log']: return
         txt = f"By: {message.author.mention} (id: {message.author.id}) in " \
               f"{message.channel.mention}\n\n{message.content}\n"
         if len(message.attachments) > 0:
@@ -873,7 +873,7 @@ class Serversetup(commands.Cog):
         ch_id = payload.channel_id
         g_id = payload.guild_id
         if g_id not in self.bot.from_serversetup: return
-        if str(ch_id) in self.bot.from_serversetup['ignored_chs_at_log']: return
+        if str(ch_id) in self.bot.from_serversetup[gid]['ignored_chs_at_log']: return
         ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
               f"(ch: {ch_id}) (guild: {g_id})"
         # for message in msgs: Don't display them
@@ -919,7 +919,7 @@ class Serversetup(commands.Cog):
         if isinstance(before.channel, discord.DMChannel) or before.author.bot or \
                 before.guild.id not in self.bot.from_serversetup:
             return
-        if str(after.channel.id) in self.bot.from_serversetup['ignored_chs_at_log']: return
+        if str(before.channel.id) in self.bot.from_serversetup[before.guild.id]['ignored_chs_at_log']: return
         try:
             txt = f"By: {before.author.mention} (id: {before.author.id}) in {before.channel.mention}\n\n" \
                   f"**Before:**\n{before.content}\n\n**After:**\n{after.content}\n" \
