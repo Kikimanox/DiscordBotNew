@@ -927,7 +927,7 @@ class Serversetup(commands.Cog):
         try:
             if self.bulk_deleted:
                 self.bulk_deleted_before = self.bulk_deleted.copy()
-                await asyncio.sleep(10)
+                await asyncio.sleep(8)
                 for k, v in self.bulk_deleted.items():
                     if self.bulk_deleted_before[k] == self.bulk_deleted[k]:
                         val = self.bulk_deleted_before[k]
@@ -940,7 +940,7 @@ class Serversetup(commands.Cog):
                                          None, 0x960f0f, guild=g)
                         d = 0
         except:
-            pass
+            await asyncio.sleep(2)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -1038,6 +1038,7 @@ class Serversetup(commands.Cog):
     @commands.group(aliases=['r'])
     async def raid(self, ctx):
         pass
+
 
 def setup(bot):
     ext = Serversetup(bot)
