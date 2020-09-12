@@ -22,6 +22,7 @@ import subprocess
 import git
 import re
 
+from models.antiraid import ArGuild, ArManager
 from models.serversetup import SSManager
 from utils.checks import owner_check, admin_check
 from utils.help import Help
@@ -52,27 +53,29 @@ def get_pre_or_mention(_bot, _message):
 bot = commands.Bot(command_prefix=get_pre_or_mention)
 ###
 bot.all_cmds = {}
-bot.from_serversetup = {}
 bot.running_tasks = []
+bot.from_serversetup = {}
+bot.anti_raid = ArManager.get_ar_data()
 bot.moderation_blacklist = {-1: 'dummy'}
-bot.banned_cuz_blacklist = {}
-bot.just_banned_by_bot = {}
-bot.just_kicked_by_bot = {}
-bot.just_muted_by_bot = {}
 ###
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
 bot.help_command = Help()
 bot.before_run_cmd = 0
+bot.just_banned_by_bot = {}
+bot.just_kicked_by_bot = {}
+bot.just_muted_by_bot = {}
+bot.banned_cuz_blacklist = {}
 
 
 @bot.event
 async def on_ready():
     ###
     if hasattr(bot, 'all_cmds') and not bot.all_cmds: bot.all_cmds = {}
-    if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
-    if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
     if hasattr(bot, 'running_tasks') and not bot.running_tasks: bot.running_tasks = []
+    if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
+    if hasattr(bot, 'anti_raid') and not bot.anti_raid: bot.anti_raid = ArManager.get_ar_data()
+    if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
     ###
     bot.config = dataIOa.load_json('config.json')
     bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
@@ -211,7 +214,6 @@ async def on_message(message):
 
         if message.author.id in bot.banlist:
             return
-
 
         if message.content.startswith(f'<@{bot.config["CLIENT_ID"]}>'):
             pfx_len = len(f'<@{bot.config["CLIENT_ID"]}>')
