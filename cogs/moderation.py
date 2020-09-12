@@ -432,7 +432,7 @@ class Moderation(commands.Cog):
         Which means that the offender will **not recieve a DM of the action**
 
         Commands that can be ran in silend mode are:
-        `ban`, `banish`, `softban`, `softbanish`, `mute`, `kick`
+        `ban`, `banish`, `softban`, `softbanish`, `mute`, `kick`, `unmute`
 
         Example: `[p]sban @user` will ban the user but
         will not dm them that they were banned.
@@ -606,6 +606,28 @@ class Moderation(commands.Cog):
                                                        f"<role>`")
 
         await dutils.unmute_user(ctx, user, reason)
+
+    @commands.check(checks.manage_messages_check)
+    @commands.command()
+    async def sunmute(self, ctx, user: discord.Member, *, reason=""):
+        """Unmutes a user if they are muted. (no dm)
+
+        `[p]sunmute @user`
+        `[p]sunmute USER_ID`"""
+        if not self.bot.from_serversetup:
+            if not self.tried_setup:
+                await self.set_server_stuff()
+        can_even_execute = True
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            sup = ctx.bot.from_serversetup[ctx.guild.id]
+            if not sup['muterole']: can_even_execute = False
+        else:
+            can_even_execute = False
+        if not can_even_execute: return await ctx.send(f"Mute role not setup. "
+                                                       f"Use `{dutils.bot_pfx(ctx.bot, ctx.message)}setup muterolenew "
+                                                       f"<role>`")
+
+        await dutils.unmute_user(ctx, user, reason, no_dm=True)
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
