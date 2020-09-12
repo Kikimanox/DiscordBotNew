@@ -708,3 +708,23 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None):
 def get_icon_url_for_member(member):
     return member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else \
         str(member.avatar_url_as(format="png"))
+
+async def saveFiles(links, savePath='tmp', fName=''):
+    # https://cdn.discordapp.com/attachments/583817473334312961/605911311401877533/texture.png
+    fileNames = []
+    for ll in links:
+        try:
+            urll = ll.url
+        except:
+            urll = ll
+        fileName = f'{savePath}/' + str(datetime.datetime.now().timestamp()).replace('.', '') \
+                   + '.' + str(urll).split('.')[-1] \
+            if not fName else f'{savePath}/{fName}_{str(datetime.datetime.now().timestamp()).replace(".", "")}' + \
+                              '.' + str(urll).split('.')[-1]
+        fileNames.append(fileName)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(urll) as r:
+                with open(fileName, 'wb') as fd:
+                    async for data in r.content.iter_chunked(1024):
+                        fd.write(data)
+    return fileNames

@@ -201,18 +201,24 @@ async def on_message(message):
         print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
 
     pfx = str(get_pre(bot, message))
-    if message.content == f'<@!{bot.config["CLIENT_ID"]}>': return await message.channel.send(
-        embed=(
-            Embed(title='My prefix here is', description=pfx).set_footer(text='You can change it with '
-                                                                              f'{pfx}prefix')))
+    if message.content in [f'<@!{bot.config["CLIENT_ID"]}>', f'<@{bot.config["CLIENT_ID"]}>']:
+        return await message.channel.send(
+            embed=(Embed(title='My prefix here is', description=pfx).set_footer(text='You can change it with '
+                                                                                     f'{pfx}prefix')))
 
-    if message.content.startswith(pfx) or message.content.split(' ')[0] == f'<@!{bot.config["CLIENT_ID"]}>':
+    if message.content.startswith(pfx) or message.content.split(' ')[0] in [f'<@!{bot.config["CLIENT_ID"]}>',
+                                                                            f'<@{bot.config["CLIENT_ID"]}>']:
 
         if message.author.id in bot.banlist:
             return
 
-        pfx_len = len(pfx) if message.content.startswith(pfx) else (len(
-            f'<@!{bot.config["CLIENT_ID"]}>') + 1)
+
+        if message.content.startswith(f'<@{bot.config["CLIENT_ID"]}>'):
+            pfx_len = len(f'<@{bot.config["CLIENT_ID"]}>')
+        elif message.content.startswith(f'<@!{bot.config["CLIENT_ID"]}>'):
+            pfx_len = len(f'<@!{bot.config["CLIENT_ID"]}>')
+        else:
+            pfx_len = len(pfx)
         possible_cmd = message.content[pfx_len:].split(' ')[0]
 
         if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
