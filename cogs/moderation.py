@@ -9,6 +9,7 @@ from discord import Member, Embed, File, utils
 import os
 import traceback
 
+from models.antiraid import ArGuild
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
@@ -608,7 +609,7 @@ class Moderation(commands.Cog):
         await dutils.unmute_user(ctx, user, reason)
 
     @commands.check(checks.manage_messages_check)
-    @commands.command()
+    @commands.command(hidden=True)
     async def sunmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted. (no dm)
 
@@ -1228,6 +1229,128 @@ class Moderation(commands.Cog):
             if not w['offender'] in ret: ret[w['offender']] = []
             ret[w['offender']].append(w)
         return ret
+
+    @commands.check(checks.moderator_check)
+    @commands.command()
+    async def lock(self, ctx, *, channels=""):
+        """Lock msg sending in a channel or channels (must be mentioned).
+
+        `[p] lock` - Locks current channel
+        `[p] lock silent` - Locks current channel (no feedback)
+        `[p] lock #ch1 #ch2 #ch3` - Locks multiple channels
+        `[p] lock silent #ch1 #ch2 #ch3` - Locks multiple channels silently (no feedback)
+        `[p] lock all` - Locks all channels and posts the lock feedback in all channels
+        `[p] lock all silent` - Locks all channels silently
+
+        This command will also set perma locked channels.
+        """
+        try:
+            all_ch = False
+            silent = False
+            if "silent" in channels.lower().strip():
+                silent = True
+
+            if "all" in channels.lower().strip():
+                all_ch = True
+                user = ctx.guild.get_member(self.bot.user.id)
+                channels = [channel for channel in ctx.guild.text_channels if
+                            channel.permissions_for(user).manage_roles]
+            elif len(ctx.message.channel_mentions) == 0:
+                channels = [ctx.channel]
+            elif len(ctx.message.channel_mentions) == 0:
+                channels = [ctx.channel]
+            else:
+                channels = ctx.message.channel_mentions
+            perma_locked_channels = []
+            m = None
+            if all_ch:
+                m = await ctx.send(f"Locking all channels{'' if not silent else ' silently'}")
+            for c in channels:
+                ow = ctx.guild.default_role
+                overwrites_everyone = c.overwrites_for(ow)
+                if all_ch and overwrites_everyone.send_messages is False:
+                    perma_locked_channels.append(str(c.id))
+                    continue
+                elif overwrites_everyone.send_messages is False:
+                    await ctx.send(f"🔒 {c.mention} is already locked down. Use `.unlock` to unlock.")
+                    continue
+                overwrites_everyone.send_messages = False
+                await c.set_permissions(ow, overwrite=overwrites_everyone)
+                if not silent:
+                    await c.send("🔒 Channel locked.")
+
+            if perma_locked_channels:
+                try:
+                    g = ArGuild.get(ArGuild.id == ctx.guild.id)
+                    g.perma_locked_channels = ' '.join(perma_locked_channels)
+                except:
+                    ArGuild.insert(id=ctx.guild.id).execute()
+            if m: await m.delete()
+            if all_ch:
+                await ctx.send('Done.')
+        except discord.errors.Forbidden:
+            await ctx.send("💢 I don't have permission to do this.")
+
+    @commands.check(checks.moderator_check)
+    @commands.command()
+    async def unlock(self, ctx, *, channels=""):
+        """Unlock message sending in the channel.
+
+        `[p] unlock` - Unlocks current channel
+        `[p] unlock silent` - Unlocks current channel (no feedback)
+        `[p] unlock #ch1 #ch2 #ch3` - Unlocks multiple channels
+        `[p] unlock silent #ch1 #ch2 #ch3` - Unlocks multiple channels silently (no feedback)
+        `[p] unlock all` - Unlocks all all non perma locked
+        channels and posts the lock feedback in all channels
+        `[p] unlock all silent` - Unlocks all non perma locked channels silently
+
+        When doing the last two commands, be sure to have ran lock all (silent)
+        at least once so perma locked channels are setup ...
+        """
+        try:
+            all_ch = False
+            silent = False
+            if "silent" in channels.lower().strip():
+                silent = True
+            if "all" in channels.lower().strip():
+                all_ch = True
+                user = ctx.guild.get_member(self.bot.user.id)
+                channels = [channel for channel in ctx.guild.text_channels if
+                            channel.permissions_for(user).manage_roles]
+            elif len(ctx.message.channel_mentions) == 0:
+                channels = [ctx.channel]
+            else:
+                channels = ctx.message.channel_mentions
+            perma_locked_channels = []
+            if all_ch:
+                try:
+                    g = ArGuild.get(ArGuild.id == ctx.guild.id)
+                    perma_locked_channels = g.perma_locked_channels.split()
+                except:
+                    if all_ch: return await ctx.send(
+                        'Can not use `unlock all` without `lock all` '
+                        'being used at least once before on the server.')
+            m = None
+            if all_ch:
+                m = await ctx.send(f"Unlocking all channels{'' if not silent else ' silently'}")
+            for c in channels:
+                ow = ctx.guild.default_role
+                overwrites_everyone = c.overwrites_for(ow)
+                if all_ch and str(c.id) in perma_locked_channels:
+                    continue
+                elif overwrites_everyone.send_messages is None:
+                    await ctx.send(f"🔓 {c.mention} is already unlocked.")
+                    continue
+                overwrites_everyone.send_messages = None
+                await c.set_permissions(ow, overwrite=overwrites_everyone)
+                if not silent:
+                    await c.send("🔓 Channel unlocked.")
+            if m: await m.delete()
+            if all_ch:
+                return await ctx.send('Done.')
+
+        except discord.errors.Forbidden:
+            await ctx.send("💢 I don't have permission to do this.")
 
 
 def setup(bot):
