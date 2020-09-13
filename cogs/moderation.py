@@ -80,7 +80,7 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             await ctx.send("Something went wrong! Could not purge.")
 
-    @commands.check(checks.manage_channels_check)
+    @commands.check(checks.moderator_check)
     @commands.command(aliases=["c"])
     async def case(self, ctx, case_id: int, *, reason):
         """Supply a reason to a moderation action witht out one"""
@@ -1243,6 +1243,8 @@ class Moderation(commands.Cog):
         `[p] lock all silent` - Locks all channels silently
 
         This command will also set perma locked channels.
+
+        (`[p]lock all silent` = `[p] raid lockdown`)
         """
         await dutils.lock_channels(ctx, channels)
 
