@@ -236,21 +236,24 @@ async def on_message(message):
         pfx_len = len(f'<@{bot.config["CLIENT_ID"]}>') + 1
     elif message.content.startswith(f'<@!{bot.config["CLIENT_ID"]}>'):
         pfx_len = len(f'<@!{bot.config["CLIENT_ID"]}>') + 1
-    else:
+    elif message.content.startswith(pfx):
         pfx_len = len(pfx)
-    possible_cmd = message.content[pfx_len:].split(' ')[0]
-    if possible_cmd in bot.all_commands:
-        is_actually_cmd = True
-    if not is_actually_cmd:
-        if message.guild and message.guild.id in bot.all_cmds:
-            if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list']:
-                ctype = 1
-            elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['cmds_name_list']:
-                ctype = 2
-            elif possible_cmd in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
-                ctype = 3
-            elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
-                ctype = 4
+    else:
+        pfx_len = -1
+    if pfx_len > 0:
+        possible_cmd = message.content[pfx_len:].split(' ')[0]
+        if possible_cmd in bot.all_commands:
+            is_actually_cmd = True
+        if not is_actually_cmd:
+            if message.guild and message.guild.id in bot.all_cmds:
+                if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list']:
+                    ctype = 1
+                elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['cmds_name_list']:
+                    ctype = 2
+                elif possible_cmd in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
+                    ctype = 3
+                elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
+                    ctype = 4
 
     # if it was a command
     if (is_actually_cmd or ctype > 0) or arl > 1:  # catch messages here for anti spam on arl > 1 regardless of cmd
