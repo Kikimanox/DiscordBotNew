@@ -198,7 +198,7 @@ async def globalprefix(ctx, *, new_prefix=""):
 
 @bot.event
 async def on_message(message):
-    if message.guild.id != 202845295158099980: return  # todo del this
+    # if message.guild.id != 202845295158099980: return  # to do del this
     if not bot.is_ready():
         await bot.wait_until_ready()
 
