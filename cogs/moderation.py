@@ -1309,6 +1309,36 @@ class Moderation(commands.Cog):
         except discord.errors.Forbidden:
             await ctx.send("💢 I don't have permission to do this.")
 
+    @commands.check(checks.moderator_check)
+    @commands.command(aliases=["hcf"])
+    async def hidechannelfrom(self, ctx, channel: discord.TextChannel, members: commands.Greedy[discord.Member]):
+        """Hide channel from memebrs"""
+        didnt_work = ""
+        for m in members:
+            try:
+                await channel.set_permissions(m, read_messages=False)
+            except:
+                didnt_work += f'{m.mention} `{m}`\n'
+        if didnt_work:
+            await ctx.send(embed=Embed(title="Didn't work on", description=didnt_work))
+        else:
+            await ctx.send("Done.")
+
+    @commands.check(checks.moderator_check)
+    @commands.command(aliases=["uhcf"])
+    async def unhidechannelfrom(self, ctx, channel: discord.TextChannel, members: commands.Greedy[discord.Member]):
+        """Unhide channel from memebrs"""
+        didnt_work = ""
+        for m in members:
+            try:
+                await channel.set_permissions(m, read_messages=True)
+            except:
+                didnt_work += f'{m.mention} `{m}`\n'
+        if didnt_work:
+            await ctx.send(embed=Embed(title="Didn't work on", description=didnt_work))
+        else:
+            await ctx.send("Done.")
+
 
 def setup(bot):
     ext = Moderation(bot)
