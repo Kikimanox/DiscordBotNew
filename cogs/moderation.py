@@ -1235,12 +1235,12 @@ class Moderation(commands.Cog):
     async def lock(self, ctx, *, channels=""):
         """Lock msg sending in a channel or channels (must be mentioned).
 
-        `[p] lock` - Locks current channel
-        `[p] lock silent` - Locks current channel (no feedback)
-        `[p] lock #ch1 #ch2 #ch3` - Locks multiple channels
-        `[p] lock silent #ch1 #ch2 #ch3` - Locks multiple channels silently (no feedback)
-        `[p] lock all` - Locks all channels and posts the lock feedback in all channels
-        `[p] lock all silent` - Locks all channels silently
+        `[p]lock` - Locks current channel
+        `[p]lock silent` - Locks current channel (no feedback)
+        `[p]lock #ch1 #ch2 #ch3` - Locks multiple channels
+        `[p]lock silent #ch1 #ch2 #ch3` - Locks multiple channels silently (no feedback)
+        `[p]lock all` - Locks all channels and posts the lock feedback in all channels
+        `[p]lock all silent` - Locks all channels silently
 
         This command will also set perma locked channels.
 
@@ -1253,18 +1253,61 @@ class Moderation(commands.Cog):
     async def unlock(self, ctx, *, channels=""):
         """Unlock message sending in the channel.
 
-        `[p] unlock` - Unlocks current channel
-        `[p] unlock silent` - Unlocks current channel (no feedback)
-        `[p] unlock #ch1 #ch2 #ch3` - Unlocks multiple channels
-        `[p] unlock silent #ch1 #ch2 #ch3` - Unlocks multiple channels silently (no feedback)
-        `[p] unlock all` - Unlocks all all non perma locked
+        `[p]unlock` - Unlocks current channel
+        `[p]unlock silent` - Unlocks current channel (no feedback)
+        `[p]unlock #ch1 #ch2 #ch3` - Unlocks multiple channels
+        `[p]unlock silent #ch1 #ch2 #ch3` - Unlocks multiple channels silently (no feedback)
+        `[p]unlock all` - Unlocks all all non perma locked
         channels and posts the lock feedback in all channels
-        `[p] unlock all silent` - Unlocks all non perma locked channels silently
+        `[p]unlock all silent` - Unlocks all non perma locked channels silently
 
         When doing the last two commands, be sure to have ran lock all (silent)
         at least once so perma locked channels are setup ...
         """
         await dutils.unlock_channels(ctx, channels)
+
+    @commands.check(checks.moderator_check)
+    @commands.command()
+    async def slowmode(self, ctx, seconds: int, *, channels=""):
+        """Set a slowmode
+
+        `[p]slowmode 5` - Sets the slowmode to 5 seconds
+        `[p]slowmode 10 silent` - Sets the slowmode to 5 seconds (no feedback)
+        `[p]slowmode 15 #ch1 #ch2 #ch3` - Slowmodes multiple channels
+        `[p]slowmode 30 silent #ch1 #ch2 #ch3` - Slowmodes multiple channels silently (no feedback)
+        `[p]slowmode 60 all` - Slowmodes all channels (post feedback to all)
+        `[p]slowmode 120 all silent` - Slowmodes all channels silently
+        """
+        if seconds > 21600: return await ctx.send("Max delay is 21600")
+        if seconds < 0: return await ctx.send("Max is 0")
+        try:
+            all_ch = False
+            silent = False
+            if "silent" in channels.lower().strip():
+                silent = True
+
+            if "all" in channels.lower().strip():
+                all_ch = True
+                user = ctx.guild.get_member(ctx.bot.user.id)
+                channels = [channel for channel in ctx.guild.text_channels if
+                            channel.permissions_for(user).manage_roles]
+            elif len(ctx.message.channel_mentions) == 0:
+                channels = [ctx.channel]
+            elif len(ctx.message.channel_mentions) == 0:
+                channels = [ctx.channel]
+            else:
+                channels = ctx.message.channel_mentions
+            m = None
+            if all_ch:
+                m = await ctx.send(f"Slowmoding all channels{'' if not silent else ' silently'}")
+            for c in channels:
+                await c.edit(slowmode_delay=seconds)
+                if not silent:
+                    await c.send(f"Slowmode set to **{tutils.convert_sec_to_smh(seconds)}**")
+            if all_ch:
+                await ctx.send('Done.')
+        except discord.errors.Forbidden:
+            await ctx.send("💢 I don't have permission to do this.")
 
 
 def setup(bot):
