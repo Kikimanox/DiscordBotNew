@@ -1089,7 +1089,7 @@ class Serversetup(commands.Cog):
             arl = db_guild.anti_raid_level
         except:
             pass
-        if anti_raid_level == -1: return await ctx.send(f"Current raid level is **{arl}** {pl[anti_raid_level]}")
+        if anti_raid_level == -1: return await ctx.send(f"Current raid level is **{arl}** {pl[arl]}")
         if anti_raid_level > 3: return await ctx.send("Max level is 3")
         if anti_raid_level < 0: return await ctx.send("Min level is 0")
         if max_allowed_mentions < 0: return await ctx.send("Min max_allowed_mentions is 1")
