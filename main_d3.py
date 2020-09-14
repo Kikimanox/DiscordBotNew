@@ -241,7 +241,7 @@ async def on_message(message):
     possible_cmd = message.content[pfx_len:].split(' ')[0]
     if possible_cmd in bot.all_commands:
         is_actually_cmd = True
-    if not is_actually_cmd and possible_cmd in bot.all_commands:
+    if not is_actually_cmd:
         if message.guild and message.guild.id in bot.all_cmds:
             if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list']:
                 ctype = 1
@@ -336,7 +336,7 @@ async def on_message(message):
 
         if not is_mod and (is_actually_cmd or ctype > 0) and arl > 1:
             return  # we don't want non mods triggering commands during a raid
-        if is_actually_cmd or ctype > 0:
+        if is_actually_cmd:
             if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
                 return await message.channel.send(arl1_ret)
             return await bot.process_commands(message)
