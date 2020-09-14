@@ -125,8 +125,11 @@ class Stats(commands.Cog):
 
         description = []
 
-        spam_control = self.bot.spam_control
-        a = spam_control._cache.items()
+        arl = 0
+        if ctx.guild and ctx.guild.id in ctx.bot.anti_raid:
+            arl = ctx.bot.anti_raid[ctx.guild.id]['anti_raid_level']
+        spam_control = self.bot.spam_control[arl]
+        # a = spam_control._cache.items()
         being_spammed = [
             str(key) for key, value in spam_control._cache.items()
             if value._tokens == 0
@@ -135,6 +138,19 @@ class Stats(commands.Cog):
         description.append(f'Current Spammers (bucket): {being_spammed or "**None**"}')
 
         if being_spammed:
+            embed.colour = WARNING
+            total_warnings += 1
+
+        spam_control = self.bot.spam_control[-1]
+        # a = spam_control._cache.items()
+        being_spammed_dm = [
+            str(key) for key, value in spam_control._cache.items()
+            if value._tokens == 0
+        ]
+        if being_spammed_dm: being_spammed_dm = '\n' + ", ".join(being_spammed_dm)
+        description.append(f'Dm Spammers (bucket): {being_spammed_dm or "**None**"}')
+
+        if being_spammed_dm:
             embed.colour = WARNING
             total_warnings += 1
 
@@ -257,25 +273,29 @@ class Stats(commands.Cog):
 
     @commands.command()
     @commands.check(checks.admin_check)
-    async def botunblacklist(self, ctx, user_id: int):
+    async def botunblacklist(self, ctx, user_ids: commands.Greedy[int]):
         """Unblacklist user by id [Admin only]"""
-        if user_id in ctx.bot.blacklist:
-            del ctx.bot.blacklist[user_id]
-            BotBlacklist.delete().where(BotBlacklist.user == user_id).execute()
-            await ctx.send("Done.")
-        else:
-            await ctx.send("This user id is not banned from the bot.")
+        ret = ''
+        for user_id in user_ids:
+            if user_id in ctx.bot.blacklist:
+                del ctx.bot.blacklist[user_id]
+                BotBlacklist.delete().where(BotBlacklist.user == user_id).execute()
+            else:
+                ret += f"{user_id} is not blacklisted from the bot.\n"
+        await ctx.send("Done." if not ret else ret + 'Done.')
 
     @commands.command()
     @commands.check(checks.admin_check)
-    async def botunban(self, ctx, user_id: int):
+    async def botunban(self, ctx, user_ids: commands.Greedy[int]):
         """Unban user by id [Admin only]"""
-        if user_id in ctx.bot.banlist:
-            del ctx.bot.banlist[user_id]
-            BotBanlist.delete().where(BotBanlist.user == user_id).execute()
-            await ctx.send("Done.")
-        else:
-            await ctx.send("This user id is not banned from the bot.")
+        ret = ''
+        for user_id in user_ids:
+            if user_id in ctx.bot.banlist:
+                del ctx.bot.banlist[user_id]
+                BotBanlist.delete().where(BotBanlist.user == user_id).execute()
+            else:
+                ret += f"{user_id} is not banned from the bot.\n"
+        await ctx.send("Done." if not ret else ret + '\nDone.')
 
 
 def setup(bot):
@@ -284,11 +304,18 @@ def setup(bot):
 
     # in case of even further spam, add a cooldown mapping
     # for people who excessively spam commands
-    bot.spam_control = commands.CooldownMapping.from_cooldown(7, 12, commands.BucketType.user)
+    bot.spam_control = {
+        -1: commands.CooldownMapping.from_cooldown(6, 8, commands.BucketType.user),
+        0: commands.CooldownMapping.from_cooldown(7, 12, commands.BucketType.user),
+        1: commands.CooldownMapping.from_cooldown(4, 4, commands.BucketType.user),
+        2: commands.CooldownMapping.from_cooldown(3, 4, commands.BucketType.user),
+        3: commands.CooldownMapping.from_cooldown(3, 4, commands.BucketType.user)
+    }
 
     # A counter to auto-ban frequent spammers
     # Triggering the rate limit 5 times in a row will auto-ban the user from the bot.
     bot._auto_spam_count = Counter()
+
     bot.blacklist = {}
     bs = [q for q in BotBlacklist.select().dicts()]
     for b in bs:  bot.blacklist[b['user']] = b['meta']

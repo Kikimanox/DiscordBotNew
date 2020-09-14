@@ -8,6 +8,7 @@ from discord.ext import commands, tasks
 from discord import Member, Embed, File, utils
 import os
 
+from models.antiraid import ArGuild, ArManager
 from models.moderation import Blacklist, ModManager
 from utils.dataIOa import dataIOa
 import utils.checks as checks
@@ -1037,7 +1038,114 @@ class Serversetup(commands.Cog):
     @commands.check(checks.moderator_check)
     @commands.group(aliases=['r'])
     async def raid(self, ctx):
-        pass
+        """Setup raid and protection related settings
+        By itself this comand doesn't do anything, use subcommands
+        """
+        if ctx.invoked_subcommand is None:
+            raise commands.errors.BadArgument
+
+    @commands.check(checks.moderator_check)
+    @raid.command(aliases=['m'])
+    async def manual(self, ctx):
+        """Read up the manual
+        By itself this comand doesn't do anything except show the manual
+        Level explenations
+
+        ✅ **Level 0:**
+        - Bot works normally, all commands available normally
+
+        ⚠ **Level 1:**
+        - Disable bot commands from non moderators
+        *users will be notified on command invoke
+        that commands are disabled for them*
+        - Welcome message will be posted with a webhook
+        instead of by the bot itself (less latency hit)
+
+        🔥 **Level 2:**
+        - Disable bot commands from non moderators
+        *users will not be not notified on command invoke*
+        - Disable image/embed perms in all (public) channels
+        - Those who post more than X mentions/spam get muted automatically
+        (this includes only people without roles)
+
+        💥 **Level 3:**
+        - Same as level 2, with aditionally:
+        - Users who post more than X mentions/spam get removed automatically:
+        No role = Ban with 1 day message history deleted
+        With role = Just kicks them
+        """
+        raise commands.errors.BadArgument
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.moderator_check)
+    @raid.command(aliases=['l', 'lvl'])
+    async def level(self, ctx, anti_raid_level: int = -1, max_allowed_mentions: int = 3):
+        """Fine tune raid protection level [0-3]"""
+        db_guild = None
+        pl = {0: '✅', 1: '⚠', 2: '🔥', 3: '💥'}
+        arl = 0
+        try:
+            db_guild = ArGuild.get(ArGuild.id == ctx.guild.id)
+            arl = db_guild.anti_raid_level
+        except:
+            pass
+        if anti_raid_level == -1: return await ctx.send(f"Current raid level is **{arl}** {pl[anti_raid_level]}")
+        if anti_raid_level > 3: return await ctx.send("Max level is 3")
+        if anti_raid_level < 0: return await ctx.send("Min level is 0")
+        if max_allowed_mentions < 0: return await ctx.send("Min max_allowed_mentions is 1")
+        # chs = " ".join([str(c.id) for c in channels_to_ignore_for_mention_punishing])
+        try:
+            db_guild = ArGuild.get(ArGuild.id == ctx.guild.id)
+            db_guild.anti_raid_level = anti_raid_level
+            db_guild.max_allowed_mentions = max_allowed_mentions
+            db_guild.save()
+        except:
+            db_guild = ArGuild.create(id=ctx.guild.id,
+                                      anti_raid_level=anti_raid_level,
+                                      max_allowed_mentions=max_allowed_mentions)
+        ctx.bot.anti_raid = ArManager.get_ar_data()
+        # if chs: chs = '\n' + '\n'.join([c.mention for c in channels_to_ignore_for_mention_punishing])
+        await ctx.send(f"Protection level: **{anti_raid_level}** {pl[anti_raid_level]}")
+        m = None
+        if anti_raid_level > 1:
+            edit_channels = []
+            m = await ctx.send("Disabling image perms in all (public) channels.")
+            for ch in ctx.guild.text_channels:
+                dr = ctx.guild.default_role
+                overwrites_everyone = ch.overwrites_for(dr)
+                if not (overwrites_everyone.embed_links is False and overwrites_everyone.attach_files is False) and \
+                        overwrites_everyone.read_messages is not False:
+                    edit_channels.append(str(ch.id))
+                    overwrites_everyone.embed_links = False
+                    overwrites_everyone.attach_files = False
+                    await ch.set_permissions(dr, overwrite=overwrites_everyone)
+            db_guild.chs_had_img_perms_on = " ".join(edit_channels)
+            db_guild.save()
+            await m.edit(content="**Disabled imaged perms in all (public) channels.**")
+
+        if anti_raid_level < 2 and db_guild.chs_had_img_perms_on:
+            m = await ctx.send("Enabling image perms back in all (public) channels.")
+            chs = db_guild.chs_had_img_perms_on.split()
+            for ch in ctx.guild.text_channels:
+                if str(ch.id) in chs:
+                    dr = ctx.guild.default_role
+                    overwrites_everyone = ch.overwrites_for(dr)
+                    if (overwrites_everyone.embed_links is False and overwrites_everyone.attach_files is False) and \
+                            overwrites_everyone.read_messages is not False:
+                        overwrites_everyone.embed_links = True
+                        overwrites_everyone.attach_files = True
+                        await ch.set_permissions(dr, overwrite=overwrites_everyone)
+            db_guild.chs_had_img_perms_on = ""
+            db_guild.save()
+            await m.edit(content="**Enabled imaged perms in all (public) channels.**")
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.moderator_check)
+    @raid.command()
+    async def lockdown(self, ctx):
+        """Same as using `[p]lock all silent`"""
+        await dutils.lock_channels(ctx, "all silent")
+        await ctx.send(f"To revert thise use the command `{dutils.bot_pfx(ctx.bot, ctx.message)} unlock all silent`")
 
 
 def setup(bot):

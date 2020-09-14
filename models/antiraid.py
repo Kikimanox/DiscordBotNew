@@ -14,6 +14,9 @@ class ArGuild(BaseModel):
     id = IntegerField(primary_key=True)
     perma_locked_channels = CharField(default="")
     anti_raid_level = IntegerField(default=0)
+    # mention_ignoring_channels = CharField(default="")
+    max_allowed_mentions = IntegerField(default=3)
+    chs_had_img_perms_on = CharField(default="")
     # todo: more fields?
 
 

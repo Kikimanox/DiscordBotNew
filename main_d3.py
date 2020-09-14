@@ -24,7 +24,7 @@ import re
 
 from models.antiraid import ArGuild, ArManager
 from models.serversetup import SSManager
-from utils.checks import owner_check, admin_check
+from utils.checks import owner_check, admin_check, moderator_check, moderator_check_no_ctx
 from utils.help import Help
 import logging
 import logging.handlers as handlers
@@ -198,10 +198,27 @@ async def globalprefix(ctx, *, new_prefix=""):
 
 @bot.event
 async def on_message(message):
+    if message.guild.id != 202845295158099980: return  # todo del this
     if not bot.is_ready():
         await bot.wait_until_ready()
+
+    # check if it's even a user
+    if not isinstance(message.author, discord.Member) or message.author.bot:
+        return
+    arl = 0
+    # get anti raid level
+    if message.guild and message.guild.id in bot.anti_raid:
+        arl = bot.anti_raid[message.guild.id]['anti_raid_level']
+        if arl > 1:  # check ping count during raid levels 2 and 3
+            mention_count = sum(not m.bot and m.id != message.author.id for m in message.mentions)
+            if mention_count > bot.anti_raid[message.guild.id]['max_allowed_mentions']:
+                return await dutils.punish_based_on_arl(arl, message, bot, mentions=True)
+
+    # it was a dm
     if not message.guild and message.author.id != bot.config['CLIENT_ID']:
+        arl = -1
         print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
+
 
     pfx = str(get_pre(bot, message))
     if message.content in [f'<@!{bot.config["CLIENT_ID"]}>', f'<@{bot.config["CLIENT_ID"]}>']:
@@ -209,80 +226,23 @@ async def on_message(message):
             embed=(Embed(title='My prefix here is', description=pfx).set_footer(text='You can change it with '
                                                                                      f'{pfx}prefix')))
 
-    if message.content.startswith(pfx) or message.content.split(' ')[0] in [f'<@!{bot.config["CLIENT_ID"]}>',
-                                                                            f'<@{bot.config["CLIENT_ID"]}>']:
+    # is_prefix = message.content.startswith(pfx) or message.content.split(' ')[0] in [f'<@!{bot.config["CLIENT_ID"]}>',
+    #                                                                                  f'<@{bot.config["CLIENT_ID"]}>']
 
-        if message.author.id in bot.banlist:
-            return
-
-        if message.content.startswith(f'<@{bot.config["CLIENT_ID"]}>'):
-            pfx_len = len(f'<@{bot.config["CLIENT_ID"]}>')
-        elif message.content.startswith(f'<@!{bot.config["CLIENT_ID"]}>'):
-            pfx_len = len(f'<@!{bot.config["CLIENT_ID"]}>')
-        else:
-            pfx_len = len(pfx)
-        possible_cmd = message.content[pfx_len:].split(' ')[0]
-
-        if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
-
-            if possible_cmd == 'unblacklistme':
-                return await bot.process_commands(message)
-
-        if message.author.id in bot.blacklist:
-            return
-
-        bucket = bot.spam_control.get_bucket(message)
-        current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
-        retry_after = bucket.update_rate_limit(current)
-        author_id = message.author.id
-        is_admin = False
-        if message.guild:
-            is_admin = message.author.guild_permissions.administrator
-        if retry_after and author_id != bot.config['OWNER_ID'] and not is_admin:
-            bot._auto_spam_count[author_id] += 1
-            d_max = 4
-            if bot._auto_spam_count[author_id] >= d_max:
-                # await self.add_to_blacklist(author_id)
-
-                if possible_cmd != 'unblacklistme':
-                    bot.blacklist[author_id] = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
-                                               f" source: {message.jump_url}"
-                    del bot._auto_spam_count[author_id]
-                    # await self.log_spammer(ctx, message, retry_after, autoblock=True)
-                    out = f'SPAMMER BLACKLISTED: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
-                    print(out)
-
-                    try:
-                        bb = BotBlacklist.get(BotBlacklist.user == author_id)
-                        bb.meta = out
-                        bb.when = datetime.datetime.utcnow()
-                        bb.guild = message.guild.id
-                        bb.save()
-                    except:
-                        BotBlacklist.insert(user=author_id, guild=message.guild.id, meta=out).execute()
-                    await message.channel.send(f'💢 {message.author.mention} you have been blacklisted from the bot '
-                                               f'for spamming. You may remove yourself from the blacklist '
-                                               f'once in a certain period. '
-                                               f'To do that you can use `{pfx}unblacklistme`')
-                else:
-                    out2 = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
-                           f" source: {message.jump_url}"
-                    out = f'SPAMMER BANNED FROM BOT: {author_id} | {retry_after} |' \
-                          f' {message.content} | {message.jump_url}'
-                    if message.author.id not in bot.banlist:
-                        await dutils.ban_from_bot(bot, message.author, out2, message.guild.id, message.channel)
-                    d = 0
-            else:
-                out = f'almost SPAMMER: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
-            bot.logger.info(out)
-            if bot._auto_spam_count[author_id] == d_max - 1: return
-        else:
-            bot._auto_spam_count.pop(author_id, None)
-
-        if possible_cmd in bot.all_commands:
-            return await bot.process_commands(message)
+    #  Check if it's actually a cmd or custom cmd
+    is_actually_cmd = False
+    ctype = -1  # 1 possible_cmd | 2 mutli word | 3 same as 0 but inh | 4 same as 1 but inh
+    if message.content.startswith(f'<@{bot.config["CLIENT_ID"]}>'):
+        pfx_len = len(f'<@{bot.config["CLIENT_ID"]}>') + 1
+    elif message.content.startswith(f'<@!{bot.config["CLIENT_ID"]}>'):
+        pfx_len = len(f'<@!{bot.config["CLIENT_ID"]}>') + 1
+    else:
+        pfx_len = len(pfx)
+    possible_cmd = message.content[pfx_len:].split(' ')[0]
+    if possible_cmd in bot.all_commands:
+        is_actually_cmd = True
+    if not is_actually_cmd and possible_cmd in bot.all_commands:
         if message.guild and message.guild.id in bot.all_cmds:
-            ctype = -1  # 1 possible_cmd | 2 mutli word | 3 same as 0 but inh | 4 same as 1 but inh
             if possible_cmd in bot.all_cmds[message.guild.id]['cmds_name_list']:
                 ctype = 1
             elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['cmds_name_list']:
@@ -292,29 +252,121 @@ async def on_message(message):
             elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
                 ctype = 4
 
-            if ctype != -1:
-                if ctype == 1:
-                    c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
-                elif ctype == 2:
-                    c = bot.all_cmds[message.guild.id]['cmds'][message.content[pfx_len:]]
-                elif ctype == 3:
-                    for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
-                        if possible_cmd in cc: c = cc[possible_cmd]
-                elif ctype == 4:
-                    for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
-                        if message.content[pfx_len:] in cc: c = cc[message.content[pfx_len:]]
+    # if it was a command
+    if (is_actually_cmd or ctype > 0) or arl > 1:  # catch messages here for anti spam on arl > 1 regardless of cmd
+        if arl in [0, 1]:  # If not checking for message spamming and user is blacklisted return
+            if message.author.id in bot.banlist:
+                return
 
-                if bool(c['raw']): return await message.channel.send(c['content'])
-                if bool(c['image']):
-                    em = Embed(color=int(f'0x{c["color"][-6:]}', 16))
-                    em.set_image(url=c['content'])
+        if arl in [0, 1]:  # user can unblacklist themselves here
+            if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
+                if possible_cmd == 'unblacklistme':
+                    return await bot.process_commands(message)
+
+        if arl in [0, 1]:  # the journey for the blacklisted end shere
+            if message.author.id in bot.blacklist:
+                return
+
+        bucket = bot.spam_control[arl].get_bucket(message)
+        current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+        retry_after = bucket.update_rate_limit(current)
+        author_id = message.author.id
+        is_mod = await moderator_check_no_ctx(message.author, message.guild, bot)
+
+        # spamming has started (but ignore moderators though)
+        if retry_after and not is_mod:
+            bot._auto_spam_count[author_id] += 1
+            d_max = 4  # max number of times they can spam again after bucket triggers
+            if arl > 1: d_max = 2
+            if bot._auto_spam_count[author_id] >= d_max:
+
+                #  SPAMMER DETECTED HERE!
+                if arl > 1:
+                    return await dutils.punish_based_on_arl(arl, message, bot)
+
+                if possible_cmd != 'unblacklistme' and arl == 0:
+                    bot.blacklist[author_id] = f"{str(message.author)} " \
+                                               f"{datetime.datetime.utcnow().strftime('%c')}" \
+                                               f" source: {message.jump_url}"
+                    del bot._auto_spam_count[author_id]
+                    # await self.log_spammer(ctx, message, retry_after, autoblock=True)
+                    out = f'SPAMMER BLACKLISTED: {author_id} | {retry_after} | ' \
+                          f'{message.content} | {message.jump_url}'
+                    print(out)
+
+                    try:
+                        bb = BotBlacklist.get(BotBlacklist.user == author_id)
+                        bb.meta = out
+                        bb.when = datetime.datetime.utcnow()
+                        if message.guild:
+                            g = message.guild.id
+                        else:
+                            g = 0
+                        bb.guild = g
+                        bb.save()
+                    except:
+                        if message.guild:
+                            g = message.guild.id
+                        else:
+                            g = 0
+                        BotBlacklist.insert(user=author_id, guild=g, meta=out).execute()
+                    if arl == 1:
+                        await message.channel.send(
+                            f'💢 {message.author.mention} you have been blacklisted from the bot '
+                            f'for spamming. You may remove yourself from the blacklist '
+                            f'once in a certain period. '
+                            f'To do that you can use `{pfx}unblacklistme`')
                 else:
-                    em = Embed(color=int(f'0x{c["color"][-6:]}', 16), description=c['content'])
-                    pic = str(c['content']).find('http')
-                    if pic > -1:
-                        urls = re.findall(r'https?:[/.\w\s-]*\.(?:jpg|gif|png|jpeg)', str(c['content']))
-                        if len(urls) > 0: em.set_image(url=urls[0])
-                return await message.channel.send(embed=em)
+                    out2 = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
+                           f" source: {message.jump_url}"
+                    out = f'SPAMMER BANNED FROM BOT: {author_id} | {retry_after} |' \
+                          f' {message.content} | {message.jump_url}'
+                    if message.author.id not in bot.banlist:
+                        await dutils.ban_from_bot(bot, message.author, out2, message.guild.id, message.channel)
+            else:
+                out = f'almost SPAMMER: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
+            bot.logger.info(out)
+            if bot._auto_spam_count[author_id] == d_max - 1: return
+        else:
+            bot._auto_spam_count.pop(author_id, None)
+
+        arl1_ret = ("The server has set it's raid protection to level 1.\n"
+                    f"{message.author.mention} stop using/spamming bot commands "
+                    f"for now or else you will get banned from the bot.")
+
+        if not is_mod and (is_actually_cmd or ctype > 0) and arl > 1:
+            return  # we don't want non mods triggering commands during a raid
+        if is_actually_cmd or ctype > 0:
+            if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
+                return await message.channel.send(arl1_ret)
+            return await bot.process_commands(message)
+
+        if ctype != -1:
+            if arl == 1 and not is_mod:
+                return await message.channel.send(arl1_ret)
+
+            if ctype == 1:
+                c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
+            elif ctype == 2:
+                c = bot.all_cmds[message.guild.id]['cmds'][message.content[pfx_len:]]
+            elif ctype == 3:
+                for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
+                    if possible_cmd in cc: c = cc[possible_cmd]
+            elif ctype == 4:
+                for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
+                    if message.content[pfx_len:] in cc: c = cc[message.content[pfx_len:]]
+
+            if bool(c['raw']): return await message.channel.send(c['content'])
+            if bool(c['image']):
+                em = Embed(color=int(f'0x{c["color"][-6:]}', 16))
+                em.set_image(url=c['content'])
+            else:
+                em = Embed(color=int(f'0x{c["color"][-6:]}', 16), description=c['content'])
+                pic = str(c['content']).find('http')
+                if pic > -1:
+                    urls = re.findall(r'https?:[/.\w\s-]*\.(?:jpg|gif|png|jpeg)', str(c['content']))
+                    if len(urls) > 0: em.set_image(url=urls[0])
+            return await message.channel.send(embed=em)
 
 
 @commands.max_concurrency(1)

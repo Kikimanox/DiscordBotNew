@@ -83,7 +83,7 @@ class Moderation(commands.Cog):
     @commands.check(checks.moderator_check)
     @commands.command(aliases=["c"])
     async def case(self, ctx, case_id: int, *, reason):
-        """Supply a reason to a moderation action witht out one"""
+        """Supply or edit reason for a moderation action"""
         if case_id > sys.maxsize: return await ctx.send("Case id too big, breaking system limits!")
         try:
             was_empty = False

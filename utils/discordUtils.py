@@ -258,24 +258,30 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None, log_l
 
 
 async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
-                       no_dm=False, softban=False, actually_resp=None):
+                       no_dm=False, softban=False, actually_resp=None,
+                       author=None, guild=None, bot=None, respch=None):
+    if ctx:
+        respch = ctx
+        author = ctx.author
+        guild = ctx.guild
+        bot = ctx.bot
     member = user
     if not member:
         if massbanning: return -1
-        return await ctx.send('Could not find this user in this server')
+        return await respch.send('Could not find this user in this server')
     if member:
         try:
             if massbanning:
-                ctx.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 2
+                bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 2
             if not massbanning:
-                ctx.bot.just_banned_by_bot[f'{member.id}_{member.guild.id}'] = 1
+                bot.just_banned_by_bot[f'{member.id}_{member.guild.id}'] = 1
             await member.ban(reason=reason, delete_message_days=removeMsgs)
             if softban:
                 await member.unban(reason='Softbanned')
             try:
                 if not no_dm and not massbanning:
                     await member.send(f'You have been {"banned" if not softban else "soft-banned"} '
-                                      f'from the {str(ctx.guild)} '
+                                      f'from the {str(guild)} '
                                       f'server {"" if not reason else f", reason: {reason}"}')
             except:
                 print(f"Member {'' if not member else member.id} disabled dms")
@@ -284,7 +290,7 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 return_msg += f" for reason: `{reason}`"
 
             if not massbanning:
-                await ctx.send(embed=Embed(description=return_msg, color=0xdd0000))
+                await respch.send(embed=Embed(description=return_msg, color=0xdd0000))
             if not massbanning:
                 typ = "ban"
                 if removeMsgs == 7: typ = "banish"
@@ -293,15 +299,24 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
                 act_id = await moderation_action(ctx, reason, typ, member, no_dm=no_dm, actually_resp=actually_resp)
                 await post_mod_log_based_on_type(ctx, typ, act_id, offender=member,
                                                  reason=reason, actually_resp=actually_resp)
+            if not ctx and massbanning:
+                act_id = await moderation_action(None, reason, 'ban', member, no_dm=no_dm,
+                                                 actually_resp=author,
+                                                 guild=guild, bot=bot)
+                await post_mod_log_based_on_type(None, 'ban', act_id, offender=member,
+                                                 reason=reason,
+                                                 actually_resp=author,
+                                                 guild=guild, bot=bot)
+
             return member.id
         except discord.Forbidden:
             if massbanning:
-                del ctx.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+                del bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
             if massbanning: return -100  # special return
-            await ctx.send('Could not ban user. Not enough permissions.')
+            await respch.send('Could not ban user. Not enough permissions.')
     else:
         if massbanning: return -1
-        return await ctx.send('Could not find user.')
+        return await respch.send('Could not find user.')
 
 
 async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, reason="Auto"):
@@ -365,23 +380,33 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
         await ctx.send("💢 I don't have permission to do this.")
 
 
-async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None, new_mute=False, batch=False):
+async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, batch=False,
+                    guild=None, bot=None, author=None, fdbch=None):
+    """
+    When ctx is missing, be sure to input the guild and bot and make.
+    If ctx == None and you don't want the feedback, just turn on batch
+    """
+    if ctx:
+        guild = ctx.guild
+        bot = ctx.bot
+        fdbch = ctx
+        author = ctx.author
     can_even_execute = True
-    if ctx.guild.id in ctx.bot.from_serversetup:
-        sup = ctx.bot.from_serversetup[ctx.guild.id]
+    if guild.id in bot.from_serversetup:
+        sup = bot.from_serversetup[guild.id]
         if not sup['muterole']: can_even_execute = False
     else:
         can_even_execute = False
     if not can_even_execute:
         if not batch:
-            return ctx.send("Mute role not setup, can not complete mute.")
+            return fdbch.send("Mute role not setup, can not complete mute.")
         else:
             return -1000
-    mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
+    mute_role = discord.utils.get(guild.roles, id=bot.from_serversetup[guild.id]['muterole'])
     if not new_mute:
-        if mute_role in ctx.guild.get_member(member.id).roles:
+        if mute_role in guild.get_member(member.id).roles:
             if not batch:
-                return await ctx.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
+                return await fdbch.send(embed=Embed(description=f'{member.mention} is already muted', color=0x753c34))
             else:
                 return -10
     unmute_time = None
@@ -396,11 +421,12 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         seconds = 0
         match = re.findall("([0-9]+[smhd])", length)  # Thanks to 3dshax server's former bot
         if not match:
-            p = bot_pfx(ctx.bot, ctx.message)
+            # p = bot_pfx(bot, ctx.message)
+            p = bot_pfx_by_gid(bot, guild.id)
             if not batch:
-                return await ctx.send(f"Could not parse mute length. Are you sure you're "
-                                      f"giving it in the right format? Ex: `{p}mute @user 30m`, "
-                                      f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
+                return await fdbch.send(f"Could not parse mute length. Are you sure you're "
+                                        f"giving it in the right format? Ex: `{p}mute @user 30m`, "
+                                        f"or `{p}mute @user 1d4h3m2s reason here`, etc.")
             else:
                 return -35
 
@@ -411,50 +437,50 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
             delta = datetime.timedelta(seconds=seconds)
         except OverflowError:
             if not batch:
-                return await ctx.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
+                return await fdbch.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
             else:
                 return 9001
         unmute_time = timestamp + delta
 
     try:
-        ctx.bot.just_muted_by_bot[f'{member.id}_{member.guild.id}'] = 1
+        bot.just_muted_by_bot[f'{member.id}_{member.guild.id}'] = 1
         await member.add_roles(mute_role, reason=reason)
         try:
             if not no_dm:
-                await member.send(f'You have been muted on the {str(ctx.guild)} server '
+                await member.send(f'You have been muted on the {str(guild)} server '
                                   f'{"for " + length if length else "indefinitely "}'
                                   f' {"" if not reason else f"reason: {reason}"}')
         except:
             print(f"Member {'' if not member else member.id} disabled dms")
     except discord.errors.Forbidden:
-        del ctx.bot.just_muted_by_bot[f'{member.id}_{member.guild.id}']
+        del bot.just_muted_by_bot[f'{member.id}_{member.guild.id}']
         if not batch:
-            return await ctx.send("💢 I don't have permission to do this.")
+            return await fdbch.send("💢 I don't have permission to do this.")
         else:
             return -19
     new_reason = reason  # deleted this functionality to not spam db
-    reminder = ctx.bot.get_cog('Reminders')
+    reminder = bot.get_cog('Reminders')
     if reminder is None:
         if not batch:
-            return await ctx.send('Can not load remidners cog! (Weird error)')
+            return await fdbch.send('Can not load remidners cog! (Weird error)')
         else:
             return -989
     try:
-        mute = Reminderstbl.get(Reminderstbl.user_id == member.id, Reminderstbl.guild == ctx.guild.id)
+        mute = Reminderstbl.get(Reminderstbl.user_id == member.id, Reminderstbl.guild == guild.id)
         mute.len_str = 'indefinitely ' if not length else length
         mute.expires_on = unmute_time if length else datetime.datetime.max
-        mute.executed_by = ctx.author.id
+        mute.executed_by = author.id
         mute.reason = new_reason
 
         mute.save()
         tim = await reminder.create_timer(
             expires_on=unmute_time,
             meta='mute_nodm' if no_dm else 'mute',
-            gid=ctx.guild.id,
+            gid=guild.id,
             reason=new_reason,
             uid=member.id,
             len_str='indefinitely ' if not length else length,
-            author_id=ctx.author.id,
+            author_id=author.id,
             unmute_user=True,
             orig_id=mute.id
         )
@@ -462,19 +488,30 @@ async def mute_user(ctx, member, length, reason, no_dm=False, actually_resp=None
         tim = await reminder.create_timer(
             expires_on=unmute_time,
             meta='mute_nodm' if no_dm else 'mute',
-            gid=ctx.guild.id,
+            gid=guild.id,
             reason=reason,
             uid=member.id,
             len_str='indefinitely ' if not length else length,
-            author_id=ctx.author.id
+            author_id=author.id
         )
     if not batch:
-        await ctx.send(embed=Embed(
+        await fdbch.send(embed=Embed(
             description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
             color=0x6785da))
-        act_id = await moderation_action(ctx, new_reason, "mute", member, no_dm=no_dm, actually_resp=actually_resp)
-        await post_mod_log_based_on_type(ctx, "mute", act_id, mute_time_str='indefinitely' if not length else length,
-                                         offender=member, reason=new_reason, actually_resp=actually_resp)
+        if ctx:
+            act_id = await moderation_action(ctx, new_reason, "mute", member, no_dm=no_dm, actually_resp=author)
+            await post_mod_log_based_on_type(ctx, "mute", act_id,
+                                             mute_time_str='indefinitely' if not length else length,
+                                             offender=member, reason=new_reason, actually_resp=author)
+    if not ctx and batch:
+        act_id = await moderation_action(None, new_reason, 'mute', member, no_dm=no_dm,
+                                         actually_resp=author,
+                                         guild=guild, bot=bot)
+        await post_mod_log_based_on_type(None, 'mute', act_id, offender=member,
+                                         reason=new_reason,
+                                         mute_time_str='indefinitely' if not length else length,
+                                         actually_resp=author,
+                                         guild=guild, bot=bot)
     return 10
     # dataIOa.save_json(self.modfilePath, modData)
     # await dutils.mod_log(f"Mod log: Mute", f"**offender:** {str(member)} ({member.id})\n"
@@ -692,7 +729,7 @@ async def log(bot, title=None, txt=None, author=None,
         bot.logger.error("Something went wrong when logging")
 
 
-async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None):
+async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     bot.banlist[offender.id] = meta
     try:
         bb = BotBanlist.get(BotBlacklist.user == offender.id)
@@ -703,7 +740,8 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None):
     except:
         BotBanlist.insert(user=offender.id, guild=gid, meta=meta).execute()
     if ch_to_reply_at:
-        await ch_to_reply_at.send(f'💢 💢 💢 {offender.mention} you have been banned from the bot!')
+        if arl < 2:
+            await ch_to_reply_at.send(f'💢 💢 💢 {offender.mention} you have been banned from the bot!')
 
 
 def get_icon_url_for_member(member):
@@ -826,3 +864,35 @@ async def unlock_channels(ctx, channels):
 
     except discord.errors.Forbidden:
         await ctx.send("💢 I don't have permission to do this.")
+
+
+async def punish_based_on_arl(arl, message, bot, mentions=False):
+    extra_rsn = ' mass mention' if mentions else ' spam'
+    rsn = f"Level {arl} raid protection:\n**{extra_rsn}**"
+    if arl == 2:
+        # async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, batch=False,
+        #                     guild=None, bot=None, author=None, fdbch=None):
+        if message.guild:
+            return await mute_user(None, message.author, '', rsn,
+                                   no_dm=True, batch=True, guild=message.guild, bot=bot,
+                                   author=bot.user)
+    if arl == 3:
+        if len(message.author.roles) == 1:  # if member has no roles
+            await ban_function(None, message.author, rsn,
+                               removeMsgs=1, no_dm=True,
+                               author=bot.user, guild=message.guild, bot=bot, massbanning=True)
+        else:
+            m = message.guild.get_member(message.author.id)
+            print(str(m))
+            if m:
+                try:
+                    await message.author.kick(reason=rsn)
+                    act_id = await moderation_action(None, rsn, 'kick', message.author, no_dm=True,
+                                                     actually_resp=bot.user,
+                                                     guild=message.guild, bot=bot)
+                    await post_mod_log_based_on_type(None, 'kick', act_id, offender=message.author,
+                                                     reason=rsn,
+                                                     actually_resp=bot.user,
+                                                     guild=message.guild, bot=bot)
+                except:
+                    pass
