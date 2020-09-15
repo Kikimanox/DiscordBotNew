@@ -896,3 +896,15 @@ async def punish_based_on_arl(arl, message, bot, mentions=False):
                                                      guild=message.guild, bot=bot)
                 except:
                     pass
+
+
+async def recheck_server_setup_get(bot, gid):
+    if bot.from_serversetup and gid in bot.from_serversetup:
+        return bot.from_serversetup[gid]
+    if not bot.from_serversetup:
+        bot.from_serversetup = await SSManager.get_setup_formatted(bot)
+    if gid not in bot.from_serversetup:
+        bot.from_serversetup = await SSManager.get_setup_formatted(bot)
+    if gid in bot.from_serversetup[gid]:
+        return bot.from_serversetup[gid]
+    return None

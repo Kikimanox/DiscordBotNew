@@ -193,7 +193,7 @@ class SSManager:
             Webhook.insert(type=typ, guild=g, target_ch=tar_id, url=h_url, hook_id=hook_id).execute()
 
     @staticmethod
-    async def get_setup_formatted(bot, updating_g_id=None):
+    async def get_setup_formatted(bot):
         gs = [q for q in Guild.select().dicts()]
         lgs = [q for q in Logging.select().dicts()]
         whks = [q for q in Webhook.select().dicts()]
@@ -201,7 +201,7 @@ class SSManager:
 
         ret = {}
         for g in gs:
-            if updating_g_id and updating_g_id != g['id']: continue
+            # if updating_g_id and updating_g_id != g['id']: continue
             ret[g['id']] = {'muterole': g['muterole'],
                             'modrole': g['modrole'],
                             'ignored_chs_at_log': g['ignored_chs_at_log']}

@@ -31,7 +31,7 @@ class Serversetup(commands.Cog):
     async def set_setup(self, gid=None):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
-        self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot, gid)
+        self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
 
     @commands.check(checks.admin_check)
     @commands.group(aliases=["sup"])

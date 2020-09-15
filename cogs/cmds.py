@@ -239,7 +239,6 @@ class Cmds(commands.Cog):
             for k, v in self.bot.all_cmds[ctx.guild.id]['cmds'].items()
         ]
         cmds = sorted(cmds)
-        icmds = [f'{c} (i)' for c in self.bot.all_cmds[ctx.guild.id]['inh_cmds_name_list']]
         icmds_by_g = {}
         if not compact:
             _icmds = [cc for cc in self.bot.all_cmds[ctx.guild.id]['inh_cmd_list']]
@@ -249,10 +248,14 @@ class Cmds(commands.Cog):
                     icmds_by_g[v['guild_id']].append(
                         f'**{k}** (raw)' if v['raw'] else f'**{k}** (image)' if v['image'] else f'**{k}** (txt)'
                     )
+                    if k in self.bot.all_cmds[ctx.guild.id]['cmds_name_list']:
+                        icmds_by_g[v['guild_id']][-1] = f"~~{icmds_by_g[v['guild_id']][-1]}~~"
             for k, v in icmds_by_g.items():
                 icmds_by_g[k] = dutils.getParts2kByDelimiter("**-** " + "\n**-** ".join(v), "\n**-** ", "**-** ", 450)
 
         if compact:
+            icmds = [(f'{c} (i)' if c not in self.bot.all_cmds[ctx.guild.id]['cmds_name_list']
+                      else f'~~{c} (i)~~') for c in self.bot.all_cmds[ctx.guild.id]['inh_cmds_name_list']]
             cmds.extend(icmds)
             ret = dutils.getParts2kByDelimiter(' | '.join(cmds), ' | ')
             for r in ret:
