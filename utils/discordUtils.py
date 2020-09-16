@@ -730,6 +730,7 @@ async def log(bot, title=None, txt=None, author=None,
 
 
 async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
+    if offender.id == bot.config['OWNER_ID']: return
     bot.banlist[offender.id] = meta
     try:
         bb = BotBanlist.get(BotBlacklist.user == offender.id)
@@ -742,6 +743,24 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     if ch_to_reply_at:
         if arl < 2:
             await ch_to_reply_at.send(f'💢 💢 💢 {offender.mention} you have been banned from the bot!')
+
+async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
+    if offender.id == bot.config['OWNER_ID']: return
+    bot.blacklist[offender.id] = meta
+    try:
+        bb = BotBlacklist.get(BotBlacklist.user == offender.id)
+        bb.meta = meta
+        bb.when = datetime.datetime.utcnow()
+        bb.guild = gid
+        bb.save()
+    except:
+        BotBlacklist.insert(user=offender.id, guild=gid, meta=meta).execute()
+    if arl < 2:
+        await ch_to_reply_at.send(
+            f'💢 {offender.mention} you have been blacklisted from the bot '
+            f'for spamming. You may remove yourself from the blacklist '
+            f'once in a certain period. '
+            f'To do that you can use `{bot_pfx_by_gid(bot, gid)}unblacklistme`')
 
 
 def get_icon_url_for_member(member):
@@ -899,6 +918,7 @@ async def punish_based_on_arl(arl, message, bot, mentions=False):
 
 
 async def recheck_server_setup_get(bot, gid):
+    #  not actually using this anyhwere atm lol
     if bot.from_serversetup and gid in bot.from_serversetup:
         return bot.from_serversetup[gid]
     if not bot.from_serversetup:

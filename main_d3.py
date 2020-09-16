@@ -219,7 +219,6 @@ async def on_message(message):
         arl = -1
         print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
 
-
     pfx = str(get_pre(bot, message))
     if message.content in [f'<@!{bot.config["CLIENT_ID"]}>', f'<@{bot.config["CLIENT_ID"]}>']:
         return await message.channel.send(
@@ -230,6 +229,7 @@ async def on_message(message):
     #                                                                                  f'<@{bot.config["CLIENT_ID"]}>']
 
     #  Check if it's actually a cmd or custom cmd
+    possible_cmd = ""
     is_actually_cmd = False
     ctype = -1  # 1 possible_cmd | 2 mutli word | 3 same as 0 but inh | 4 same as 1 but inh
     if message.content.startswith(f'<@{bot.config["CLIENT_ID"]}>'):
@@ -263,7 +263,7 @@ async def on_message(message):
 
         if arl in [0, 1]:  # user can unblacklist themselves here
             if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
-                if possible_cmd == 'unblacklistme':
+                if possible_cmd and possible_cmd == 'unblacklistme':
                     return await bot.process_commands(message)
 
         if arl in [0, 1]:  # the journey for the blacklisted end shere
@@ -287,43 +287,20 @@ async def on_message(message):
                 if arl > 1:
                     return await dutils.punish_based_on_arl(arl, message, bot)
 
-                if possible_cmd != 'unblacklistme' and arl == 0:
-                    bot.blacklist[author_id] = f"{str(message.author)} " \
-                                               f"{datetime.datetime.utcnow().strftime('%c')}" \
-                                               f" source: {message.jump_url}"
+                if possible_cmd != 'unblacklistme' and arl in [0, 1]:
                     del bot._auto_spam_count[author_id]
                     # await self.log_spammer(ctx, message, retry_after, autoblock=True)
-                    out = f'SPAMMER BLACKLISTED: {author_id} | {retry_after} | ' \
-                          f'{message.content} | {message.jump_url}'
+                    out = f'[{retry_after} | {message.content}]({message.jump_url})'
                     print(out)
-
-                    try:
-                        bb = BotBlacklist.get(BotBlacklist.user == author_id)
-                        bb.meta = out
-                        bb.when = datetime.datetime.utcnow()
-                        if message.guild:
-                            g = message.guild.id
-                        else:
-                            g = 0
-                        bb.guild = g
-                        bb.save()
-                    except:
-                        if message.guild:
-                            g = message.guild.id
-                        else:
-                            g = 0
-                        BotBlacklist.insert(user=author_id, guild=g, meta=out).execute()
-                    if arl == 1:
-                        await message.channel.send(
-                            f'💢 {message.author.mention} you have been blacklisted from the bot '
-                            f'for spamming. You may remove yourself from the blacklist '
-                            f'once in a certain period. '
-                            f'To do that you can use `{pfx}unblacklistme`')
+                    gid = 0
+                    if message.guild: gid = message.guild.id
+                    await dutils.blacklist_from_bot(bot, message.author, out, gid,
+                                                    ch_to_reply_at=message.channel, arl=arl)
                 else:
                     out2 = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
                            f" source: {message.jump_url}"
-                    out = f'SPAMMER BANNED FROM BOT: {author_id} | {retry_after} |' \
-                          f' {message.content} | {message.jump_url}'
+                    out = f'[{author_id} | {retry_after} |' \
+                          f' {message.content}]({message.jump_url})'
                     if message.author.id not in bot.banlist:
                         await dutils.ban_from_bot(bot, message.author, out2, message.guild.id, message.channel)
             else:
