@@ -28,6 +28,7 @@ class Fun(commands.Cog):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
         self.data = await ClaimsManager.get_data_from_server(self.bot, self.config)
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         print("Claims data loaded")
 
     @commands.group(aliases=['bride', 'vtuber'])
