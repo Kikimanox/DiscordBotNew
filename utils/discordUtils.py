@@ -693,6 +693,9 @@ async def log(bot, title=None, txt=None, author=None,
             bot.from_serversetup = await SSManager.get_setup_formatted(bot)
         if guild.id not in bot.from_serversetup: return
         sup = bot.from_serversetup[guild.id]
+
+        if f'{hook_typ}' not in sup or not sup[f'{hook_typ}']: return
+        if f'hook_{hook_typ}' not in sup or not sup[f'hook_{hook_typ}']: return
         if not this_content and not this_embed:
             desc = []
             while len(txt) > 0:
@@ -926,7 +929,7 @@ async def punish_based_on_arl(arl, message, bot, mentions=False):
 async def try_get_member(ctx, user):
     member = None
     if not user: return member
-    
+
     if ctx.message.mentions:
         member = ctx.message.mentions[0]
     elif user and user.isdigit():
