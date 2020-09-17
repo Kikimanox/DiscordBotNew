@@ -52,7 +52,6 @@ class ClaimsManager:
                             resps_for_char.extend(rs.split('```')[1].split('```')[0].split('\n'))
                             for r in resps_for_char:
                                 if r == '': resps_for_char.remove(r)
-                            # todo: remove all empty strings in array
                             a = 0
                 dk = (str(c).replace('-', ' ').title()
                       if not str(c).startswith('_') else str(c)[1:].title())
