@@ -31,7 +31,7 @@ class Claimed(BaseModel):
     is_nsfw = BooleanField(null=True)
 
 
-# db.drop_tables([History, Claimed, UserSettings])
+db.drop_tables([History, Claimed, UserSettings])
 db.create_tables([History, Claimed, UserSettings])
 
 
