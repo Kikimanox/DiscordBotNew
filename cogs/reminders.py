@@ -117,6 +117,7 @@ class Reminders(commands.Cog):
         except asyncio.CancelledError:
             print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             print("Raise happened in dispatch_timers")
+            self.bot.logger.error(traceback.format_exc())
             raise
         except(OSError, discord.ConnectionClosed):
             self._task.cancel()
