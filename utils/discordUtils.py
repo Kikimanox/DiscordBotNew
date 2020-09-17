@@ -731,6 +731,7 @@ async def log(bot, title=None, txt=None, author=None,
 
 async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     if offender.id == bot.config['OWNER_ID']: return
+    print(meta)
     bot.banlist[offender.id] = meta
     try:
         bb = BotBanlist.get(BotBlacklist.user == offender.id)
@@ -746,6 +747,7 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
 
 async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     if offender.id == bot.config['OWNER_ID']: return
+    print(meta)
     bot.blacklist[offender.id] = meta
     try:
         bb = BotBlacklist.get(BotBlacklist.user == offender.id)

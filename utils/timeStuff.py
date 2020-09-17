@@ -101,9 +101,9 @@ def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
 
 def convert_sec_to_smh(sec):
     if sec < 60:
-        tim = f'{sec}s'
+        tim = f'{int(sec)}s'
     elif 3600 > sec >= 60:
-        tim = f'{sec // 60}m'
+        tim = f'{int(sec // 60)}m'
     else:
-        tim = f'{sec // 3600}h{(sec // 60) % 60}m'
+        tim = f'{int(sec // 3600)}h {int((sec // 60) % 60)}m'
     return tim

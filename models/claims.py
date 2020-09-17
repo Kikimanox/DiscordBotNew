@@ -23,7 +23,7 @@ class Claimed(BaseModel):
     expires_on = DateTimeField(default=datetime.utcnow)
 
 
-db.drop_tables([History, Claimed])
+# db.drop_tables([History, Claimed])
 db.create_tables([History, Claimed])
 
 
@@ -36,19 +36,28 @@ class ClaimsManager:
             cat = g.get_channel(v)
             pics = {}
             for c in cat.channels:
+                if c.name == '_resp_specific': continue  # todo logic
                 color = "4f545c"
+                resps_for_char = []
                 msgs = await c.history().flatten()
-                urls = []
+                attachements = []
                 for m in msgs:
                     #  url, is_nsfw
-                    urls.extend([[a.url, a.is_spoiler()] for a in m.attachments])
+                    attachements.extend([[a, a.is_spoiler()] for a in m.attachments])
                     if m.content:
-                        if m.content.startswith('color: '):
-                            color = m.content.split('color: ')[-1][:6]
+                        if m.content.lower().startswith('color: '):
+                            color = m.content.lower().split('color: ')[-1][:6]
+                        if m.content.startswith('resps:'):  # be sure it's resps:
+                            rs = "resps:".join(m.content.split('resps:')[1:])
+                            resps_for_char.extend(rs.split('```')[1].split('```')[0].split('\n'))
+                            for r in resps_for_char:
+                                if r == '': resps_for_char.remove(r)
+                            # todo: remove all empty strings in array
+                            a = 0
                 dk = (str(c).replace('-', ' ').title()
                       if not str(c).startswith('_') else str(c)[1:].title())
                 dk += f'_{color}'
-                pics[dk] = urls
+                pics[dk] = [attachements, resps_for_char]  # indexes for ret stuff
 
             ret[k] = pics
         d = 0
