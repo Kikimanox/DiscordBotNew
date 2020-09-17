@@ -903,8 +903,6 @@ class Serversetup(commands.Cog):
         g_id = payload.guild_id
         if g_id not in self.bot.from_serversetup: return
         if str(ch_id) in self.bot.from_serversetup[g_id]['ignored_chs_at_log']: return
-        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
-              f"(ch: {ch_id}) (guild: {g_id})"
         # for message in msgs: Don't display them
         #     if isinstance(message.channel, discord.DMChannel) or message.author.bot or \
         #             message.guild.id not in self.bot.from_serversetup:
@@ -917,7 +915,6 @@ class Serversetup(commands.Cog):
         #     ret += (txt + '\n')
         # if len(msgs) > 0:
         #     print(ret)
-        print(ret)
         kk = f'{g_id}_{ch_id}'
         if len(payload.message_ids) < 3: return
         if kk not in self.bulk_deleted: self.bulk_deleted[kk] = 0
@@ -939,7 +936,9 @@ class Serversetup(commands.Cog):
                         await dutils.log(self.bot, "Bulk message delete detected", f"{val - 1} messages deleted in "
                                                                                    f"{(g.get_channel(int(ch_id))).mention}",
                                          None, 0x960f0f, guild=g)
-                        d = 0
+                        ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
+                              f"(ch: {ch_id}) (guild: {g_id})"
+                        print(ret)
         except:
             await asyncio.sleep(2)
 

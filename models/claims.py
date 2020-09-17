@@ -9,22 +9,30 @@ class BaseModel(Model):
     class Meta:
         database = db
 
+class UserSettings(BaseModel):
+    user = IntegerField()
+    type = CharField()
+    nsfw = CharField(default='default')  # off | default
 
 class History(BaseModel):
     user = IntegerField()
-    type = IntegerField()
-    meta = CharField()
+    type = CharField()
+    meta = CharField(default='{}')
 
 
 class Claimed(BaseModel):
     id = AutoField()
     user = IntegerField()
-    type = IntegerField()
+    type = CharField()
     expires_on = DateTimeField(default=datetime.utcnow)
+    char_name = CharField(null=True)
+    img_url = CharField(null=True)
+    color_string = CharField(null=True)
+    is_nsfw = BooleanField(null=True)
 
 
-# db.drop_tables([History, Claimed])
-db.create_tables([History, Claimed])
+# db.drop_tables([History, Claimed, UserSettings])
+db.create_tables([History, Claimed, UserSettings])
 
 
 class ClaimsManager:

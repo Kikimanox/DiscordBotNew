@@ -748,6 +748,7 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
         if arl < 2:
             await ch_to_reply_at.send(f'💢 💢 💢 {offender.mention} you have been banned from the bot!')
 
+
 async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     if offender.id == bot.config['OWNER_ID']: return
     print(meta)
@@ -922,14 +923,14 @@ async def punish_based_on_arl(arl, message, bot, mentions=False):
                     pass
 
 
-async def recheck_server_setup_get(bot, gid):
-    #  not actually using this anyhwere atm lol
-    if bot.from_serversetup and gid in bot.from_serversetup:
-        return bot.from_serversetup[gid]
-    if not bot.from_serversetup:
-        bot.from_serversetup = await SSManager.get_setup_formatted(bot)
-    if gid not in bot.from_serversetup:
-        bot.from_serversetup = await SSManager.get_setup_formatted(bot)
-    if gid in bot.from_serversetup[gid]:
-        return bot.from_serversetup[gid]
-    return None
+async def try_get_member(ctx, user):
+    member = None
+    if not user: return member
+    
+    if ctx.message.mentions:
+        member = ctx.message.mentions[0]
+    elif user and user.isdigit():
+        member = ctx.guild.get_member(int(user))
+    else:
+        member = discord.utils.get(ctx.guild.members, name=user)
+    return member
