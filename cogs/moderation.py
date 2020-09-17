@@ -155,6 +155,7 @@ class Moderation(commands.Cog):
                                                regular_ch=sup['modlog'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
             except:
+                print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
                 ctx.bot.logger.error(f"Something went wrong when trying to update case {case_id} message\n")
         except:
@@ -283,6 +284,8 @@ class Moderation(commands.Cog):
                                               f"```\n{ee}```")
                 except:
                     trace = traceback.format_exc()
+                    print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+                    print(trace)
                     ctx.bot.logger.error(trace)
                     return await ctx.send("Something went wrong. Please re-check usage.")
             try:
@@ -415,6 +418,7 @@ class Moderation(commands.Cog):
                     return await ctx.send("Sent to dms")
 
             except:
+                print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
                 await ctx.send("Something weird went wrong when executing querry.")
                 ctx.bot.logger.error('listcases execution ERROR:\n' + traceback.format_exc())

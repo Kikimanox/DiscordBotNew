@@ -117,6 +117,7 @@ async def on_ready():
             channel = guild.get_channel(restartData["channel"])
             await channel.send("Restarted.")
         except:
+            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             trace = traceback.format_exc()
             bot.logger.error(trace)
             print(trace)
@@ -436,6 +437,7 @@ async def on_command_error(ctx, error):
         await ctx.send("An unknown error occurred with the `{}` command.".format(ctx.command.name))
         trace = traceback.format_exception(type(error), error, error.__traceback__)
         trace_str = "".join(trace)
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         print(trace_str)
         print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
         bot.logger.error(
@@ -458,6 +460,7 @@ async def on_error(event, *args, **kwargs):
         bot.logger.error("exception occurred, restarting bot")
         exit_bot(0)
     else:
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         trace = traceback.format_exc()
         bot.logger.error(f"---------- ERROR ----------: {trace}")
         print(trace)
@@ -488,6 +491,7 @@ def load_all_cogs_except(cogs_to_exclude):
                 try:
                     bot.load_extension("cogs." + extension[:-3])
                 except Exception as e:
+                    print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                     traceback.print_exc()
 
 
@@ -504,6 +508,7 @@ if __name__ == '__main__':
             loop.run_until_complete(bot.connect())
             print(f'Disconected: ---{datetime.datetime.utcnow().strftime("%c")}---')
         except Exception as e:
+            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             traceback.print_exc()
         print("Waiting for restart (30 seconds)")
         time.sleep(30)

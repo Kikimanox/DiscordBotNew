@@ -342,6 +342,7 @@ async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, 
         #                                  reason=reason, actually_resp=actually_resp,
         #                                  guild=guild, bot=bot)
     except:
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         traceback.print_exc()
         bot.logger.error(f"can not auto unmute {guild} {guild.id}")
 
@@ -726,6 +727,7 @@ async def log(bot, title=None, txt=None, author=None,
                                        content=this_content)
 
     except:
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         traceback.print_exc()
         bot.logger.error("Something went wrong when logging")
 

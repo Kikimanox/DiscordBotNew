@@ -216,6 +216,7 @@ class Cmds(commands.Cog):
             db_guild.save()
         except Exception as e:
             import traceback
+            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             traceback.print_exc()
             return await ctx.send("Something went wrong.")
         self.set_commands()

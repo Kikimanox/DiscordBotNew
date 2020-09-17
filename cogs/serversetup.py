@@ -1027,6 +1027,7 @@ class Serversetup(commands.Cog):
             return True
         except Exception as e:
             if str(e) == '_fail': return
+            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             traceback.print_exc()
             info = ""
             if quiet_succ:
