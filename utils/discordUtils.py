@@ -341,7 +341,8 @@ async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, 
         # await post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
         #                                  reason=reason, actually_resp=actually_resp,
         #                                  guild=guild, bot=bot)
-    except discord.errors.Forbidden:
+    except:
+        traceback.print_exc()
         bot.logger.error(f"can not auto unmute {guild} {guild.id}")
 
 

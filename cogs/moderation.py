@@ -643,6 +643,7 @@ class Moderation(commands.Cog):
 
         Only this command (and smute) can mute multiple users at once (max 10)"""
         users = list(set(users))
+        if len(users) == 0: raise commands.errors.BadArgument
         if len(users) > 10: return await ctx.send("Max 10 users")
         if len(users) > 1:
             if not await dutils.prompt(ctx, "Are you sure you want to mass mute like this? (It will send a dm "

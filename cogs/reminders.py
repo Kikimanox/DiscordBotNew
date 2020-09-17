@@ -166,7 +166,7 @@ class Reminders(commands.Cog):
         else:
             timer.id = orig_id
 
-        if delta <= 30:
+        if delta <= 40:
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
             return timer
 
