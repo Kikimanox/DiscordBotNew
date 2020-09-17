@@ -150,7 +150,6 @@ class Fun(commands.Cog):
         his = ({k: v for k, v in sorted(his.items(), key=lambda item: item[1], reverse=True)[:10]})
         his['last_3_claims'] = hiss['last_3_claims']
         his['last_3_claims'][0] += ' (last claim)'
-        # todo: last 3
 
         color = None
         url = None
@@ -292,7 +291,7 @@ class Fun(commands.Cog):
         ret = {}
         for k in [*d]:
             ret[k.split('_')[0]] = 0
-        ret['last_3_claims'] = []  # todo see here
+        ret['last_3_claims'] = []
         return ret
 
     async def delete_old_records(self):
