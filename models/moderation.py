@@ -23,8 +23,10 @@ class Reminderstbl(BaseModel):
     executed_by = IntegerField(null=True)
     guild = IntegerField(null=True)
     reason = CharField(null=True)
+    # basically user_id = target_id
     user_id = IntegerField(null=True)
     len_str = CharField(null=True)
+    executed_on = DateTimeField(default=datetime.utcnow)
 
 
 class Actions(BaseModel):

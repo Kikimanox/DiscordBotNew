@@ -1,3 +1,5 @@
+import re
+
 import arrow
 import datetime
 from dateutil.relativedelta import relativedelta
@@ -107,3 +109,23 @@ def convert_sec_to_smh(sec):
     else:
         tim = f'{int(sec // 3600)}h {int((sec // 60) % 60)}m'
     return tim
+
+
+def get_time_from_str_and_possible_err(string):
+    try:
+        error = ""
+        date = None
+        ds = tuple(map(int, re.findall(r'\d+', string)))[:6]
+        if ds:
+            date = datetime.datetime(*ds)
+        else:
+            error = "Couldn't find any numbers while parsing date."
+    except Exception as e:
+        date = None
+        ee = str(e).replace('@', '@\u200b')
+        error = (f"Something went wrong when parsing time. "
+                 f"Please check your "
+                 f"syntax and semantics. Exception:\n"
+                 f"```\n{ee}```")
+
+    return date, error

@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import re
 
 import discord
 from discord.ext import commands
@@ -140,8 +141,7 @@ class Reminders(commands.Cog):
         await self._have_data.wait()
         return await self.get_active_timer(days=days)
 
-    async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str,
-                           author_id, update_timer=False, orig_id=0):
+    async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
         now = datetime.datetime.utcnow()
         if not expires_on:
             expires_on = datetime.datetime.max
@@ -155,19 +155,26 @@ class Reminders(commands.Cog):
             len_str=len_str,
             executed_by=author_id
         )
+        # Insert into REMINDERSTABLE here
+        try:
+            # due to race conditions with MUTE we check if it's still in the db
+            rem = Reminderstbl.get(Reminderstbl.guild == gid,
+                                   Reminderstbl.user_id == uid)
 
-        if not update_timer:
-            try:
-                if meta.startswith('mute'):
-                    Reminderstbl.get(Reminderstbl.guild == gid,
-                                     Reminderstbl.user_id == uid)
-                    # Only insert below if not exists (1 user mute per guild)
-            except:
-                tim_id = Reminderstbl.insert(guild=gid, reason=reason, user_id=uid, len_str=len_str,
-                                             expires_on=expires_on, executed_by=author_id, meta=meta).execute()
-                timer.id = tim_id
-        else:
-            timer.id = orig_id
+            if not should_update:
+                raise
+
+            rem.len_str = len_str
+            rem.expires_on = expires_on
+            rem.executed_by = author_id
+            rem.reason = reason
+            rem.save()
+            timer.id = rem.id
+        except:
+            # Only insert if not exists (1 user mute per guild)
+            tim_id = Reminderstbl.insert(guild=gid, reason=reason, user_id=uid, len_str=len_str,
+                                         expires_on=expires_on, executed_by=author_id, meta=meta).execute()
+            timer.id = tim_id
 
         if delta <= 40:
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
@@ -191,6 +198,184 @@ class Reminders(commands.Cog):
             await asyncio.sleep(86400 * 5)  # every 5 days
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
+
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.command()
+    async def remind(self, ctx, *, text):
+        """Set a reminder.
+
+        Remind a channel or yourself.
+
+        - Reminding youself, use **me**
+        - Reminding a channel, mention that channel or supply it's id or name
+
+        Structure: **[p]remind [me|channel] [the reminder's content] [when]**
+
+        Regarding the **[when]** part, please use the folloing format x[d|h|m|s]{y[h|m|s]}{y[m|s]}, examples:
+        - in 1h
+        - in 2d
+        - in 1h30m
+        (those will trigger after an hour, two days, an hour and thirty minutes)
+        **__or use:__** 🆕
+        - at 23:50
+        - on YYYY M D [h m s]
+        (hour is optional, defaults to midnight if left empty)
+
+        > Please don't try to use **at** and **on** at once, use only one
+
+        Command examples:
+
+        `[p]remind me take out the trash in 2h`
+        `[p]remind #general Hey, ten days have passed in 10d`
+        `[p]remind 2953845243582 That's general's channel id btw. in 1m`
+        `[p]remind me Something at 23:50` (today sometime) (time is in UTC) 🆕
+        `[p]remind me Something on 2020/10/14 16:25` 🆕
+        """
+        await self.remindFunction(ctx, text)
+
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.command(aliases=["rm"])
+    async def remindme(self, ctx, *, text):
+        """Same as doing .remind me
+
+        This is just a shorter version of doing [p]remind me something in Xh
+
+        So you do `[p]rm take out the trash in 2h` instead of `[p]remind me take out the trash in 2h`"""
+        await self.remindFunction(ctx, f'me {text}')
+
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.check(checks.moderator_check)
+    @commands.command(aliases=["rro"])
+    async def remindrole(self, ctx, role: discord.Role, *, text):
+        """Same as doing .remind me plus a role ping
+
+        Remind role: When you create this reminder, it will automatically make the
+        selected role by id pingable and will ping it after the reminder is triggered
+        (after the ping the role will be unpinable again or left pingable if it was b4)
+
+        Example: [p]rro 1231432432 #movie-night Hey peeps with the role id 12314.... Movie time in 15h"""
+        # r = discord.utils.get(ctx.guild.roles, id=int(roleID))
+        if role.is_default():
+            return await ctx.send('Cannot use the @\u200beveryone role.')
+        if role > ctx.author.top_role and ctx.author.id != ctx.guild.owner_id:
+            return await ctx.send('This role is higher than your highest role.')
+        if role > ctx.me.top_role:
+            return await ctx.send('This role is higher than my highest role.')
+        await self.remindFunction(ctx, text, role)
+
+    async def remindFunction(self, ctx, text, rolePing=None):
+        try:
+            timestamp = datetime.datetime.utcnow()
+            remind_time = timestamp
+            who = ctx.author
+            by = who
+
+            firstPart = text.split(' ')[0]
+            idx2 = text.rfind('in')
+            idx3 = text.rfind('on')
+            idx4 = text.rfind('at')
+            match2 = re.findall(r"(in [0-9]+[smhd][0-9]*[smh]*[0-9]*[sm]*$)", text)
+            match3 = re.findall(r"(on [0-9].*?$)", text)
+            match4 = re.findall(r"(at [0-9].*?$)", text)
+            not2 = False
+            not3 = False
+            not4 = False
+            if idx2 == -1 or not match2: not2 = True
+            if idx3 == -1 or not match3: not3 = True
+            if idx4 == -1 or not match4: not4 = True
+            if not2 and not3 and not4:
+                return await ctx.send("You forgot the `in/on/at` at the end. If needed check the commands help.")
+            idx = 0
+            if match2: idx = idx2
+            if match3: idx = idx3
+            if match4: idx = idx4
+
+            lastPart = text[idx + 3::]
+            midPart = text[len(firstPart) + 1:idx - 1]
+            if not midPart: return await ctx.send("You forgot the reminders content.")
+            if not lastPart: return await ctx.send("You forgot to set when to set of the reminder.")
+
+            if firstPart != 'me':
+                isMod = await checks.moderator_check(ctx)
+                if not isMod: return await ctx.send(
+                    "Only moderators and admins may set the reminder's target to be a channel.\n"
+                    "You can however remind yourself to do something by replacing the channel name with `me`. "
+                    "(Check command's help for more details)")
+                ch = await dutils.getChannel(ctx, firstPart)
+                if not ch: return
+                who = ch
+
+            if idx == idx2:  # in
+                unitss = ['d', 'h', 'm', 's']
+                for u in unitss:
+                    cnt = lastPart.count(u)
+                    if cnt > 1: return await ctx.send(f"Error, you used **{u}** twice for the timer, don't do that.")
+
+                units = {
+                    "d": 86400,
+                    "h": 3600,
+                    "m": 60,
+                    "s": 1
+                }
+                seconds = 0
+                match = re.findall("([0-9]+[smhd])", lastPart)  # Thanks to 3dshax server's former bot
+                if not match:
+                    p = dutils.bot_pfx_by_ctx(ctx)
+                    return await ctx.send(f"Could not parse length. Are you using "
+                                          f"the right format? Check help for details (`{p}help remind` .. "
+                                          f"or just `{p}remind`)")
+                try:
+                    for item in match:
+                        seconds += int(item[:-1]) * units[item[-1]]
+                    if seconds <= 10:
+                        return await ctx.send("Reminder can't be less than 10 seconds from now!")
+                    delta = datetime.timedelta(seconds=seconds)
+                except OverflowError:
+                    return await ctx.send("Reminder time too long. Please input a shorter time.")
+                remind_time = timestamp + delta
+
+            if idx == idx3 or idx == idx4:  # on / at
+                if idx == idx4:
+                    lastPart = f'{timestamp.year} {timestamp.month} {timestamp.day} {lastPart}'
+                remind_time, err = tutils.get_time_from_str_and_possible_err(lastPart)
+                if err:
+                    return await ctx.send(err)
+
+            if remind_time <= timestamp:
+                return await ctx.send("Remind time can not be in the past.")
+            if remind_time - datetime.timedelta(seconds=10) <= timestamp:
+                return await ctx.send("Reminder can't be less than 10 seconds from now!")
+
+            meta = 'reminder_'
+            if by.id == who.id:
+                meta += 'me'
+            if rolePing:
+                meta += f'rolePing_{rolePing.id}'
+            tim = await self.create_timer(
+                expires_on=remind_time,
+                meta=meta,
+                gid=0 if not ctx.guild else ctx.guild.id,
+                reason=midPart.replace('@', '@\u200b'),
+                uid=who.id,  # This is the target user or channel
+                len_str=remind_time.strftime('%Y/%m/%d %H:%M:%S'),
+                author_id=by.id
+            )
+
+            cnt = f"⏰  |  **Got it! The reminder has been set up.**"
+            desc = f"**Id:** {tim.id}\n" \
+                   f"**Target:** {who.mention}\n" \
+                   f"**Triggered on:** {tim.len_str}"
+            if rolePing:
+                await ctx.send(
+                    embed=Embed(title='Reminder info', description=f"{desc}\n\nAlongside this reminder "
+                                                                   f"the role {rolePing.mention} will be pinged"),
+                    content=cnt)
+            else:
+                await ctx.send(embed=Embed(title='Reminder info', description=desc), content=cnt)
+        except:
+            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+            traceback.print_exc()
+            await ctx.send("Something went wrong")
 
 
 def setup(bot):

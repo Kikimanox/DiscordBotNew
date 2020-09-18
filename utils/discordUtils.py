@@ -3,6 +3,8 @@ import traceback
 
 import discord
 import time
+
+
 import utils.dataIO as dataIO
 import os
 from discord import Embed
@@ -37,6 +39,7 @@ def bot_pfx_by_gid(bot, gid):
     prefix = bot.config['BOT_PREFIX']
     if str(gid) not in bot.config['B_PREF_GUILD']: return prefix
     return bot.config['B_PREF_GUILD'][str(gid)]
+
 
 def bot_pfx_by_ctx(ctx):
     bot = ctx.bot
@@ -475,35 +478,23 @@ async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, ba
             return await fdbch.send('Can not load remidners cog! (Weird error)')
         else:
             return -989
+    updating_mute = True
     try:
-        mute = Reminderstbl.get(Reminderstbl.user_id == member.id, Reminderstbl.guild == guild.id)
-        mute.len_str = 'indefinitely ' if not length else length
-        mute.expires_on = unmute_time if length else datetime.datetime.max
-        mute.executed_by = author.id
-        mute.reason = new_reason
-
-        mute.save()
-        tim = await reminder.create_timer(
-            expires_on=unmute_time,
-            meta='mute_nodm' if no_dm else 'mute',
-            gid=guild.id,
-            reason=new_reason,
-            uid=member.id,
-            len_str='indefinitely ' if not length else length,
-            author_id=author.id,
-            unmute_user=True,
-            orig_id=mute.id
-        )
+        mute = Reminderstbl.get(Reminderstbl.user_id == member.id, Reminderstbl.guild == guild.id,
+                                Reminderstbl.meta.startswith('mute'))
+        d = 0
     except:
-        tim = await reminder.create_timer(
-            expires_on=unmute_time,
-            meta='mute_nodm' if no_dm else 'mute',
-            gid=guild.id,
-            reason=reason,
-            uid=member.id,
-            len_str='indefinitely ' if not length else length,
-            author_id=author.id
-        )
+        updating_mute = False
+    tim = await reminder.create_timer(
+        expires_on=unmute_time if length else datetime.datetime.max,
+        meta='mute_nodm' if no_dm else 'mute',
+        gid=guild.id,
+        reason=new_reason,
+        uid=member.id,
+        len_str='indefinitely ' if not length else length,
+        author_id=author.id,
+        should_update=updating_mute
+    )
     if not batch:
         await fdbch.send(embed=Embed(
             description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
@@ -797,9 +788,9 @@ async def saveFiles(links, savePath='tmp', fName=''):
             urll = ll.url
         except:
             urll = ll
-        fileName = f'{savePath}/' + str(datetime.datetime.now().timestamp()).replace('.', '') \
+        fileName = f'{savePath}/' + str(datetime.datetime.utcnow().timestamp()).replace('.', '') \
                    + '.' + str(urll).split('.')[-1] \
-            if not fName else f'{savePath}/{fName}_{str(datetime.datetime.now().timestamp()).replace(".", "")}' + \
+            if not fName else f'{savePath}/{fName}_{str(datetime.datetime.utcnow().timestamp()).replace(".", "")}' + \
                               '.' + str(urll).split('.')[-1]
         fileNames.append(fileName)
         async with aiohttp.ClientSession() as session:

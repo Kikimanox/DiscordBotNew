@@ -523,7 +523,8 @@ class Moderation(commands.Cog):
             if mute_role not in after.roles and mute_role in before.roles:
                 # unmute logic time
                 try:
-                    muted = Reminderstbl.get(Reminderstbl.guild == before.guild.id, Reminderstbl.user_id == before.id)
+                    muted = Reminderstbl.get(Reminderstbl.guild == before.guild.id, Reminderstbl.user_id == before.id,
+                                             Reminderstbl.meta.startswith('mute'))
                     muted.delete_instance()
                 except:
                     pass
