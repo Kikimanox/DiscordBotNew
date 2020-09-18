@@ -357,7 +357,7 @@ class Reminders(commands.Cog):
                 gid=0 if not ctx.guild else ctx.guild.id,
                 reason=midPart.replace('@', '@\u200b'),
                 uid=who.id,  # This is the target user or channel
-                len_str=remind_time.strftime('%Y/%m/%d %H:%M:%S'),
+                len_str=remind_time.strftime('%Y/%m/%d %H:%M:%S'),  # used to show when
                 author_id=by.id
             )
 
