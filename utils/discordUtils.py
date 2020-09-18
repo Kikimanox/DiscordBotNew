@@ -38,6 +38,13 @@ def bot_pfx_by_gid(bot, gid):
     if str(gid) not in bot.config['B_PREF_GUILD']: return prefix
     return bot.config['B_PREF_GUILD'][str(gid)]
 
+def bot_pfx_by_ctx(ctx):
+    bot = ctx.bot
+    gid = ctx.guild.id
+    prefix = bot.config['BOT_PREFIX']
+    if str(gid) not in bot.config['B_PREF_GUILD']: return prefix
+    return bot.config['B_PREF_GUILD'][str(gid)]
+
 
 def escape_at(content):
     return content.replace('@', '@\u200b')

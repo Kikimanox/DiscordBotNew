@@ -44,7 +44,7 @@ class Fun(commands.Cog):
 
         Use subcommands for other functionalities
         """
-        await ctx.send("Currently disabled unti the bot is oficially live.")
+        return await ctx.send("Currently disabled unti the bot is oficially live.")
         cmd = ctx.invoked_with
         if cmd == 'claim' and not subcmd:
             raise commands.errors.BadArgument
