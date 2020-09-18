@@ -27,6 +27,7 @@ class Serversetup(commands.Cog):
         self.bulk_deleted_before = {}
         self.bulk_deleted = {}
         self.check_bulk_msg_delete.start()
+        self.welcomed_in_guild = {}
 
     async def set_setup(self, gid=None):
         if not self.bot.is_ready():
@@ -810,17 +811,73 @@ class Serversetup(commands.Cog):
                         em = Embed(title=wmsg['title'], description=wmsg['desc'], color=wmsg['color'])
                         if wmsg['display_mem_count']:
                             em.set_footer(text=f'Member count: {len(member.guild.members)}')
-                        if wmsg.images:
+                        if wmsg['images']:
                             pic = random.choice(wmsg['images'].split())
                             if pic.startswith('http'):
                                 em.set_image(url=pic)
-                        cnt = wmsg.content.replace('[username]', member.mention)
-                        if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
-                                and not wmsg['title'] and not wmsg['display_mem_count']:
-                            await wmsg['target_ch'].send(content=cnt)
+                        cnt = wmsg['content'].replace('[username]', member.mention)
+
+                        # STUFF
+                        send_with_hook = False
+                        send_with = wmsg['target_ch']
+                        gid = member.guild.id
+                        now = datetime.datetime.utcnow().timestamp()
+                        anti_spam_cd = 5  # so 5 seconds
+                        if gid in self.welcomed_in_guild:
+                            if now - self.welcomed_in_guild[gid][1] < anti_spam_cd:  # see if its less than 5s
+                                self.welcomed_in_guild[gid][0] += 1
+                                if self.welcomed_in_guild[gid][0] > 3:  # 4th+ join in last 5s
+                                    send_with_hook = True
+                                else:
+                                    pass  # Almost reached the limit
+                            else:
+                                del self.welcomed_in_guild[gid]
                         else:
-                            await wmsg['target_ch'].send(embed=em, content=cnt)
+                            self.welcomed_in_guild[gid] = [0, now]
+                        if send_with_hook and wmsg['backup_hook']:
+                            send_with = wmsg['backup_hook']
+
+                        try:
+                            if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
+                                    and not wmsg['title'] and not wmsg['display_mem_count']:
+                                await send_with.send(content=cnt)
+                            else:
+                                await send_with.send(embed=em, content=cnt)
+                        except:
+                            # idk if this will ever be hit but aight
+                            self.bot.logger.info(f"Error at welcome webhook send in {member.guild.id} {member.guild}! "
+                                                 f"Making new hook one.")
+
+                            try:
+                                hook = await wmsg['backup_hook'].create_webhook(name=f'Tmp name', reason="!Backup hook "
+                                                                                                         "for "
+                                                                                                         "welcoming "
+                                                                                                         "in case of a "
+                                                                                                         "raid")
+                                db_wmsg = WelcomeMsg.get(WelcomeMsg.guild == member.guild.id)
+                                db_wmsg.backup_hook = hook.id
+                                db_wmsg.save()
+                                self.bot.from_serversetup[member.guild.id]['welcomemsg']['backup_hook'] = hook
+                                send_with = hook
+                                self.bot.logger.info(f'Newest hook id {hook.id}')
+                                url = str(self.bot.user.avatar_url).replace('.webp', '.png')
+                                tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
+                                fnn = await dutils.saveFile(url, 'tmp', tf)  # copy from dutils because circular import
+                                with open(fnn, 'rb') as fp:
+                                    await hook.edit(name=f'{self.bot.user.display_name}'[:32], avatar=fp.read())
+                                os.remove(fnn)
+                            except discord.errors.Forbidden:
+                                await self.bot.logger.error(f'Missing webhook perms in '
+                                                            f'{member.guild.id} {member.guild}!')
+
+                            if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
+                                    and not wmsg['title'] and not wmsg['display_mem_count']:
+                                await send_with.send(content=cnt)
+                            else:
+                                await send_with.send(embed=em, content=cnt)
             except:
+                print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+                traceback.print_exc()
                 self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} "
                                       f"in {str(member.guild)} {member.guild.id}")
 
