@@ -157,12 +157,12 @@ class Reminders(commands.Cog):
         )
         # Insert into REMINDERSTABLE here
         try:
+            if not should_update:
+                raise
+
             # due to race conditions with MUTE we check if it's still in the db
             rem = Reminderstbl.get(Reminderstbl.guild == gid,
                                    Reminderstbl.user_id == uid)
-
-            if not should_update:
-                raise
 
             rem.len_str = len_str
             rem.expires_on = expires_on
