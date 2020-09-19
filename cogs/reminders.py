@@ -82,6 +82,46 @@ class Reminders(commands.Cog):
                         no_dm = bool(timer.meta == 'mute_nodm')
                         await dutils.unmute_user_auto(user, guild, self.bot, no_dm,
                                                       self.bot.user, "Auto")
+        if timer.meta.startswith('reminder_'):
+            exec_user = self.bot.get_user(timer.executed_by)
+            guild = self.bot.get_guild(timer.guild)
+            if timer.meta == 'reminder_me':
+                if exec_user:
+                    try:
+                        return await exec_user.send(timer.reason)
+                    except:
+                        pass  # oh well ... we tried
+            elif timer.meta.startswith('reminder_rolePing_'):
+                if guild:
+                    role: discord.Role = discord.utils.get(guild.roles, id=int(timer.meta.split('_')[-1]))
+                    if role:
+                        target_ch = guild.get_channel(timer.user_id)
+                        if target_ch:
+                            was_mentionable = role.mentionable
+                            if not was_mentionable:
+                                try:
+                                    await role.edit(mentionable=True, reason=f"{exec_user} made a rro with this role")
+                                except:
+                                    pass
+                            try:
+                                await target_ch.send(f"{role.mention} {timer.reason}")
+                            except:
+                                pass
+                            if not was_mentionable:
+                                try:
+                                    await role.edit(mentionable=False, reason=f"{exec_user} made a rro with this role "
+                                                                              f"(reverting back to unmentionable)")
+                                except:
+                                    pass
+
+            else:
+                if guild:
+                    target_ch = guild.get_channel(timer.user_id)
+                    if target_ch:
+                        try:
+                            await target_ch.send(timer.reason)
+                        except:
+                            pass
 
     async def short_timer_optimisation(self, seconds, timer):
         await asyncio.sleep(seconds)
@@ -253,7 +293,9 @@ class Reminders(commands.Cog):
         selected role by id pingable and will ping it after the reminder is triggered
         (after the ping the role will be unpinable again or left pingable if it was b4)
 
-        Example: [p]rro 1231432432 #movie-night Hey peeps with the role id 12314.... Movie time in 15h"""
+        Example: `[p]rro 1231432432 #movie-night Hey peeps with the role id 12314.... Movie time in 15h`
+        `[p]rro #general Muted lol you guys are muted at 15:30`
+        """
         # r = discord.utils.get(ctx.guild.roles, id=int(roleID))
         if role.is_default():
             return await ctx.send('Cannot use the @\u200beveryone role.')
