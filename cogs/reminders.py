@@ -88,7 +88,7 @@ class Reminders(commands.Cog):
         if not self.bot.from_serversetup:
             if not self.tried_setup:
                 await self.set_server_stuff()
-        await self.execute_reminder(timer)
+        await self.call_timer(timer)
 
     async def call_timer(self, timer: Timer):
         try:
@@ -176,7 +176,7 @@ class Reminders(commands.Cog):
                                          expires_on=expires_on, executed_by=author_id, meta=meta).execute()
             timer.id = tim_id
 
-        if delta <= 40:
+        if delta <= 30:
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
             return timer
 
