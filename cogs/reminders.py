@@ -13,7 +13,7 @@ from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
-from models.moderation import Reminderstbl
+from models.moderation import Reminderstbl, Timezones
 
 
 class Timer:
@@ -53,11 +53,6 @@ class Reminders(commands.Cog):
 
     def cog_unload(self):
         self._task.cancel()
-
-    @commands.command()
-    async def tt(self, ctx):
-        """aaa"""
-        print("k")
 
     async def set_server_stuff(self):
         if not self.tried_setup:
@@ -158,6 +153,7 @@ class Reminders(commands.Cog):
         except asyncio.CancelledError:
             print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             print("Raise happened in dispatch_timers")
+            print(traceback.format_exc())
             self.bot.logger.error(traceback.format_exc())
             raise
         except(OSError, discord.ConnectionClosed):
@@ -239,41 +235,66 @@ class Reminders(commands.Cog):
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
+    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.command(aliases=['mutc'])
+    async def setmyutc(self, ctx, new_utc: float):
+        """Set your utc so you don't need to use UTC time for reminding
+
+        if your timezone is UTC+2 use:
+        `[p]setmyutc 2`
+        if your timezone is UTC+3.5 use:
+        `[p]setmyutc 3.5`
+        if your timezone is UTC+12.45 use:
+        `[p]setmyutc 12.45`
+        If your timezone is UTC-9 use:
+        `[p]setmyutc -9`
+        If your timezone is UTC or you want to reset use:
+        `[p]setmyutc 0`
+
+        Why is this useful? Simple, when doing remind commands
+        you won't have to convert the time to uct anymore, but the
+        bot will do that for you. **And you can use your own time
+        for setting any reminder.** 🎉
+        """
+        new_utc = round(new_utc * 4) / 4
+        if new_utc < -12: return await ctx.send(embed=Embed(description='[Min offset is -12](https://en.wikipedia.org/w'
+                                                                        'iki/List_of_UTC_time_offsets)'))
+        if new_utc > 14: return await ctx.send(embed=Embed(description='[Max offset is 14](https://en.wikipedia.org/w'
+                                                                       'iki/List_of_UTC_time_offsets)'))
+
+        Timezones.insert(user=ctx.author.id, utc_offset=new_utc).on_conflict_replace().execute()
+        await ctx.send(f'When using remind commands your new utc offset will be **{new_utc}**'.replace('@', '@\u200b'))
+
     @commands.cooldown(1, 2, commands.BucketType.user)
     @commands.command()
     async def remind(self, ctx, *, text):
-        """Set a reminder.
-
-        Remind a channel or yourself.
-
-        - Reminding youself, use **me**
-        - Reminding a channel, mention that channel or supply it's id or name
-
+        """Set a reminder. (Please see `[p]setmyutc`)
+         [Times are in UTC] (unless set their timezone with `[p]setmyutc`)
         Structure: **[p]remind [me|channel] [the reminder's content] [when]**
 
-        Regarding the **[when]** part, please use the folloing format x[d|h|m|s]{y[h|m|s]}{y[m|s]}, examples:
-        - in 1h
-        - in 2d
-        - in 1h30m
-        (those will trigger after an hour, two days, an hour and thirty minutes)
-        **__or use:__** 🆕
-        - at 23:50
-        - on YYYY M D [h m s]
-        (hour is optional, defaults to midnight if left empty)
-
-        > Please don't try to use **at** and **on** at once, use only one
+        - Reminding youself, use **me** (you can use `[p]rm ...` instead of `[p]remind me ...`)
 
         Command examples:
-
+        ℹ **All time inputs should use the 24 hour format (aka. don't use 3PM, use 15)**
+        **When using the `on` format, be sure to use Y then M then D** (Y can be skipped)
         `[p]remind me take out the trash in 2h`
-        `[p]remind #general Hey, ten days have passed in 10d`
-        `[p]remind 2953845243582 That's general's channel id btw. in 1m`
-        `[p]remind me Something at 23:50` (today sometime) (time is in UTC) 🆕
-        `[p]remind me Something on 2020/10/14 16:25` 🆕
+        `[p]remind #general Hey, ten days have passed in 10 days`
+        `[p]remind 31232132 channel id btw. tomorrow at 15:50`
+        `[p]remind me Something at 23:50` (today sometime)
+        `[p]remind me Something on 2020/10/14 16:25` (no, this example isn't incorrect)
+        `[p]remind me stuff on July 10th` (triggers at midnight July 10th)
+        `[p]remind me stuff on 10. 12. at 14:55` (triggers on oct 12nd, at 14:55)
+        `[p]remind me stuff at 3:25 on 3.3` (3rd march 3:25(AM))
+        `[p]remind me stuff tomorrow at 3:25`
+        `[p]remind me stuff at 3:25 tomorrow`
+        `[p]rm stuff in 3 days 2hour 1sec`
+        `[p]rm stuff in 3d2h1s`
+        `[p]rm stuff in 24hours`
+        `[p]rm stuff in 1 day`
         """
         await self.remindFunction(ctx, text)
 
-    @commands.cooldown(1, 2, commands.BucketType.user)
+    # @commands.cooldown(1, 2, commands.BucketType.user)
     @commands.command(aliases=["rm"])
     async def remindme(self, ctx, *, text):
         """Same as doing .remind me
@@ -305,37 +326,61 @@ class Reminders(commands.Cog):
             return await ctx.send('This role is higher than my highest role.')
         await self.remindFunction(ctx, text, role)
 
+    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.command(aliases=["listreminders", "lsrm", "lsrms", "reminderslist", "reminderlist"])
+    async def reminders(self, ctx):
+        reminders = Reminderstbl.select().where(Reminderstbl.executed_by == ctx.author.id,
+                                                Reminderstbl.meta.startswith('reminder_'))
+        if not reminders:
+            return await ctx.send(f"{ctx.author.mention} you have no ongoing reminders right now.")
+        cnt = f"⏰  |  {ctx.author.mention} these are your current reminders."
+        rms = []
+        for r in reminders:
+            reminder: Reminderstbl = r.get()
+            target = None
+            role_ping = False
+            g = self.bot.get_guild(reminder.guild)
+            if g:
+                if reminder.executed_by == reminder.user_id: target = self.bot.get_user(reminder.executed_by)
+                if not target: target = g.get_channel(reminder.user_id)
+                if not target:
+                    role_ping = True
+                    target = discord.utils.get(g.roles, id=reminder.user_id)
+            p = "" if target else "~~"
+            desc = f"{p}**Id:** {reminder.id}{p}\n" \
+                   f"{p}**Target:** {target}{p}\n" \
+                   f"{p}**Triggered on:** {reminder.len_str}{p}" \
+                   f"{p}**Reminder content:**{p}\n" \
+                   f"{p}```\n{reminder.reason if not role_ping else f'@{target.name} {reminder.reason}'}```{p}"
+
+            if not target: desc += '\n⚠ **Target is gone for some reason, deleting this reminder**'
+
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command(aliases=["reminderremove", "rmrm", "rmr", "rmrs", "removereminders", "remindersremove"])
+    async def removereminder(self, ctx, *, ids: commands.Greedy[int]):
+        pass
+
+    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.command(aliases=["clearreminders", "clrrms"])
+    async def remindersclear(self, ctx, *, text):
+        pass
+
     async def remindFunction(self, ctx, text, rolePing=None):
+        utc_offset = 0.0
+        try:
+            tz = Timezones.get(Timezones.user == ctx.author.id)
+            utc_offset = tz.utc_offset
+        except:
+            pass
         try:
             timestamp = datetime.datetime.utcnow()
+            utcnow = timestamp
+            timestamp = timestamp + datetime.timedelta(hours=utc_offset)
             remind_time = timestamp
             who = ctx.author
             by = who
 
             firstPart = text.split(' ')[0]
-            idx2 = text.rfind('in')
-            idx3 = text.rfind('on')
-            idx4 = text.rfind('at')
-            match2 = re.findall(r"(in [0-9]+[smhd][0-9]*[smh]*[0-9]*[sm]*$)", text)
-            match3 = re.findall(r"(on [0-9].*?$)", text)
-            match4 = re.findall(r"(at [0-9].*?$)", text)
-            not2 = False
-            not3 = False
-            not4 = False
-            if idx2 == -1 or not match2: not2 = True
-            if idx3 == -1 or not match3: not3 = True
-            if idx4 == -1 or not match4: not4 = True
-            if not2 and not3 and not4:
-                return await ctx.send("You forgot the `in/on/at` at the end. If needed check the commands help.")
-            idx = 0
-            if match2: idx = idx2
-            if match3: idx = idx3
-            if match4: idx = idx4
-
-            lastPart = text[idx + 3::]
-            midPart = text[len(firstPart) + 1:idx - 1]
-            if not midPart: return await ctx.send("You forgot the reminders content.")
-            if not lastPart: return await ctx.send("You forgot to set when to set of the reminder.")
 
             if firstPart != 'me':
                 isMod = await checks.moderator_check(ctx)
@@ -347,41 +392,13 @@ class Reminders(commands.Cog):
                 if not ch: return
                 who = ch
 
-            if idx == idx2:  # in
-                unitss = ['d', 'h', 'm', 's']
-                for u in unitss:
-                    cnt = lastPart.count(u)
-                    if cnt > 1: return await ctx.send(f"Error, you used **{u}** twice for the timer, don't do that.")
+            mid_part, remind_time, error = tutils.try_get_time_from_text(text, timestamp, firstPart)
+            if error:
+                return await ctx.send(error)
 
-                units = {
-                    "d": 86400,
-                    "h": 3600,
-                    "m": 60,
-                    "s": 1
-                }
-                seconds = 0
-                match = re.findall("([0-9]+[smhd])", lastPart)  # Thanks to 3dshax server's former bot
-                if not match:
-                    p = dutils.bot_pfx_by_ctx(ctx)
-                    return await ctx.send(f"Could not parse length. Are you using "
-                                          f"the right format? Check help for details (`{p}help remind` .. "
-                                          f"or just `{p}remind`)")
-                try:
-                    for item in match:
-                        seconds += int(item[:-1]) * units[item[-1]]
-                    if seconds <= 10:
-                        return await ctx.send("Reminder can't be less than 10 seconds from now!")
-                    delta = datetime.timedelta(seconds=seconds)
-                except OverflowError:
-                    return await ctx.send("Reminder time too long. Please input a shorter time.")
-                remind_time = timestamp + delta
-
-            if idx == idx3 or idx == idx4:  # on / at
-                if idx == idx4:
-                    lastPart = f'{timestamp.year} {timestamp.month} {timestamp.day} {lastPart}'
-                remind_time, err = tutils.get_time_from_str_and_possible_err(lastPart)
-                if err:
-                    return await ctx.send(err)
+            diff = remind_time - timestamp
+            if (diff.seconds < 30 and diff.days <= 0) or diff.days < 0:
+                return await ctx.send("Reminder can't be less than 30 seconds in the future.")
 
             if remind_time <= timestamp:
                 return await ctx.send("Remind time can not be in the past.")
@@ -393,13 +410,16 @@ class Reminders(commands.Cog):
                 meta += 'me'
             if rolePing:
                 meta += f'rolePing_{rolePing.id}'
+
+            len_str = remind_time.strftime('%Y/%m/%d %H:%M:%S')
+            if utc_offset != 0.0: len_str += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
             tim = await self.create_timer(
-                expires_on=remind_time,
+                expires_on=remind_time - datetime.timedelta(hours=utc_offset),
                 meta=meta,
                 gid=0 if not ctx.guild else ctx.guild.id,
-                reason=midPart.replace('@', '@\u200b'),
+                reason=mid_part.replace('@', '@\u200b'),
                 uid=who.id,  # This is the target user or channel
-                len_str=remind_time.strftime('%Y/%m/%d %H:%M:%S'),  # used to show when
+                len_str=len_str,  # used to show when
                 author_id=by.id
             )
 
@@ -408,12 +428,12 @@ class Reminders(commands.Cog):
                    f"**Target:** {who.mention}\n" \
                    f"**Triggered on:** {tim.len_str}"
             if rolePing:
-                await ctx.send(
-                    embed=Embed(title='Reminder info', description=f"{desc}\n\nAlongside this reminder "
-                                                                   f"the role {rolePing.mention} will be pinged"),
-                    content=cnt)
+                em = Embed(title='Reminder info', description=f"{desc}\n\nAlongside this reminder "
+                                                              f"the role {rolePing.mention} will be pinged")
+                await ctx.send(embed=em, content=cnt)
             else:
-                await ctx.send(embed=Embed(title='Reminder info', description=desc), content=cnt)
+                em = Embed(title='Reminder info', description=desc)
+                await ctx.send(embed=em, content=cnt)
         except:
             print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             traceback.print_exc()

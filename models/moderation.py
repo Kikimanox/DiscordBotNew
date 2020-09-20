@@ -50,9 +50,12 @@ class Blacklist(BaseModel):
     guild = IntegerField()
     user_id = IntegerField()
 
+class Timezones(BaseModel):
+    user = IntegerField(unique=True)
+    utc_offset = FloatField()
 
 # db.drop_tables([Reminderstbl, Actions, Blacklist])
-db.create_tables([Reminderstbl, Actions, Blacklist])
+db.create_tables([Reminderstbl, Actions, Blacklist, Timezones])
 
 
 class ModManager:
