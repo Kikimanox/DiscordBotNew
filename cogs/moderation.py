@@ -1003,7 +1003,8 @@ class Moderation(commands.Cog):
         Use `blacklistshow` to see current blacklist
         Use `whitelist` to remove ids from it"""
         user_ids = list(set(user_ids))  # remove dupes
-        if len(user_ids) > 90: return await ctx.send("Can only blacklist up to 90 at once")
+        if len(user_ids) > 90: return await ctx.send("Can only blacklist up to 90 at once.")
+        if len(user_ids) == 0: return await ctx.send("You didn't input any ids to blacklist.")
         data = [{'guild': ctx.guild.id, 'user_id': uid} for uid in user_ids]
         de = Blacklist.delete().where(Blacklist.guild == ctx.guild.id, Blacklist.user_id << user_ids).execute()
         if de > 0:

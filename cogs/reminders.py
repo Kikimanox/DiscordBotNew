@@ -9,6 +9,7 @@ import os
 import traceback
 
 from models.serversetup import SSManager
+from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -26,9 +27,10 @@ class Timer:
         self.len_str = record['len_str']
         self.expires = record['expires_on']
         self.executed_by = record['executed_by']
+        self.executed_on = record['executed_on']
 
     @classmethod
-    def temporary(cls, *, expires, meta, guild, reason, user_id, len_str, executed_by):
+    def temporary(cls, *, expires, meta, guild, reason, user_id, len_str, executed_by, executed_on):
         pseudo = {
             'id': None,
             'meta': meta,
@@ -38,6 +40,7 @@ class Timer:
             'len_str': len_str,
             'expires_on': expires,
             'executed_by': executed_by,
+            'executed_on': executed_on,
         }
         return cls(record=pseudo)
 
@@ -128,9 +131,13 @@ class Reminders(commands.Cog):
     async def call_timer(self, timer: Timer):
         try:
             rm = Reminderstbl.get(Reminderstbl.id == timer.id)
+            # this is only for some weird race conciditons
+            if timer.executed_on != rm.executed_on:
+                timer = Timer(record=(Reminderstbl.select().where(Reminderstbl.id == timer.id)).dicts()[0])
             rm.delete_instance()
         except:
-            pass
+            return  # reminder should have been executed but it was deleted
+            # and no other reminders have been created during that time. Just return here.
         if not self.bot.from_serversetup:
             if not self.tried_setup:
                 await self.set_server_stuff()
@@ -151,11 +158,7 @@ class Reminders(commands.Cog):
                 await self.call_timer(timer)
 
         except asyncio.CancelledError:
-            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            print("Raise happened in dispatch_timers")
-            print(traceback.format_exc())
-            self.bot.logger.error(traceback.format_exc())
-            raise
+            raise  # a timer with a shorter time has beeb found
         except(OSError, discord.ConnectionClosed):
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
@@ -163,7 +166,10 @@ class Reminders(commands.Cog):
     @staticmethod
     async def get_active_timer(days=7):
         now = datetime.datetime.utcnow()
-        record = Reminderstbl.select().where(Reminderstbl.expires_on < (now + datetime.timedelta(days=days))).limit(1)
+        record = Reminderstbl.select().where(Reminderstbl.expires_on < (now + datetime.timedelta(days=days))).order_by(
+            +Reminderstbl.expires_on
+        ).limit(1)
+
         return Timer(record=record.dicts()[0]) if record else None
 
     async def wait_for_active_timers(self, days=7):
@@ -189,7 +195,8 @@ class Reminders(commands.Cog):
             reason=reason,
             user_id=uid,
             len_str=len_str,
-            executed_by=author_id
+            executed_by=author_id,
+            executed_on=0  # tmp value
         )
         # Insert into REMINDERSTABLE here
         try:
@@ -206,11 +213,13 @@ class Reminders(commands.Cog):
             rem.reason = reason
             rem.save()
             timer.id = rem.id
+            timer.executed_on = rem.executed_on
         except:
             # Only insert if not exists (1 user mute per guild)
             tim_id = Reminderstbl.insert(guild=gid, reason=reason, user_id=uid, len_str=len_str,
                                          expires_on=expires_on, executed_by=author_id, meta=meta).execute()
             timer.id = tim_id
+            timer.executed_on = (Reminderstbl.get_by_id(tim_id)).executed_on
 
         if delta <= 30:
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
@@ -236,8 +245,8 @@ class Reminders(commands.Cog):
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
     @commands.cooldown(1, 4, commands.BucketType.user)
-    @commands.command(aliases=['mutc'])
-    async def setmyutc(self, ctx, new_utc: float):
+    @commands.command(aliases=['mutc', 'setmyutc'])
+    async def myutc(self, ctx, new_utc: float):
         """Set your utc so you don't need to use UTC time for reminding
 
         if your timezone is UTC+2 use:
@@ -265,11 +274,11 @@ class Reminders(commands.Cog):
         Timezones.insert(user=ctx.author.id, utc_offset=new_utc).on_conflict_replace().execute()
         await ctx.send(f'When using remind commands your new utc offset will be **{new_utc}**'.replace('@', '@\u200b'))
 
-    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.cooldown(3, 3, commands.BucketType.user)
     @commands.command()
     async def remind(self, ctx, *, text):
-        """Set a reminder. (Please see `[p]setmyutc`)
-         [Times are in UTC] (unless set their timezone with `[p]setmyutc`)
+        """Set a reminder. (Please see `[p]myutc`)
+         [Times are in UTC] (unless user set their timezone with ℹ `[p]myutc` ℹ)
         Structure: **[p]remind [me|channel] [the reminder's content] [when]**
 
         - Reminding youself, use **me** (you can use `[p]rm ...` instead of `[p]remind me ...`)
@@ -294,7 +303,7 @@ class Reminders(commands.Cog):
         """
         await self.remindFunction(ctx, text)
 
-    # @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.cooldown(3, 4, commands.BucketType.user)
     @commands.command(aliases=["rm"])
     async def remindme(self, ctx, *, text):
         """Same as doing .remind me
@@ -304,7 +313,7 @@ class Reminders(commands.Cog):
         So you do `[p]rm take out the trash in 2h` instead of `[p]remind me take out the trash in 2h`"""
         await self.remindFunction(ctx, f'me {text}')
 
-    @commands.cooldown(1, 2, commands.BucketType.user)
+    @commands.cooldown(3, 4, commands.BucketType.user)
     @commands.check(checks.moderator_check)
     @commands.command(aliases=["rro"])
     async def remindrole(self, ctx, role: discord.Role, *, text):
@@ -327,16 +336,19 @@ class Reminders(commands.Cog):
         await self.remindFunction(ctx, text, role)
 
     @commands.cooldown(1, 2, commands.BucketType.user)
-    @commands.command(aliases=["listreminders", "lsrm", "lsrms", "reminderslist", "reminderlist"])
+    @commands.command(aliases=["listreminders", "lsrm", "lsrms", "reminderslist", "reminderlist", 'rms'])
     async def reminders(self, ctx):
+        """Display all your ongoing reminders sorted by remind time"""
         reminders = Reminderstbl.select().where(Reminderstbl.executed_by == ctx.author.id,
-                                                Reminderstbl.meta.startswith('reminder_'))
+                                                Reminderstbl.meta.startswith('reminder_')).order_by(
+            +Reminderstbl.expires_on)
+
         if not reminders:
             return await ctx.send(f"{ctx.author.mention} you have no ongoing reminders right now.")
         cnt = f"⏰  |  {ctx.author.mention} these are your current reminders."
         rms = []
         for r in reminders:
-            reminder: Reminderstbl = r.get()
+            reminder = r
             target = None
             role_ping = False
             g = self.bot.get_guild(reminder.guild)
@@ -347,23 +359,89 @@ class Reminders(commands.Cog):
                     role_ping = True
                     target = discord.utils.get(g.roles, id=reminder.user_id)
             p = "" if target else "~~"
-            desc = f"{p}**Id:** {reminder.id}{p}\n" \
+            desc = f"\n{p}**Id:** {reminder.id}{p}\n" \
                    f"{p}**Target:** {target}{p}\n" \
-                   f"{p}**Triggered on:** {reminder.len_str}{p}" \
+                   f"{p}**Triggeres on:** {reminder.len_str}{p}\n" \
                    f"{p}**Reminder content:**{p}\n" \
                    f"{p}```\n{reminder.reason if not role_ping else f'@{target.name} {reminder.reason}'}```{p}"
 
-            if not target: desc += '\n⚠ **Target is gone for some reason, deleting this reminder**'
+            if not target:
+                desc += '\n⚠ **Target is gone for some reason, deleting this reminder**'
+                g.delete_instance()
+            rms.append(desc)
+
+        title = f"Reminders for {ctx.author}"
+        le_max = 450
+        txt = rms
+        txt = txt[::-1]
+        desc = ""
+        desc_arr = []
+        while len(txt) > 0:
+            desc += txt.pop()
+            if len(txt) == 0: break
+            if len(desc) > le_max or len(desc) + len(txt[-1]) > 2000:
+                desc_arr.append(desc)
+                desc = ""
+        if desc: desc_arr.append(desc)
+
+        embeds = []
+        for i in range(len(desc_arr)):
+            em = Embed(title=title + f'\nPage {i + 1}/{len(desc_arr)}',
+                       description=desc_arr[i], color=ctx.author.color)
+            embeds.append(em)
+
+        if len(embeds) == 1:
+            embeds[0].title = title
+            return await ctx.send(embed=embeds[0])
+        else:
+            return await SimplePaginator(extras=embeds).paginate(ctx)
 
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command(aliases=["reminderremove", "rmrm", "rmr", "rmrs", "removereminders", "remindersremove"])
-    async def removereminder(self, ctx, *, ids: commands.Greedy[int]):
-        pass
+    @commands.command(aliases=["reminderremove", "rmrm", "rmr", "rmrs", "rmrms", "rmsrm",
+                               "removereminders", "remindersremove"])
+    async def removereminder(self, ctx, reminder_ids: commands.Greedy[int]):
+        """Remove reminder(s) by id.
 
-    @commands.cooldown(1, 4, commands.BucketType.user)
-    @commands.command(aliases=["clearreminders", "clrrms"])
-    async def remindersclear(self, ctx, *, text):
-        pass
+        `[p]rmr 1`, `[p] rmr 1 2 5 6`"""
+        if not reminder_ids:
+            await ctx.send("You are either missing the argument <reminder_ids> or you have inputed some non intiger "
+                           "(number) symbols.\nPlease see the examples on how to use this commands.")
+            raise commands.errors.BadArgument
+        reminders = Reminderstbl.select().where(Reminderstbl.executed_by == ctx.author.id,
+                                                Reminderstbl.meta.startswith('reminder_'),
+                                                Reminderstbl.id << reminder_ids)
+        if not reminders:
+            return await ctx.send(f"You do not own any reminders with those ids {ctx.author.mention}")
+        correct_ids = [r.id for r in reminders]
+        will_delete = list(set(correct_ids) & set(reminder_ids))
+        will_exclude = list(set(reminder_ids) - set(correct_ids))
+        p = f"Deleting reminders with the id: **{', '.join([str(w) for w in will_delete])}**"
+        if will_exclude: p += f"\n~~Excluding the following ids, because you don't own those reminders or they " \
+                              f"don't exist: **{', '.join([str(w) for w in will_exclude])}**~~"
+        if await dutils.prompt(ctx, p):
+            d = Reminderstbl.delete().where(Reminderstbl.executed_by == ctx.author.id,
+                                            Reminderstbl.meta.startswith('reminder_'),
+                                            Reminderstbl.id << will_delete).execute()
+            await ctx.send(f"Removed **{d}** reminder." if d == 1 else f"Removed **{d}** reminders.")
+        else:
+            await ctx.send("Cancelled.")
+
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command(aliases=["clearreminders", "clrrms", "rmsclr"])
+    async def remindersclear(self, ctx):
+        confirm = await dutils.prompt(ctx, "Are you sure you want to clear **all** your reminders?")
+        if not confirm:
+            return await ctx.send("Cancelled.")
+
+        reminders = Reminderstbl.select().where(Reminderstbl.executed_by == ctx.author.id,
+                                                Reminderstbl.meta.startswith('reminder_'))
+        if not reminders:
+            return await ctx.send(f"You don't have any active reminders {ctx.author.mention}")
+
+        d = Reminderstbl.delete().where(Reminderstbl.executed_by == ctx.author.id,
+                                        Reminderstbl.meta.startswith('reminder_')).execute()
+
+        await ctx.send(f"I've cleared all (**{d}**) of your reminders {ctx.author.mention}")
 
     async def remindFunction(self, ctx, text, rolePing=None):
         utc_offset = 0.0
@@ -411,7 +489,7 @@ class Reminders(commands.Cog):
             if rolePing:
                 meta += f'rolePing_{rolePing.id}'
 
-            len_str = remind_time.strftime('%Y/%m/%d %H:%M:%S')
+            len_str = remind_time.strftime('%Y/%m/%d %H:%M:%S') + ' UTC'
             if utc_offset != 0.0: len_str += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
             tim = await self.create_timer(
                 expires_on=remind_time - datetime.timedelta(hours=utc_offset),
@@ -426,7 +504,7 @@ class Reminders(commands.Cog):
             cnt = f"⏰  |  **Got it! The reminder has been set up.**"
             desc = f"**Id:** {tim.id}\n" \
                    f"**Target:** {who.mention}\n" \
-                   f"**Triggered on:** {tim.len_str}"
+                   f"**Triggeres on:** {tim.len_str}"
             if rolePing:
                 em = Embed(title='Reminder info', description=f"{desc}\n\nAlongside this reminder "
                                                               f"the role {rolePing.mention} will be pinged")
