@@ -29,7 +29,14 @@ class Fun(commands.Cog):
     async def set_setup(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
-        self.data = await ClaimsManager.get_data_from_server(self.bot, self.config)
+        try:
+            self.data = await ClaimsManager.get_data_from_server(self.bot, self.config)
+        except:
+            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+            print("Claims data not loaded")
+            traceback.print_exc()
+            self.data = {'-1-1-1': '-1-1-1'}
+            return
         print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         print("Claims data loaded")
 
@@ -44,7 +51,7 @@ class Fun(commands.Cog):
 
         Use subcommands for other functionalities
         """
-        return await ctx.send("Currently disabled unti the bot is oficially live.")
+        # return await ctx.send("Currently disabled unti the bot is oficially live.")
         cmd = ctx.invoked_with
         if cmd == 'claim' and not subcmd:
             raise commands.errors.BadArgument
@@ -82,6 +89,8 @@ class Fun(commands.Cog):
         users = ' '.join(user)
         if not self.data:
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
+        if '-1-1-1' in self.data and self.data['-1-1-1'] == '-1-1-1':
+            return await ctx.send("Something went wrong when loading data, please contact the bot owner.")
         if user:
             member = await dutils.try_get_member(ctx, user)
         else:
@@ -125,6 +134,8 @@ class Fun(commands.Cog):
         users = ' '.join(user)
         if not self.data:
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
+        if '-1-1-1' in self.data and self.data['-1-1-1'] == '-1-1-1':
+            return await ctx.send("Something went wrong when loading data, please contact the bot owner.")
         if user:
             member = await dutils.try_get_member(ctx, user)
         else:
@@ -203,6 +214,8 @@ class Fun(commands.Cog):
     async def do_claim(self, ctx, c_type, claim_cd=20):
         if not self.data:
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
+        if '-1-1-1' in self.data and self.data['-1-1-1'] == '-1-1-1':
+            return await ctx.send("Something went wrong when loading data, please contact the bot owner.")
         utcnow = datetime.datetime.utcnow()
         now = utcnow.timestamp()
         d_key = f"{ctx.author.id}_{c_type}"
@@ -247,7 +260,7 @@ class Fun(commands.Cog):
                                          Claimed.type == c_type,
                                          Claimed.expires_on > utcnow)
             if usr:
-                usr = usr.get()
+                usr.get()
                 await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
                                f"**{tutils.convert_sec_to_smh((usr.expires_on - utcnow).total_seconds())}**")
                 if d_key in self.just_claimed:
