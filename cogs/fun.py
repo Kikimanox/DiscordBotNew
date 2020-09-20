@@ -40,18 +40,19 @@ class Fun(commands.Cog):
         print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         print("Claims data loaded")
 
-    @commands.group(aliases=['bride', 'vtuber'])  # THESE TWO HAVE TO BE THE SAME
+    @commands.group(aliases=['bride', 'vtuber'])  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
     async def claim(self, ctx, *, subcmd=""):
         """Get your daily claim for a certain theme
 
         Command usages:
         `[p]claim` - shows this output
+
         `[p]bride` - get your bride
         `[p]vtuber` - get your daily vtuber
 
         Use subcommands for other functionalities
         """
-        # return await ctx.send("Currently disabled unti the bot is oficially live.")
+        return await ctx.send("Currently disabled unti the bot is oficially live.")
         cmd = ctx.invoked_with
         if cmd == 'claim' and not subcmd:
             raise commands.errors.BadArgument
