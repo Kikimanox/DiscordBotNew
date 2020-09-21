@@ -1,4 +1,6 @@
+import random
 import re
+import string
 
 import arrow
 import datetime
@@ -144,6 +146,15 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
         midPart = ""
         remind_time = timestamp
 
+        replace_with = "min"
+        min_replace = False
+        if 'min' in text:
+            min_replace = True
+            rand_str = ''.join(random.choices(string.digits + string.digits, k=random.randint(1200, 1700)))
+            rand_str2 = ''.join(random.choices(string.digits + string.digits, k=random.randint(1400, 1900)))
+            replace_with = f'a{rand_str}{rand_str2}a'
+            text = text.replace('min', replace_with)
+
         idx2 = text.lower().rfind('in')
         idx3 = text.lower().rfind('on')
         idx4 = text.lower().rfind('at')
@@ -151,7 +162,7 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
         idx6 = text.lower().rfind('at')  # at on
         idx7 = text.lower().rfind('tomorrow')  # tomorrow at
         idx8 = text.lower().rfind('at')  # at.. tomorrow
-        #match2 = re.findall(r"(in [0-9]+[smhd][0-9]*[smh]*[0-9]*[sm]*$)", text.lower())
+        # match2 = re.findall(r"(in [0-9]+[smhd][0-9]*[smh]*[0-9]*[sm]*$)", text.lower())
         match2 = re.findall(r"(in .*?$)", text.lower())
         match3 = re.findall(r"(on .*?$)", text.lower())
         match4 = re.findall(r"(at .*?$)", text.lower())
@@ -189,8 +200,12 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
         lastPart = text[idx + 3::]
         midPart = text[len(firstPart) + 1:idx - 1]
 
+        if min_replace:
+            lastPart = lastPart.replace(replace_with, 'min')
+            midPart = midPart.replace(replace_with, 'min')
+
         if firstPart and not midPart: return None, None, "You forgot the reminders content."
-        if not lastPart: return None, None, "You forgot to set when to set of the reminder."
+        if not lastPart: return None, None, "You forgot to set when to set off the reminder."
 
         if idx == idx2:  # in
             replacements = [
