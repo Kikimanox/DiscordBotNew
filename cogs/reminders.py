@@ -133,7 +133,9 @@ class Reminders(commands.Cog):
             rm = Reminderstbl.get(Reminderstbl.id == timer.id)
             # this is only for some weird race conciditons
             if timer.executed_on != rm.executed_on:
-                timer = Timer(record=(Reminderstbl.select().where(Reminderstbl.id == timer.id)).dicts()[0])
+                self._task.cancel()
+                self._task = self.bot.loop.create_task(self.dispatch_timers())
+                return
             rm.delete_instance()
         except:
             return  # reminder should have been executed but it was deleted
@@ -423,6 +425,7 @@ class Reminders(commands.Cog):
                                             Reminderstbl.meta.startswith('reminder_'),
                                             Reminderstbl.id << will_delete).execute()
             await ctx.send(f"Removed **{d}** reminder." if d == 1 else f"Removed **{d}** reminders.")
+            # check if this timer is earlier than our currently run timer
         else:
             await ctx.send("Cancelled.")
 
