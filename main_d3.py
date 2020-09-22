@@ -206,6 +206,16 @@ async def on_message(message):
     # check if it's even a user
     if not isinstance(message.author, discord.Member) or message.author.bot:
         return
+
+    is_mod = await moderator_check_no_ctx(message.author, message.guild, bot)
+    ck = 'censor_list'
+    if not is_mod:
+        if message.guild and message.guild.id in bot.from_serversetup and bot.from_serversetup[message.guild.id][ck]:
+            if any(w in bot.from_serversetup[message.guild.id][ck] for w in message.content.split()):
+                await message.delete()
+            if any(c in message.content for c in bot.from_serversetup[message.guild.id][ck]):
+                await message.delete()
+
     arl = 0
     # get anti raid level
     if message.guild and message.guild.id in bot.anti_raid:
@@ -275,7 +285,6 @@ async def on_message(message):
         current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
         retry_after = bucket.update_rate_limit(current)
         author_id = message.author.id
-        is_mod = await moderator_check_no_ctx(message.author, message.guild, bot)
 
         # spamming has started (but ignore moderators though)
         if retry_after and not is_mod:

@@ -4,7 +4,6 @@ import traceback
 import discord
 import time
 
-
 import utils.dataIO as dataIO
 import os
 from discord import Embed
@@ -12,6 +11,7 @@ from discord import Embed
 from models.antiraid import ArGuild
 from models.bot import BotBlacklist, BotBanlist
 from models.serversetup import Guild, SSManager
+from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 import re
 import datetime
@@ -171,6 +171,26 @@ def getParts2kByDelimiter(text, delimi, extra='', limit=1900):
     return ret
 
 
+def getEmbedsFromTxtArrs(bot, arrs, title, color=None, cnt_join_instd_of_spc=None):
+    embeds = []
+    for a in arrs:
+        if cnt_join_instd_of_spc:
+            a = cnt_join_instd_of_spc.join(a.split())
+        embeds.append(Embed(title=f'{title}\n'
+                                  f'Page {len(embeds) + 1}/[MAX]', description=a,
+                            color=bot.config['BOT_DEFAULT_EMBED_COLOR'] if not color else color))
+    for e in embeds:
+        e.title = str(e.title).replace("[MAX]", str(len(embeds)))
+    return embeds
+
+
+async def send_and_maybe_paginate_embeds(ctx, embeds):
+    if len(embeds) == 1:
+        await ctx.send(embed=embeds[0])
+    else:
+        await SimplePaginator(extras=embeds).paginate(ctx)
+
+
 async def saveFile(link, path, fName):
     fileName = f"{path}/{fName}"
     async with aiohttp.ClientSession() as session:
@@ -245,6 +265,7 @@ async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=No
     finally:
         return confirm
 
+
 async def prompt_custom(ctx, message, *, emotes=None, timeout=60.0, delete_after=True, reactor_id=None):
     """Similar to prompt but you make your own message and emotes
     emotes length shouldn't be less than 1 and more than 19!!! (be careful!)
@@ -294,6 +315,7 @@ async def prompt_custom(ctx, message, *, emotes=None, timeout=60.0, delete_after
             await msg.delete()
     finally:
         return confirm
+
 
 async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None, log_logMismatch=True):
     hook_ok = False

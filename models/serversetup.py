@@ -26,6 +26,7 @@ class Guild(BaseModel):
     muterole = IntegerField(null=True)
     modrole = IntegerField(null=True)
     ignored_chs_at_log = CharField(default="")
+    censor_list = CharField(default="")
     disabled_onlyEnabled_cmds_and_chs = CharField(default="{}")
 
 
@@ -57,6 +58,7 @@ class Logging(BaseModel):
 
 
 # db.drop_tables([Guild, WelcomeMsg, Logging, Webhook])
+# db.drop_tables([Guild])
 db.create_tables([Guild, WelcomeMsg, Logging, Webhook])
 
 
@@ -206,6 +208,7 @@ class SSManager:
             ret[g['id']] = {'muterole': g['muterole'],
                             'modrole': g['modrole'],
                             'ignored_chs_at_log': g['ignored_chs_at_log'],
+                            'censor_list': g['censor_list'].split(),
                             'disabled_onlyEnabled_cmds_and_chs':
                                 json.loads(g['disabled_onlyEnabled_cmds_and_chs'])}
             for lg in lgs:
