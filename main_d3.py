@@ -325,7 +325,7 @@ async def on_message(message):
         if is_actually_cmd:
             if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
                 return await message.channel.send(arl1_ret)
-            if sup and possible_cmd in sup:
+            if sup and possible_cmd in sup and not is_mod:
                 if message.channel.id in sup[possible_cmd]['dis']:
                     return await message.channel.send("❌ This command is disabled in the following channels:\n"
                                                       f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['dis'])}")
@@ -341,7 +341,7 @@ async def on_message(message):
 
             pos_c = '"custom cmds"'
             if sup and pos_c in sup:
-                if message.channel.id in sup[pos_c]['dis']:
+                if message.channel.id in sup[pos_c]['dis'] and not is_mod:
                     return await message.channel.send("❌ Custom commands are disabled in the following channels:\n"
                                                       f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['dis'])}")
                 if sup[pos_c]['only_e'] and message.channel.id not in sup[pos_c]['only_e']:
