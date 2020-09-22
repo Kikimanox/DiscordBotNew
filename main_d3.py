@@ -339,6 +339,15 @@ async def on_message(message):
             if arl == 1 and not is_mod:
                 return await message.channel.send(arl1_ret)
 
+            pos_c = '"custom cmds"'
+            if sup and pos_c in sup:
+                if message.channel.id in sup[pos_c]['dis']:
+                    return await message.channel.send("❌ Custom commands are disabled in the following channels:\n"
+                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['dis'])}")
+                if sup[pos_c]['only_e'] and message.channel.id not in sup[pos_c]['only_e']:
+                    return await message.channel.send("❌ Custom commands are enabled only in the following channels:\n"
+                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['only_e'])}")
+
             if ctype == 1:
                 c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
             elif ctype == 2:
