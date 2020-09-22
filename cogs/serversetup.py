@@ -425,9 +425,9 @@ class Serversetup(commands.Cog):
         If you want to revert or change something, just run the command again
         or something (see the message history).
 
-        ~~Yes I was very lazy when adding this command, I *might* make it
-        more flexible in the future.~~ **So please follow the syntax
-        as shown in the example exactly.**
+        ~~Yes I was a bit lazy when adding this command, I *might* make it
+        more flexible in the future. But is should be fiiine~~
+        **So please follow the syntax as shown in the example exactly.**
 
         This setting doesn't work on mods and admins.
         """
