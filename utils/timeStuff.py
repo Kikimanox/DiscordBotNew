@@ -147,6 +147,7 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
     try:
         midPart = ""
         midPart2 = ""
+        err_no = "No reminder"
         remind_time = timestamp
 
         replace_with = "min"
@@ -372,14 +373,17 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
                     if idx == 1:
                         remind_time = remind_time2
                         midPart = midPart2
+                        err_no = err2
+                    if idx == 0:
+                        err_no = err
                     if idx == None:
                         return None, None, "Prompt timeout, please try again."
                     if idx == -1:
                         return None, None, "Cancelled."
                 else:
-                    # ree duplicate string code, anyway..
                     return None, None, ss
 
+        if not remind_time: return None, None, err_no
         if remind_time < timestamp: return None, None, "Time can not be in the past."
         return midPart, remind_time, None
     except Exception as e:
