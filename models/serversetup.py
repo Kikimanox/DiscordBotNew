@@ -4,6 +4,7 @@ Welcomemsg: id, content, desc, images, title, FK_GUILD
 Logging: id, target_ch, type, FK_GUILD, FK_Hooks
 Webhooks: id, url, id, target_ch, FK_GUILD, valid
 """
+import json
 import os
 import discord
 import aiohttp
@@ -202,10 +203,11 @@ class SSManager:
 
         ret = {}
         for g in gs:
-            # if updating_g_id and updating_g_id != g['id']: continue
             ret[g['id']] = {'muterole': g['muterole'],
                             'modrole': g['modrole'],
-                            'ignored_chs_at_log': g['ignored_chs_at_log']}
+                            'ignored_chs_at_log': g['ignored_chs_at_log'],
+                            'disabled_onlyEnabled_cmds_and_chs':
+                                json.loads(g['disabled_onlyEnabled_cmds_and_chs'])}
             for lg in lgs:
                 if lg['guild'] != g['id']: continue
                 try:

@@ -406,10 +406,13 @@ class Serversetup(commands.Cog):
         await ctx.message.delete()
 
     @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @setup.group(aliases=['cmdschs'])
-    async def commandschannels(self, ctx, *, settings):
+    @setup.command(aliases=['cmdschs'])
+    async def commandschannels(self, ctx, *, settings=""):
         """Disable cmds in certain channels, or only enable them in certain chs.
+
+        > Running this command with no arguemnts will display current settings
 
         Use the following syntax: (channel can be id, name or mention)
         Command example:
@@ -428,10 +431,32 @@ class Serversetup(commands.Cog):
 
         This setting doesn't work on mods and admins
         """
+        if not settings:
+            g = Guild.get_or_none(id=ctx.guild.id)
+            if not g or not g.disabled_onlyEnabled_cmds_and_chs or g.disabled_onlyEnabled_cmds_and_chs == '{}':
+                return await ctx.send("No disabled/only_enabled settings setup for this sever.")
+            chs = json.loads(g.disabled_onlyEnabled_cmds_and_chs)
+            ret = 'Displaying the current setup, sending it in command invoke format in case any changes ' \
+                  'need to be applied.:\n'
+            cc = {}
+            r = ''
+            for de in [('disable', 'just in'), ('enable', 'only in')]:
+                keyy = 'only_e' if de[0] == 'enable' else 'dis'
+                for k, v in chs.items():
+                    for ch in v[keyy]:
+                        ch = str(ch)
+                        if ch not in cc: cc[ch] = {'only_e': [], 'dis': []}
+                        cc[ch][keyy].append(k)
+                for kk, vv in cc.items():
+                    if not vv[keyy]: continue
+                    chn = ctx.guild.get_channel(int(kk))
+                    if chn:
+                        r += f'{de[0]} [{", ".join(vv[keyy])}] {de[1]} [{chn.name}]\n'
+            ret += f'```\n{dutils.bot_pfx_by_ctx(ctx)}sup cmdschs {r}```'
+            return await ctx.send(ret.replace('@', '@\u200b'))
         try:
             settings = settings.replace(',', ', ')
             settings = re.sub(' +', ' ', settings)
-            meta = {}
             chs = {}  # ch: {"only_e": [...], "dis": [...]}
             for line in settings.split('\n'):
                 left = 'disable \['
@@ -443,18 +468,25 @@ class Serversetup(commands.Cog):
                 for _ch in (re.search(f'{right}(.*?)\]', line)).group(1).split(', '):
                     ch = await dutils.getChannel(ctx, _ch, silent=True)
                     if ch:
-                        if str(ch.id) not in chs: chs[str(ch.id)] = {"only_e": [], "dis": []}
                         for _cm in (re.search(f'{left}(.*?)\]', line)).group(1).split(', '):
-                            # if _cm in self.bot.all_commands or _cm == '"custom cmds"':
-                            if True:
-                                chs[str(ch.id)][k].append(_cm)
-                            chs[str(ch.id)][k] = list(set(chs[str(ch.id)][k]))
-            d = 0
-
-
+                            if _cm in self.bot.all_commands or _cm == '"custom cmds"':
+                                if _cm not in chs: chs[_cm] = {"only_e": [], "dis": []}
+                                chs[_cm][k].append(ch.id)
+                            if _cm in chs: chs[_cm][k] = list(set(chs[_cm][k]))
+            for k in chs.copy():
+                if not chs[k]['only_e'] and not chs[k]['dis']:
+                    del chs[k]
+                if chs[k]['only_e'] and chs[k]['dis']:
+                    ctx.command.reset_cooldown(ctx)
+                    return await ctx.send(f"You tried to only enable and just disable **{k}** in "
+                                          f"multiple channels at once. Please try again without doing that. "
+                                          f"Only enable the command in some channels or just disable it in "
+                                          f"some channels, not both at once.")
+            await self.do_setup(cmds_chs_meta=chs, ctx=ctx)
         except:
-            traceback.print_exc()
+            self.bot.logger.error(traceback.format_exc())
             await ctx.send("Something went wrong, ~~are you using the correct syntax?~~")
+            ctx.command.reset_cooldown(ctx)
             raise commands.errors.BadArgument
 
     @commands.check(checks.admin_check)
@@ -1130,8 +1162,9 @@ class Serversetup(commands.Cog):
                     await ctx.send(f"<#{remove_ignore}> is not being ignored.")
                     raise Exception("_fail")
             elif cmds_chs_meta and len(kwargs) == 2:
-                if cmds_chs_meta != db_guild.disabled_onlyEnabled_cmds_and_chs:
-                    db_guild.ignored_chs_at_log = cmds_chs_meta
+                c = json.dumps(cmds_chs_meta)
+                if c != db_guild.disabled_onlyEnabled_cmds_and_chs:
+                    db_guild.disabled_onlyEnabled_cmds_and_chs = c
                     db_guild.save()
                 else:
                     await ctx.send(f"No changes were made to commands disabled/enabled setings "
