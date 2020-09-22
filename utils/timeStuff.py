@@ -213,14 +213,15 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
         lastPart = text[idx + 3::]
         lastPart_just_right_one = ""
         midPart = text[len(firstPart) + 1:idx - 1]
-        max_mid = 650
-        if len(midPart) > max_mid:
-            return None, None, f"Reminder content is not allowed to be more than {max_mid} characters long. " \
-                               f"(Yours was {len(midPart)} characters long)"
 
         if min_replace:
             lastPart = lastPart.replace(replace_with, 'min')
             midPart = midPart.replace(replace_with, 'min')
+
+        max_mid = 650
+        if len(midPart) > max_mid:
+            return None, None, f"Reminder content is not allowed to be more than {max_mid} characters long. " \
+                               f"(Yours was {len(midPart)} characters long)"
 
         if firstPart and not midPart: return None, None, "You forgot the reminders content."
         if not lastPart: return None, None, "You forgot to set when to set off the reminder."
