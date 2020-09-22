@@ -58,7 +58,7 @@ class Logging(BaseModel):
 
 
 # db.drop_tables([Guild, WelcomeMsg, Logging, Webhook])
-# db.drop_tables([Guild])
+db.drop_tables([Guild])
 db.create_tables([Guild, WelcomeMsg, Logging, Webhook])
 
 
