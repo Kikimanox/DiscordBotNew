@@ -471,8 +471,12 @@ async def before_any_command(ctx):
     if not bot.is_ready():
         await bot.wait_until_ready()
     if hasattr(bot, 'logger'):
+        if ctx.guild:
+            gg = f' In {ctx.guild} (id: {ctx.guild.id}) |'
+        else:
+            gg = ' In dms'
         bot.logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
-                        f"| Message: {ctx.message.content}")
+                        f"|{gg} Message: {ctx.message.content}")
     bot.before_run_cmd += 1
 
 

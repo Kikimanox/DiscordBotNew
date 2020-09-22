@@ -1,5 +1,6 @@
 import asyncio
 import random
+import re
 import time
 import traceback
 import json
@@ -403,6 +404,58 @@ class Serversetup(commands.Cog):
         for channel in channels:
             await self.do_setup(remove_ignore=str(channel.id), ctx=ctx)
         await ctx.message.delete()
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.check(checks.admin_check)
+    @setup.group(aliases=['cmdschs'])
+    async def commandschannels(self, ctx, *, settings):
+        """Disable cmds in certain channels, or only enable them in certain chs.
+
+        Use the following syntax: (channel can be id, name or mention)
+        Command example:
+        `[p]sup cmdschs disable [cm1, cmd2, cmd2] just in [channel1, channel2]
+        disable [cm10, "custom cmds", cmd21] just in [channel12, channel2]
+        disable [cmd10, cmd2, cmd24] just in [channel14, channel22]
+        enable [cmd54, cmd51] only in [channel3]
+        enable [cmd44, cmd15] only in [channel35]`
+
+        If you want to revert or change something, just run the command again
+        or something (see the message history).
+
+        ~~Yes I was very lazy when adding this command, I *might* make it
+        more flexible in the future.~~ **So please follow the syntax
+        as shown in the example exactly.**
+
+        This setting doesn't work on mods and admins
+        """
+        try:
+            settings = settings.replace(',', ', ')
+            settings = re.sub(' +', ' ', settings)
+            meta = {}
+            chs = {}  # ch: {"only_e": [...], "dis": [...]}
+            for line in settings.split('\n'):
+                left = 'disable \['
+                right = 'just in \['
+                if 'enable [' in line:
+                    left = 'enable \['
+                    right = 'only in \['
+                k = 'only_e' if left == 'enable \[' else 'dis'
+                for _ch in (re.search(f'{right}(.*?)\]', line)).group(1).split(', '):
+                    ch = await dutils.getChannel(ctx, _ch, silent=True)
+                    if ch:
+                        if str(ch.id) not in chs: chs[str(ch.id)] = {"only_e": [], "dis": []}
+                        for _cm in (re.search(f'{left}(.*?)\]', line)).group(1).split(', '):
+                            # if _cm in self.bot.all_commands or _cm == '"custom cmds"':
+                            if True:
+                                chs[str(ch.id)][k].append(_cm)
+                            chs[str(ch.id)][k] = list(set(chs[str(ch.id)][k]))
+            d = 0
+
+
+        except:
+            traceback.print_exc()
+            await ctx.send("Something went wrong, ~~are you using the correct syntax?~~")
+            raise commands.errors.BadArgument
 
     @commands.check(checks.admin_check)
     @setup.group(aliases=['wm'])
@@ -1032,6 +1085,7 @@ class Serversetup(commands.Cog):
         mod_role = kwargs.get('mod_role', None)
         add_ignore = kwargs.get('add_ignore', None)
         remove_ignore = kwargs.get('remove_ignore', None)
+        cmds_chs_meta = kwargs.get('cmds_chs_meta', None)
 
         db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
         try:
@@ -1074,6 +1128,14 @@ class Serversetup(commands.Cog):
                     db_guild.save()
                 else:
                     await ctx.send(f"<#{remove_ignore}> is not being ignored.")
+                    raise Exception("_fail")
+            elif cmds_chs_meta and len(kwargs) == 2:
+                if cmds_chs_meta != db_guild.disabled_onlyEnabled_cmds_and_chs:
+                    db_guild.ignored_chs_at_log = cmds_chs_meta
+                    db_guild.save()
+                else:
+                    await ctx.send(f"No changes were made to commands disabled/enabled setings "
+                                   f"because the previous settings are the same as the one you set.")
                     raise Exception("_fail")
 
             else:

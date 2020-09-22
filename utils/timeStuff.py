@@ -5,7 +5,7 @@ import string
 import arrow
 import datetime
 from dateutil.relativedelta import relativedelta
-import discord.utils as dutils
+import utils.discordUtils as dutils
 
 
 class plural:
@@ -134,9 +134,11 @@ def get_regexed_time_from_str_and_possible_err(string):
     return date, error
 
 
-def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
+# noinspection PyComparisonWithNone
+async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstPart="", utc_offset=0.0):
     """
 
+    :param ctx: The context
     :param text: The text that has time at the end
     :param timestamp: Current timestamp
     :param firstPart: In case the text has some first part that has to be cut out
@@ -144,6 +146,7 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
     """
     try:
         midPart = ""
+        midPart2 = ""
         remind_time = timestamp
 
         replace_with = "min"
@@ -155,21 +158,30 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
             replace_with = f'a{rand_str}{rand_str2}a'
             text = text.replace('min', replace_with)
 
-        idx2 = text.lower().rfind('in')
-        idx3 = text.lower().rfind('on')
-        idx4 = text.lower().rfind('at')
-        idx5 = text.lower().rfind('on')  # on at
-        idx6 = text.lower().rfind('at')  # at on
-        idx7 = text.lower().rfind('tomorrow')  # tomorrow at
-        idx8 = text.lower().rfind('at')  # at.. tomorrow
+        idx2_in = text.lower().rfind('in')
+        idx3_on = text.lower().rfind('on')
+        idx4_at = text.lower().rfind('at')
+        idx5 = idx3_on  # on at
+        idx7_tom = text.lower().rfind('tomorrow')  # tomorrow at
+
+        idx6 = idx4_at  # at on
+        idx8 = idx4_at  # at.. tomorrow
         # match2 = re.findall(r"(in [0-9]+[smhd][0-9]*[smh]*[0-9]*[sm]*$)", text.lower())
-        match2 = re.findall(r"(in .*?$)", text.lower())
-        match3 = re.findall(r"(on .*?$)", text.lower())
-        match4 = re.findall(r"(at .*?$)", text.lower())
-        match5 = re.findall(r"(on .*? at .*?$)", text.lower())
-        match6 = re.findall(r"(at .*? on .*?$)", text.lower())
-        match7 = re.findall(r"(tomorrow at .*?$)", text.lower())
-        match8 = re.findall(r"(at .*?tomorrow$)", text.lower())
+        a = text.lower()[idx2_in:]
+        b = text.lower()[idx7_tom:]
+        match2 = re.findall(r"(in .*?$)", text.lower()[idx2_in:])
+        if match2:
+            if any(c in ['at', 'on', 'tomorrow'] for c in match2[0].split()): match2 = []
+        match3 = re.findall(r"(on .*?$)", text.lower()[idx3_on:])
+        match4 = re.findall(r"(at .*?$)", text.lower()[idx4_at:])
+        match5 = re.findall(r"(on .*? at .*?$)", text.lower()[idx3_on:])
+        match6 = re.findall(r"(at .*? on .*?$)", text.lower()[idx4_at:])
+        match7 = re.findall(r"(tomorrow at .*?$)", text.lower()[idx7_tom:])
+        if match7:
+            if any(c in ['in', 'on'] for c in match7[0].split()): match7 = []
+        match8 = re.findall(r"(at .*?tomorrow$)", text.lower()[idx4_at:])
+        if match8:
+            if any(c in ['in', 'on'] for c in match8[0].split()): match8 = []
         not2 = False
         not3 = False
         not4 = False
@@ -177,28 +189,33 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
         not6 = False
         not7 = False
         not8 = False
-        if idx2 == -1 or not match2: not2 = True
-        if idx3 == -1 or not match3: not3 = True
-        if idx4 == -1 or not match4: not4 = True
+        if idx2_in == -1 or not match2: not2 = True
+        if idx3_on == -1 or not match3: not3 = True
+        if idx4_at == -1 or not match4: not4 = True
         if idx5 == -1 or not match5: not5 = True
         if idx6 == -1 or not match6: not6 = True
-        if idx7 == -1 or not match7: not7 = True
+        if idx7_tom == -1 or not match7: not7 = True
         if idx8 == -1 or not match8: not8 = True
         if not2 and not3 and not4 and not5 and not6 and not7 and not8:
             return None, None, "You forgot the `in../on../at../on..at../at..on../tomorrow at../at.. tomorrow` " \
                                "at the end."
 
         idx = 0
-        if match2: idx = idx2
-        if match3: idx = idx3  # on
-        if match4: idx = idx4  # at
-        if match5: idx = idx5  # on..at..
+        if match3: idx = idx3_on  # on
+        if match4: idx = idx4_at  # at
         if match6: idx = idx6  # at..on..
-        if match7: idx = idx7  # tomorrow at..
+        if match5: idx = idx5  # on..at..
+        if match7: idx = idx7_tom  # tomorrow at..
         if match8: idx = idx8  # at.. tomorrow
+        if match2 and idx2_in >= max(idx3_on, idx4_at, idx5, idx7_tom): idx = idx2_in  # in..
 
         lastPart = text[idx + 3::]
+        lastPart_just_right_one = ""
         midPart = text[len(firstPart) + 1:idx - 1]
+        max_mid = 650
+        if len(midPart) > max_mid:
+            return None, None, f"Reminder content is not allowed to be more than {max_mid} characters long. " \
+                               f"(Yours was {len(midPart)} characters long)"
 
         if min_replace:
             lastPart = lastPart.replace(replace_with, 'min')
@@ -207,7 +224,7 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
         if firstPart and not midPart: return None, None, "You forgot the reminders content."
         if not lastPart: return None, None, "You forgot to set when to set off the reminder."
 
-        if idx == idx2:  # in
+        if idx == idx2_in:  # in
             replacements = [
                 ['s', 'seconds', 'second', 'secs', 'sec'],
                 ['m', 'minutes', 'minte', 'mins', 'min'],
@@ -249,7 +266,7 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
             remind_time = timestamp + delta
 
         else:
-            if idx != idx4 or 'orrow' in lastPart or 'on' in lastPart:
+            if idx != idx4_at or 'orrow' in lastPart or 'on' in lastPart:
                 replacements = [
                     ['1', 'january', 'jan'],
                     ['2', 'february', 'feb'],
@@ -272,15 +289,17 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
                             lastPart = lastPart.replace(r, f' {rr[0]} ')
 
                 tomorrow = timestamp + datetime.timedelta(days=1)
+                was_at = False
                 if 'at' in lastPart:
+                    was_at = True
                     lastPart = lastPart.replace('tomorrow', f'{tomorrow.year} {tomorrow.month} {tomorrow.day}')
                     lastPart = lastPart.replace('orrow', f'{tomorrow.year} {tomorrow.month} {tomorrow.day}')
                 else:
                     lastPart = lastPart.replace('tomorrow', f'on {tomorrow.year} {tomorrow.month} {tomorrow.day}')
                     lastPart = lastPart.replace('orrow', f'on {tomorrow.year} {tomorrow.month} {tomorrow.day}')
 
-                if lastPart.count('at ') > 1: return None, None, "Don't use more than two `at ` there...."
-                if lastPart.count('on ') > 1: return None, None, "Don't use more than two `on ` there...."
+                if lastPart.count(' at ') > 1: return None, None, "Don't use more than two ` at ` there...."
+                if lastPart.count(' on ') > 1: return None, None, "Don't use more than two ` on ` there...."
                 m5 = re.findall(r'(.*?)at (.*?$)', lastPart)
                 m6 = re.findall(r'(.*?)on (.*?$)', lastPart)
                 m3 = re.findall(r'(.*?$)', lastPart)
@@ -297,13 +316,19 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
                     on_part = m6[0][1]
 
                 nums = list(map(int, re.findall(r'\d+', on_part)))
-                if len(nums) == 1:
-                    return None, None, "If you use `on` you have to provide at least a month and a day"
+                # if len(nums) == 1:
+                #     return None, None, "If you use `on` you have to provide at least a month and a day"
                 if len(nums) == 2:
                     on_part = f'{timestamp.year} {on_part}'
 
                 lastPart = f'{on_part} {at_part}'
-
+                if on_part and at_part:
+                    if not was_at:
+                        lastPart_just_right_one = on_part
+                        midPart2 = text[len(firstPart) + 1:idx3_on - 1]
+                    if was_at:
+                        lastPart_just_right_one = f'{timestamp.year} {timestamp.month} {timestamp.day} {at_part}'
+                        midPart2 = text[len(firstPart) + 1:idx4_at - 1]
 
             # if idx == idx7:
             #    tomorrow = timestamp + datetime.timedelta(days=1)
@@ -313,8 +338,47 @@ def try_get_time_from_text(text, timestamp: datetime.datetime, firstPart=""):
                 lastPart = f'{timestamp.year} {timestamp.month} {timestamp.day} {lastPart}'
 
             remind_time, err = get_regexed_time_from_str_and_possible_err(lastPart)
-            if err:
+            remind_time2, err2 = None, ""
+            if lastPart_just_right_one:
+                remind_time2, err2 = get_regexed_time_from_str_and_possible_err(lastPart_just_right_one)
+
+            if err and not lastPart_just_right_one:
                 return None, None, err
+
+            if lastPart_just_right_one:
+
+                t1 = err if err else f"**{remind_time.strftime('on %Y/%m/%d at %H:%M:%S')}**"
+                if not err:
+                    if utc_offset != 0.0: t1 += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
+                    if remind_time.date() == timestamp.date(): t1 += " ***(Today)***"
+                    t1 += '\n'
+
+                t2 = err2 if err2 else f"**{remind_time2.strftime('on %Y/%m/%d at %H:%M:%S')}**"
+                if not err2:
+                    if utc_offset != 0.0: t2 += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
+                    if remind_time2.date() == timestamp.date(): t2 += " ***(Today)***"
+                    t2 += '\n'
+
+                tmp_midPart = midPart.replace('@', '@\u200b')
+                tmp_midPart2 = midPart2.replace('@', '@\u200b')
+                ss = ("Your input has caused the parser to "
+                      "assume two possible date "
+                      "inputs, these are the ones it "
+                      "found (format `Y/M/D H:M:S`):\n\n"
+                      f"1\u20e3 {t1}```\n{tmp_midPart}```\n"
+                      f"2\u20e3 {t2}```\n{tmp_midPart2}```")
+                if not err or not err2:
+                    idx = await dutils.prompt_custom(ctx, ss, emotes=[f'1\u20e3', f'2\u20e3'])
+                    if idx == 1:
+                        remind_time = remind_time2
+                        midPart = midPart2
+                    if idx == None:
+                        return None, None, "Prompt timeout, please try again."
+                    if idx == -1:
+                        return None, None, "Cancelled."
+                else:
+                    # ree duplicate string code, anyway..
+                    return None, None, ss
 
         if remind_time < timestamp: return None, None, "Time can not be in the past."
         return midPart, remind_time, None

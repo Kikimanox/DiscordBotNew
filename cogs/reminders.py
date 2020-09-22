@@ -361,11 +361,12 @@ class Reminders(commands.Cog):
                     role_ping = True
                     target = discord.utils.get(g.roles, id=reminder.user_id)
             p = "" if target else "~~"
+            rsn = reminder.reason.replace('@', '@\u200b')
             desc = f"\n{p}**Id:** {reminder.id}{p}\n" \
                    f"{p}**Target:** {target}{p}\n" \
-                   f"{p}**Triggeres on:** {reminder.len_str}{p}\n" \
+                   f"{p}**Triggers on:** {reminder.len_str}{p}\n" \
                    f"{p}**Reminder content:**{p}\n" \
-                   f"{p}```\n{reminder.reason if not role_ping else f'@{target.name} {reminder.reason}'}```{p}"
+                   f"{p}```\n{rsn if not role_ping else f'@{target.name} {rsn}'}```{p}"
 
             if not target:
                 desc += '\n⚠ **Target is gone for some reason, deleting this reminder**'
@@ -473,7 +474,8 @@ class Reminders(commands.Cog):
                 if not ch: return
                 who = ch
 
-            mid_part, remind_time, error = tutils.try_get_time_from_text(text, timestamp, firstPart)
+            mid_part, remind_time, error = await tutils.try_get_time_from_text(ctx, text, timestamp, firstPart,
+                                                                               utc_offset=utc_offset)
             if error:
                 return await ctx.send(error)
 
@@ -492,22 +494,28 @@ class Reminders(commands.Cog):
             if rolePing:
                 meta += f'rolePing_{rolePing.id}'
 
-            len_str = remind_time.strftime('%Y/%m/%d %H:%M:%S') + ' UTC'
-            if utc_offset != 0.0: len_str += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
+            len_str = remind_time.strftime('%Y/%m/%d %H:%M:%S')
+            if utc_offset != 0.0:
+                len_str += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
+            else:
+                len_str += ' UTC'
             tim = await self.create_timer(
                 expires_on=remind_time - datetime.timedelta(hours=utc_offset),
                 meta=meta,
                 gid=0 if not ctx.guild else ctx.guild.id,
-                reason=mid_part.replace('@', '@\u200b'),
+                reason=mid_part,
                 uid=who.id,  # This is the target user or channel
                 len_str=len_str,  # used to show when
                 author_id=by.id
             )
-
+            print(f'Reminder created: {ctx.author} {ctx.author.id} triggers on {len_str} ({tim.executed_on})')
+            mid_part = mid_part.replace('@', '@\u200b')
             cnt = f"⏰  |  **Got it! The reminder has been set up.**"
             desc = f"**Id:** {tim.id}\n" \
                    f"**Target:** {who.mention}\n" \
-                   f"**Triggeres on:** {tim.len_str}"
+                   f"**Triggers on:** {tim.len_str}\n" \
+                   f"**Reminder content:**\n" \
+                   f"```\n{mid_part if not rolePing else f'@{rolePing.name} {mid_part}'}```"
             if rolePing:
                 em = Embed(title='Reminder info', description=f"{desc}\n\nAlongside this reminder "
                                                               f"the role {rolePing.mention} will be pinged")

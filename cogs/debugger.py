@@ -297,6 +297,7 @@ class Debugger(commands.Cog):
                             break
 
                 result = "\n".join(log_lines)
+                result = result.replace('@', '@\u200b')
                 return await dutils.result_printer(ctx, f"```shell\n{result}```")
             else:
                 return await ctx.send(f"No logs found in `logs/{directory}` for `{log_group}`.")

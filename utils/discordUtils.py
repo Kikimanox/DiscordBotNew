@@ -53,7 +53,7 @@ def escape_at(content):
     return content.replace('@', '@\u200b')
 
 
-async def getChannel(ctx, arg):
+async def getChannel(ctx, arg, silent=False):
     channels = []
     channel = arg.strip()
     if channel.startswith("<#") and channel.endswith(">"):
@@ -67,7 +67,8 @@ async def getChannel(ctx, arg):
                     channels.append(chan)
                     break
     if not channels:
-        await ctx.send("The specified channel could not be found.")
+        if not silent:
+            await ctx.send("The specified channel could not be found.")
         return None
     return channels[0]
 
@@ -244,6 +245,55 @@ async def prompt(ctx, message, *, timeout=60.0, delete_after=True, reactor_id=No
     finally:
         return confirm
 
+async def prompt_custom(ctx, message, *, emotes=None, timeout=60.0, delete_after=True, reactor_id=None):
+    """Similar to prompt but you make your own message and emotes
+    emotes length shouldn't be less than 1 and more than 19!!! (be careful!)
+
+    Returns reactex index or -1 if X
+    """
+    if not emotes or len(emotes) == 0: return
+    if not ctx.channel.permissions_for(ctx.me).add_reactions:
+        raise RuntimeError('Bot does not have Add Reactions permission.')
+
+    # fmt = f'{message}\n\nReact with \N{WHITE HEAVY CHECK MARK} to confirm or \N{CROSS MARK} to deny.'
+    fmt = f'{message}\n\nReact with one of {" ".join(emotes)} to select your choice. React with ❌ to cancel this.'
+
+    reactor_id = reactor_id or ctx.author.id
+    msg = await ctx.send(fmt)
+
+    confirm = None
+
+    def check(payload):
+        nonlocal confirm
+
+        if payload.message_id != msg.id or payload.user_id != reactor_id:
+            return False
+
+        codepoint = str(payload.emoji)
+
+        if codepoint in emotes:
+            confirm = emotes.index(codepoint)
+            return True
+        elif codepoint == '❌':
+            confirm = -1
+            return True
+
+        return False
+
+    for emoji in emotes:
+        await msg.add_reaction(emoji)
+    await msg.add_reaction('❌')
+
+    try:
+        await ctx.bot.wait_for('raw_reaction_add', check=check, timeout=timeout)
+    except asyncio.TimeoutError:
+        confirm = None
+
+    try:
+        if delete_after:
+            await msg.delete()
+    finally:
+        return confirm
 
 async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None, log_logMismatch=True):
     hook_ok = False

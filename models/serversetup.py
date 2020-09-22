@@ -25,6 +25,7 @@ class Guild(BaseModel):
     muterole = IntegerField(null=True)
     modrole = IntegerField(null=True)
     ignored_chs_at_log = CharField(default="")
+    disabled_onlyEnabled_cmds_and_chs = CharField(default="{}")
 
 
 class WelcomeMsg(BaseModel):
