@@ -412,7 +412,7 @@ class Serversetup(commands.Cog):
     async def commandschannels(self, ctx, *, settings=""):
         """Disable cmds in certain channels, or only enable them in certain chs.
 
-        > Running this command with no arguemnts will display current settings
+        > Running this command with no arguments will display current settings
 
         Use the following syntax: (channel can be id, name or mention)
         Command example:
