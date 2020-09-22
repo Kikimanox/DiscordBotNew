@@ -199,7 +199,7 @@ async def globalprefix(ctx, *, new_prefix=""):
 
 @bot.event
 async def on_message(message):
-    # if message.guild.id != 202845295158099980: return  # to do del this
+    # if message.guild.id != 202845295158099980: return  # Testing guild
     if not bot.is_ready():
         await bot.wait_until_ready()
 
@@ -315,11 +315,24 @@ async def on_message(message):
                     f"{message.author.mention} stop using/spamming bot commands "
                     f"for now or else you will get banned from the bot.")
 
+        sup = None
+        kk = 'disabled_onlyEnabled_cmds_and_chs'
+        if message.guild and message.guild.id in bot.from_serversetup and bot.from_serversetup[message.guild.id][kk]:
+            sup = bot.from_serversetup[message.guild.id][kk]
+
         if not is_mod and (is_actually_cmd or ctype > 0) and arl > 1:
             return  # we don't want non mods triggering commands during a raid
         if is_actually_cmd:
             if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
                 return await message.channel.send(arl1_ret)
+            if sup and possible_cmd in sup:
+                if message.channel.id in sup[possible_cmd]['dis']:
+                    return await message.channel.send("❌ This command is disabled in the following channels:\n"
+                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['dis'])}")
+                if sup[possible_cmd]['only_e'] and message.channel.id not in sup[possible_cmd]['only_e']:
+                    return await message.channel.send("❌ This command is enabled only in the following channels:\n"
+                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['only_e'])}")
+
             return await bot.process_commands(message)
 
         if ctype != -1:

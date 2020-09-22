@@ -408,7 +408,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @setup.command(aliases=['cmdschs'])
+    @setup.command(aliases=['cmdschs', 'cc'])
     async def commandschannels(self, ctx, *, settings=""):
         """Disable cmds in certain channels, or only enable them in certain chs.
 
@@ -416,9 +416,9 @@ class Serversetup(commands.Cog):
 
         Use the following syntax: (channel can be id, name or mention)
         Command example:
-        `[p]sup cmdschs disable [cm1, cmd2, cmd2] just in [channel1, channel2]
-        disable [cm10, "custom cmds", cmd21] just in [channel12, channel2]
-        disable [cmd10, cmd2, cmd24] just in [channel14, channel22]
+        `[p]sup cmdschs disable [cm1, cmd2, cmd2] those in [channel1, channel2]
+        disable [cm10, "custom cmds", cmd21] those in [channel12, channel2]
+        disable [cmd10, cmd2, cmd24] those in [channel14, channel22]
         enable [cmd54, cmd51] only in [channel3]
         enable [cmd44, cmd15] only in [channel35]`
 
@@ -429,7 +429,7 @@ class Serversetup(commands.Cog):
         more flexible in the future.~~ **So please follow the syntax
         as shown in the example exactly.**
 
-        This setting doesn't work on mods and admins
+        This setting doesn't work on mods and admins.
         """
         if not settings:
             g = Guild.get_or_none(id=ctx.guild.id)
@@ -440,7 +440,7 @@ class Serversetup(commands.Cog):
                   'need to be applied.:\n'
             cc = {}
             r = ''
-            for de in [('disable', 'just in'), ('enable', 'only in')]:
+            for de in [('disable', 'those in'), ('enable', 'only in')]:
                 keyy = 'only_e' if de[0] == 'enable' else 'dis'
                 for k, v in chs.items():
                     for ch in v[keyy]:
@@ -460,7 +460,7 @@ class Serversetup(commands.Cog):
             chs = {}  # ch: {"only_e": [...], "dis": [...]}
             for line in settings.split('\n'):
                 left = 'disable \['
-                right = 'just in \['
+                right = 'those in \['
                 if 'enable [' in line:
                     left = 'enable \['
                     right = 'only in \['
