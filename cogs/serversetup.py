@@ -432,6 +432,7 @@ class Serversetup(commands.Cog):
         """Show censor list (for compact view `[p]cl show compact`)"""
         db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
         delim = '\n' if compact != 'compact' else ' '
+        if db_guild.censor_list == "": return await ctx.send("No censored words here yet.")
         arrs = dutils.getParts2kByDelimiter(db_guild.censor_list, delim, limit=1000)
         ems = dutils.getEmbedsFromTxtArrs(ctx.bot, arrs, '**Censor list**', cnt_join_instd_of_spc=delim)
         return await dutils.send_and_maybe_paginate_embeds(ctx, ems)
