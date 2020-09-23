@@ -55,7 +55,7 @@ class Timezones(BaseModel):
     utc_offset = FloatField()
 
 # db.drop_tables([Reminderstbl, Actions, Blacklist, Timezones])
-db.drop_tables([Reminderstbl])
+# db.drop_tables([Reminderstbl])
 db.create_tables([Reminderstbl, Actions, Blacklist, Timezones])
 
 
