@@ -104,13 +104,15 @@ def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
             return ' '.join(output) + suffix
 
 
-def convert_sec_to_smh(sec):
+def convert_sec_to_smhd(sec):
     if sec < 60:
         tim = f'{int(sec)}s'
     elif 3600 > sec >= 60:
         tim = f'{int(sec // 60)}m'
-    else:
+    elif 86400 > sec >= 3600:
         tim = f'{int(sec // 3600)}h {int((sec // 60) % 60)}m'
+    else:
+        tim = f'{int(sec // 86400)}d {int(sec // 3600) % 24}h {int((sec // 60) % 60)}m'
     return tim
 
 
@@ -134,6 +136,54 @@ def get_regexed_time_from_str_and_possible_err(string):
     return date, error
 
 
+def get_seconds_from_smhdw(smh_text):
+    """
+
+    :param smh_text: text input
+    :return: seconds, error
+    """
+    replacements = [
+        ['s', 'seconds', 'second', 'secs', 'sec'],
+        ['m', 'minutes', 'minte', 'mins', 'min'],
+        ['h', 'hours', 'hour', 'hrs', 'hr'],
+        ['d', 'days', 'day'],
+        ['w', 'weeks', 'week'],
+    ]
+    smh_text = smh_text.replace(' ', '')
+    smh_text = smh_text.lower()
+    for rr in replacements:
+        for r in rr[1:]:
+            if r in smh_text:
+                smh_text = smh_text.replace(r, rr[0])
+
+    unitss = ['w', 'd', 'h', 'm', 's']
+    for u in unitss:
+        cnt = smh_text.count(u)
+        if cnt > 1: return None, f"Error, you used **{u}** twice, don't do that."
+
+    units = {
+        "w": 86400 * 7,
+        "d": 86400,
+        "h": 3600,
+        "m": 60,
+        "s": 1
+    }
+    seconds = 0
+    match = re.findall("([0-9]+[smhdw])", smh_text)
+    if not match:
+        return None, f"Could not parse length. Are you using the right format?"
+    try:
+        for item in match:
+            seconds += int(item[:-1]) * units[item[-1]]
+        # if seconds <= 10:
+        #     return await ctx.send("Reminder can't be less than 10 seconds from now!")
+        # delta = datetime.timedelta(seconds=seconds)
+    except OverflowError:
+        return None, "**Overflow.** Future time too long. Please input a shorter time."
+
+    return seconds, None
+
+
 # noinspection PyComparisonWithNone
 async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstPart="", utc_offset=0.0):
     """
@@ -142,6 +192,7 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
     :param text: The text that has time at the end
     :param timestamp: Current timestamp
     :param firstPart: In case the text has some first part that has to be cut out
+    :param utc_offset: The utc offset of the user
     :return: mid_part, remind_time, error
     """
     try:
@@ -254,7 +305,7 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
                 "s": 1
             }
             seconds = 0
-            match = re.findall("([0-9]+[smhdw])", lastPart)  # Thanks to 3dshax server's former bot
+            match = re.findall("([0-9]+[smhdw])", lastPart)  # Thanks to 3dshax
             if not match:
                 return None, None, f"Could not parse length. Are you using the right format?"
             try:

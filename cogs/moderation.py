@@ -1310,7 +1310,7 @@ class Moderation(commands.Cog):
             for c in channels:
                 await c.edit(slowmode_delay=seconds)
                 if not silent:
-                    await c.send(f"Slowmode set to **{tutils.convert_sec_to_smh(seconds)}**")
+                    await c.send(f"Slowmode set to **{tutils.convert_sec_to_smhd(seconds)}**")
             if all_ch:
                 await ctx.send('Done.')
         except discord.errors.Forbidden:

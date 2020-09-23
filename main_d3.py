@@ -442,7 +442,7 @@ async def on_command_error(ctx, error):
             extra += f" ({error.cooldown.type.name} cooldown)"
         tim = error.args[0].split(' in ')[-1]
         sec = int(tim.split('.')[0])
-        tim = tutils.convert_sec_to_smh(sec)
+        tim = tutils.convert_sec_to_smhd(sec)
         await ctx.send(f"⏲ Command on cooldown, try again"
                        f" in **{tim}**" + extra, delete_after=5)
     elif isinstance(error, commands.errors.CheckFailure):

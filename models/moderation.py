@@ -23,11 +23,11 @@ class Reminderstbl(BaseModel):
     executed_by = IntegerField(null=True)
     guild = IntegerField(null=True)
     reason = CharField(null=True)
-    # basically user_id = target_id
+    # basically target_id is "user_id"
     user_id = IntegerField(null=True)
     len_str = CharField(null=True)
     executed_on = DateTimeField(default=datetime.utcnow)
-
+    periodic = IntegerField(default=0)
 
 class Actions(BaseModel):
     id = AutoField()
@@ -54,7 +54,8 @@ class Timezones(BaseModel):
     user = IntegerField(unique=True)
     utc_offset = FloatField()
 
-# db.drop_tables([Reminderstbl, Actions, Blacklist])
+# db.drop_tables([Reminderstbl, Actions, Blacklist, Timezones])
+db.drop_tables([Reminderstbl])
 db.create_tables([Reminderstbl, Actions, Blacklist, Timezones])
 
 

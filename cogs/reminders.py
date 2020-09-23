@@ -130,13 +130,17 @@ class Reminders(commands.Cog):
 
     async def call_timer(self, timer: Timer):
         try:
-            rm = Reminderstbl.get(Reminderstbl.id == timer.id)
+            rm: Reminderstbl = Reminderstbl.get(Reminderstbl.id == timer.id)
             # this is only for some weird race conciditons
             if timer.executed_on != rm.executed_on:
                 self._task.cancel()
                 self._task = self.bot.loop.create_task(self.dispatch_timers())
                 return
-            rm.delete_instance()
+            if rm.periodic != 0:
+                rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
+                rm.save()
+            else:
+                rm.delete_instance()
         except:
             return  # reminder should have been executed but it was deleted
             # and no other reminders have been created during that time. Just return here.
@@ -350,7 +354,7 @@ class Reminders(commands.Cog):
         cnt = f"⏰  |  {ctx.author.mention} these are your current reminders."
         rms = []
         for r in reminders:
-            reminder = r
+            reminder: Reminderstbl = r
             target = None
             role_ping = False
             g = self.bot.get_guild(reminder.guild)
@@ -367,6 +371,8 @@ class Reminders(commands.Cog):
                    f"{p}**Triggers on:** {reminder.len_str}{p}\n" \
                    f"{p}**Reminder content:**{p}\n" \
                    f"{p}```\n{rsn if not role_ping else f'@{target.name} {rsn}'}```{p}"
+            if reminder.periodic != 0:
+                desc += f'{p}🔁 **Periodic reminder:** every {tutils.convert_sec_to_smhd(reminder.periodic)}{p}\n'
 
             if not target:
                 desc += '\n⚠ **Target is gone for some reason, deleting this reminder**'
@@ -430,9 +436,35 @@ class Reminders(commands.Cog):
         else:
             await ctx.send("Cancelled.")
 
+    @commands.cooldown(3, 3, commands.BucketType.user)
+    @commands.command(aliases=['mp'])
+    async def makeperiodic(self, ctx, reminder_id: int, *, execute_every):
+        """Make reminder periodic
+        Example:
+        `[p]makeperiodic 15 3hours` Execute every 3h
+        `[p]makeperiodic 15 20m` Execute every 20 minutes
+
+        To cancel the periodic nature, you have to delete the reminder.
+        """
+        reminder = Reminderstbl.select().where(Reminderstbl.meta.startswith('reminder_'),
+                                               Reminderstbl.id == reminder_id)
+        if not reminder:
+            return await ctx.send(f"A reminder with that id does not exist. {ctx.author.mention}")
+        reminder: Reminderstbl = reminder[0]
+        seconds, err = tutils.get_seconds_from_smhdw(execute_every)
+        if err:
+            return await ctx.send(err)
+        if seconds < 60: return await ctx.send("Min periodic time is 60 seconds. Cancelling.")
+        reminder.periodic = seconds
+        reminder.save()
+        ss = tutils.convert_sec_to_smhd(seconds)
+        await ctx.send(f"Reminder with the id **{reminder_id}** is going to be executed again "
+                       f"every **{ss}** after the next scheduled execution happens.")
+
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(aliases=["clearreminders", "clrrms", "rmsclr"])
     async def remindersclear(self, ctx):
+        """Clear all your owned reminders"""
         confirm = await dutils.prompt(ctx, "Are you sure you want to clear **all** your reminders?")
         if not confirm:
             return await ctx.send("Cancelled.")
@@ -517,7 +549,7 @@ class Reminders(commands.Cog):
                    f"**Reminder content:**\n" \
                    f"```\n{mid_part if not rolePing else f'@{rolePing.name} {mid_part}'}```"
             if rolePing:
-                em = Embed(title='Reminder info', description=f"{desc}\n\nAlongside this reminder "
+                em = Embed(title='Reminder info', description=f"{desc}\nAlongside this reminder "
                                                               f"the role {rolePing.mention} will be pinged")
                 await ctx.send(embed=em, content=cnt)
             else:

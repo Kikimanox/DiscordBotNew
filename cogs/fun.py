@@ -263,7 +263,7 @@ class Fun(commands.Cog):
             if usr:
                 usr.get()
                 await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
-                               f"**{tutils.convert_sec_to_smh((usr.expires_on - utcnow).total_seconds())}**")
+                               f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**")
                 if d_key in self.just_claimed:
                     del self.just_claimed[d_key]
             else:

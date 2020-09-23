@@ -504,7 +504,7 @@ async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, ba
             "s": 1
         }
         seconds = 0
-        match = re.findall("([0-9]+[smhd])", length)  # Thanks to 3dshax server's former bot
+        match = re.findall("([0-9]+[smhd])", length)  # Thanks to 3dshax
         if not match:
             # p = bot_pfx(bot, ctx.message)
             p = bot_pfx_by_gid(bot, guild.id)
