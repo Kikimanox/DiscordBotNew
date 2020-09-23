@@ -113,6 +113,8 @@ def convert_sec_to_smhd(sec):
         tim = f'{int(sec // 3600)}h {int((sec // 60) % 60)}m'
     else:
         tim = f'{int(sec // 86400)}d {int(sec // 3600) % 24}h {int((sec // 60) % 60)}m'
+        if int(sec // 3600) % 24 == 0 and int((sec // 60) % 60) == 0:
+            tim = f'{int(sec // 86400)}d'
     return tim
 
 

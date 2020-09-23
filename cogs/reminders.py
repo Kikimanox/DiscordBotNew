@@ -343,11 +343,21 @@ class Reminders(commands.Cog):
 
     @commands.cooldown(1, 2, commands.BucketType.user)
     @commands.command(aliases=["listreminders", "lsrm", "lsrms", "reminderslist", "reminderlist", 'rms'])
-    async def reminders(self, ctx):
-        """Display all your ongoing reminders sorted by remind time"""
-        reminders = Reminderstbl.select().where(Reminderstbl.executed_by == ctx.author.id,
-                                                Reminderstbl.meta.startswith('reminder_')).order_by(
-            +Reminderstbl.expires_on)
+    async def reminders(self, ctx, only_check_this_id: int = 0):
+        """Display all your ongoing reminders (or see just one) sorted by remind time"""
+        if only_check_this_id < 0: return await ctx.send("Single reminder id can not be less than 0")
+        if only_check_this_id == 0:
+            reminders = Reminderstbl.select().where(Reminderstbl.executed_by == ctx.author.id,
+                                                    Reminderstbl.meta.startswith('reminder_')).order_by(
+                +Reminderstbl.expires_on)
+        else:
+            reminders = Reminderstbl.select().where(Reminderstbl.meta.startswith('reminder_'),
+                                                    Reminderstbl.id == only_check_this_id)
+            if not reminders:
+                return await ctx.send(f"A reminder with that id does not exist. {ctx.author.mention}")
+            reminder: Reminderstbl = reminders[0]
+            if reminder.executed_by != ctx.author.id:
+                return await ctx.send("The reminder with that id does not belong to you!")
 
         if not reminders:
             return await ctx.send(f"{ctx.author.mention} you have no ongoing reminders right now.")
@@ -356,26 +366,35 @@ class Reminders(commands.Cog):
         for r in reminders:
             reminder: Reminderstbl = r
             target = None
-            role_ping = False
             g = self.bot.get_guild(reminder.guild)
+            role = None
+            rolePing = False
             if g:
                 if reminder.executed_by == reminder.user_id: target = self.bot.get_user(reminder.executed_by)
                 if not target: target = g.get_channel(reminder.user_id)
-                if not target:
-                    role_ping = True
-                    target = discord.utils.get(g.roles, id=reminder.user_id)
+                if 'rolePing_' in reminder.meta:
+                    rolePing = True
+                    roleId = reminder.meta.split('rolePing_')[-1]
+                    role = discord.utils.get(g.roles, id=int(roleId))
+
             p = "" if target else "~~"
+            if rolePing and not role: p = "~~"
+            rol = ""
+            if not role and rolePing:
+                rol = "DELETED_ROLE"
+            if role and rolePing:
+                rol = role.name
             rsn = reminder.reason.replace('@', '@\u200b')
             desc = f"\n{p}**Id:** {reminder.id}{p}\n" \
                    f"{p}**Target:** {target}{p}\n" \
                    f"{p}**Triggers on:** {reminder.len_str}{p}\n" \
                    f"{p}**Reminder content:**{p}\n" \
-                   f"{p}```\n{rsn if not role_ping else f'@{target.name} {rsn}'}```{p}"
+                   f"{p}```\n{rsn if not rolePing else f'@{rol} {rsn}'}```{p}"
             if reminder.periodic != 0:
                 desc += f'{p}🔁 **Periodic reminder:** every {tutils.convert_sec_to_smhd(reminder.periodic)}{p}\n'
 
-            if not target:
-                desc += '\n⚠ **Target is gone for some reason, deleting this reminder**'
+            if not target or p == "~~":
+                desc += '\n⚠ **Target or role is gone for some reason, deleting this reminder**'
                 g.delete_instance()
             rms.append(desc)
 
@@ -451,6 +470,8 @@ class Reminders(commands.Cog):
         if not reminder:
             return await ctx.send(f"A reminder with that id does not exist. {ctx.author.mention}")
         reminder: Reminderstbl = reminder[0]
+        if reminder.executed_by != ctx.author.id:
+            return await ctx.send(f"The reminder with that id does not belong to you! {ctx.author.mention}")
         seconds, err = tutils.get_seconds_from_smhdw(execute_every)
         if err:
             return await ctx.send(err)
