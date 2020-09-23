@@ -378,6 +378,8 @@ class Reminders(commands.Cog):
                     role = discord.utils.get(g.roles, id=int(roleId))
 
             p = "" if target else "~~"
+            if target:
+                target = target.mention
             if rolePing and not role: p = "~~"
             rol = ""
             if not role and rolePing:
