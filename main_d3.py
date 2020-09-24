@@ -145,7 +145,7 @@ def exit_bot(self):
 
 
 @commands.check(owner_check)
-@bot.command()
+@bot.command(hidden=True)
 async def dmlu(ctx, *, urls_paste: str):
     """Combine urls from a dm log"""
     try:
@@ -163,20 +163,19 @@ async def dmlu(ctx, *, urls_paste: str):
 async def dm(ctx, user: discord.User, *, content=""):
     """Send a direct message to an user [no arguments for user check]"""
     if not content and not ctx.message.attachments and user:
-        return await ctx.send(embed=Embed(description=f"{user.mention} - `{user}` `{user.id}`"))
+        return await ctx.send(embed=Embed(description=f"{user.mention} - `{user}` `{user.id}`")
+                              .set_thumbnail(url=dutils.icon_url(user)))
     try:
         async with ctx.typing():
             m = None
             if ctx.message.attachments:
                 m = await ctx.send("Saving files to re-send.")
             atts = [await a.to_file(spoiler=a.is_spoiler()) for a in ctx.message.attachments]
-            icon_url = user.avatar_url if 'gif' in str(user.avatar_url).split('.')[-1] else str(
-                user.avatar_url_as(format="png"))
             mm = await user.send(content, files=atts)
             if m: await m.delete()
             await ctx.send(embed=Embed(description=f"{user.mention} - `{user}` `{user.id}`", title='Message '
                                                                                                    'delivered ✅')
-                           .set_thumbnail(url=icon_url).set_footer(text=f'{mm.channel.id} {mm.id}'))
+                           .set_thumbnail(url=dutils.icon_url(user)).set_footer(text=f'{mm.channel.id} {mm.id}'))
     except:
         await ctx.send(f"Failed to send.\n```\n{traceback.format_exc()}```")
 

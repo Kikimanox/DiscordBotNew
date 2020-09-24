@@ -381,6 +381,8 @@ async def dm_log_try_setup(bot):
     else:  # == 1
         return True
 
+def icon_url(user):
+    return user.avatar_url if 'gif' in str(user.avatar_url).split('.')[-1] else str(user.avatar_url_as(format="png"))
 
 async def dm_log(bot, message: discord.Message):
     cnt = message.content
