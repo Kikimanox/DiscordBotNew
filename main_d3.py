@@ -204,7 +204,7 @@ async def dmedit(ctx, ch_id: int, msg_id: int, *, new_content):
         await msg.edit(content=new_content)
         await ctx.sned("Edited.")
     except:
-        await ctx.send("Something went wrong when trying to delete.")
+        await ctx.send("Something went wrong when trying to edit.")
 
 
 @commands.check(admin_check)
