@@ -563,7 +563,8 @@ class Reminders(commands.Cog):
                 len_str=len_str,  # used to show when
                 author_id=by.id
             )
-            print(f'Reminder created: {ctx.author} {ctx.author.id} triggers on {len_str} ({tim.executed_on})')
+            to_info = f'Reminder created: {ctx.author} {ctx.author.id} triggers on {len_str} ({tim.executed_on})'
+            self.bot.logger.info(to_info)
             mid_part = mid_part.replace('@', '@\u200b')
             cnt = f"⏰  |  **Got it! The reminder has been set up.**"
             desc = f"**Id:** {tim.id}\n" \
@@ -579,9 +580,10 @@ class Reminders(commands.Cog):
                 em = Embed(title='Reminder info', description=desc)
                 await ctx.send(embed=em, content=cnt)
         except:
-            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            traceback.print_exc()
-            await ctx.send("Something went wrong")
+            # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+            # traceback.print_exc()
+            await ctx.send(f"Something went wrong, please try again.")
+            self.bot.logger.error(f"Something went wrong when making a reminder\n{traceback.format_exc()}")
 
 
 def setup(bot):

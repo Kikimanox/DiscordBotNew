@@ -216,9 +216,9 @@ class Cmds(commands.Cog):
             db_guild.save()
         except Exception as e:
             import traceback
-            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            traceback.print_exc()
-            return await ctx.send("Something went wrong.")
+            # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+            # traceback.print_exc()
+            return await ctx.send(f"Something went wrong in icmds:\n{traceback.format_exc()}")
         self.set_commands()
         return await ctx.send("Done.")
 

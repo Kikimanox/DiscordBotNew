@@ -12,3 +12,4 @@ class BaseModel(Model):
 
 class Tbd(BaseModel):
     id = IntegerField(primary_key=True)
+

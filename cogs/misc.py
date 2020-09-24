@@ -30,16 +30,17 @@ class Misc(commands.Cog):
         Some long text for community upates
         can also have new lines and emotes and
         links etc.... Goes here`"""
-        ch = await dutils.getChannel(ctx, channel)
-        if not ch: return
+
+        # ch = await dutils.getChannel(ctx, channel)
+        ch = channel
         if not text and len(ctx.message.attachments) == 0: return await ctx.send('Please supply text or at least '
-                                                                                 'one attachment image')
+                                                                                 'one attachment')
         atts = []
         if len(ctx.message.attachments) > 0:
             try:
                 was = await ctx.channel.send('Wait a second.. saving temporary files')
                 with ctx.channel.typing():
-                    atts = await dutils.saveFiles(ctx.message.attachments)
+                    atts = [await a.to_file(spoiler=a.is_spoiler()) for a in ctx.message.attachments]
                     await was.delete()
             except:
                 return await ctx.send('Something went wrong with the `say` command')
@@ -51,10 +52,6 @@ class Misc(commands.Cog):
         def check(m):
             return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
                    m.author == ctx.author and m.channel == ctx.channel
-
-        def delTmpFiles(fileNames):
-            for fn in fileNames:
-                os.remove(fn)
 
         try:
             reply = await self.bot.wait_for("message", check=check, timeout=20)
@@ -68,10 +65,7 @@ class Misc(commands.Cog):
             await ctx.channel.send('```PREVIEW BELOW```')
             if len(atts) > 0:
                 async with ctx.channel.typing():
-                    fpz = [open(f, 'rb') for f in atts]
-                    fps = [File(f) for f in fpz]
-                    await ctx.channel.send(text, files=fps)
-                    for f in fpz: f.close()
+                    await ctx.channel.send(text, files=atts)
             else:
                 await ctx.channel.send(text)
             w2 = await ctx.channel.send(f'```PREVIEW ABOVE```\nDo you want to send this message to {ch.mention} (y/n)')
@@ -85,22 +79,14 @@ class Misc(commands.Cog):
                 await w2.delete()
                 if len(atts) > 0:
                     async with ctx.channel.typing():
-                        fpz = [open(f, 'rb') for f in atts]
-                        fps = [File(f) for f in fpz]
-                        await ch.send(text, files=fps)
-                        for f in fpz: f.close()
-                        delTmpFiles(atts)
+                        await ch.send(text, files=atts)
                         return await ctx.send(f'Posted in {ch.mention}')
                 else:
                     await ch.send(text)
                     return await ctx.send(f'Posted in {ch.mention}')
         if len(atts) > 0:
             async with ctx.channel.typing():
-                fpz = [open(f, 'rb') for f in atts]
-                fps = [File(f) for f in fpz]
-                await ch.send(text, files=fps)
-                for f in fpz: f.close()
-                delTmpFiles(atts)
+                await ch.send(text, files=atts)
                 return await ctx.send(f'Posted in {ch.mention}')
         else:
             await ch.send(text)

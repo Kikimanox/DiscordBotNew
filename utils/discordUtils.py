@@ -340,6 +340,98 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None, log_l
         return await regular_ch.send(embed=embed, content=content)
 
 
+async def dm_log_try_setup(bot):
+    failed = False
+    if bot.config['BOT_DM_LOG']['CAN_SEND'] == 0:
+        try:
+            g = bot.get_guild(bot.config['BOT_DM_LOG']['GUILD_ID'])
+            if g:
+                ch = bot.get_channel(bot.config['BOT_DM_LOG']['CHANNEL_ID'])
+                if ch:
+                    hooks = await ch.webhooks()
+                    for h in hooks:
+                        if h.name == f'{bot.user.name} dm log':
+                            bot.config['BOT_DM_LOG']['HOOK'] = h
+                            bot.config['BOT_DM_LOG']['CAN_SEND'] = 1
+                            return True
+                    hook = await ch.create_webhook(name=f'{bot.user.name} dm log',
+                                                   reason="Logging webhook was missing or renamed")
+                    bot.config['BOT_DM_LOG']['HOOK'] = hook
+                    # set the webhooks pfp
+                    url = str(bot.user.avatar_url).replace('.webp', '.png')
+                    tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
+                    fnn = await saveFile(url, 'tmp', tf)  # copy from dutils because circular import
+                    with open(fnn, 'rb') as fp:
+                        await hook.edit(avatar=fp.read())
+                    os.remove(fnn)
+                    bot.config['BOT_DM_LOG']['CAN_SEND'] = 1
+                    return True
+                else:
+                    failed = True
+            else:
+                failed = True
+            if failed:
+                bot.config['BOT_DM_LOG']['CAN_SEND'] = -1
+                return False
+        except:
+            bot.config['BOT_DM_LOG']['CAN_SEND'] = -1
+            return False
+    elif bot.config['BOT_DM_LOG']['CAN_SEND'] == -1:
+        return False
+    else:  # == 1
+        return True
+
+
+async def dm_log(bot, message: discord.Message):
+    cnt = message.content
+    if bot.config['BOT_DM_LOG']['HOOK'] == 0:
+        print(f"DM WEBHOOK GONE? Dm by {message.author.id} | {message.content}")
+        return
+    try:
+        descs = []
+        txt = message.content
+        if not txt: txt = "*there was no content*"
+        while len(txt) > 0:
+            descs.append(txt[:1024])
+            txt = txt[1024:]
+        a_title = str(message.author)
+        ems = []
+        i = 1
+        for desc in descs:
+            if len(descs) > 1:
+                a_title += f' {i}/{len(descs)}'
+                i += 1
+            icon_url = message.author.avatar_url if 'gif' in str(message.author.avatar_url).split('.')[-1] else str(
+                message.author.avatar_url_as(format="png"))
+            em = Embed(description=desc)
+            em.set_author(name=a_title, icon_url=icon_url)
+            em.set_thumbnail(url=icon_url)
+            a_title = str(message.author)
+            em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')} | "
+                               f'{message.author.id}')
+            if message.attachments:
+                val = ("\n".join(f'[{j}. {s.filename}]({s.url})'
+                                 for j, s in enumerate(message.attachments, 1)))
+                if len(val) > 1024:
+                    val = (" ".join(f'[{j}]({s.url})' for j, s in enumerate(message.attachments, 1)))
+                    if len(val) > 1024:
+                        val = f'https://cdn.discordapp.com/attachments/{message.channel.id}/...\n'
+                        rest = ("\n".join(f'{"/".join(s.url.split("/")[-2:])}'
+                                          for j, s in enumerate(message.attachments, 1)))
+                        val += rest
+                        val += '\n\n**Combine all these into urls with `dmlu PASTE_HERE`**'
+                em.add_field(name="Attachements", value=val)
+            ems.append(em)
+        for e in ems:
+            await bot.config['BOT_DM_LOG']['HOOK'].send(embed=e)
+    except:
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        print("exception in dm logging")
+        traceback.print_exc()
+        bot.config['BOT_DM_LOG']['HOOK'] = 0
+        bot.config['BOT_DM_LOG']['CAN_SEND'] = 0
+
+
 async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
                        no_dm=False, softban=False, actually_resp=None,
                        author=None, guild=None, bot=None, respch=None):
@@ -367,7 +459,8 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
                                       f'from the {str(guild)} '
                                       f'server {"" if not reason else f", reason: {reason}"}')
             except:
-                print(f"Member {'' if not member else member.id} disabled dms")
+                pass
+                # print(f"Member {'' if not member else member.id} disabled dms")
             return_msg = f'{"Banned" if not softban else "Soft-banned"} the user {member.mention} (id: {member.id})'
             if reason:
                 return_msg += f" for reason: `{reason}`"
@@ -425,9 +518,9 @@ async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, 
         #                                  reason=reason, actually_resp=actually_resp,
         #                                  guild=guild, bot=bot)
     except:
-        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        traceback.print_exc()
-        bot.logger.error(f"can not auto unmute {guild} {guild.id}")
+        # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        # traceback.print_exc()
+        bot.logger.error(f"can not auto unmute {guild} {guild.id}\n{traceback.format_exc()}")
 
 
 async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
@@ -457,7 +550,8 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
                 await member.send(f'You have been unmuted on the {str(ctx.guild)} server.'
                                   f'{"" if not reason else f" Reason: **{reason}**"}')
         except:
-            print(f"Member {'' if not member else member.id} disabled dms")
+            pass
+            # print(f"Member {'' if not member else member.id} disabled dms")
             # act_id = await moderation_action(ctx, reason, "unmute", member, no_dm=no_dm, actually_resp=actually_resp)
             # await post_mod_log_based_on_type(ctx, "unmute", act_id, offender=member,
             #                                  reason=reason, actually_resp=actually_resp)
@@ -536,7 +630,8 @@ async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, ba
                                   f'{"for " + length if length else "indefinitely "}'
                                   f' {"" if not reason else f"reason: {reason}"}')
         except:
-            print(f"Member {'' if not member else member.id} disabled dms")
+            # print(f"Member {'' if not member else member.id} disabled dms")
+            pass
     except discord.errors.Forbidden:
         del bot.just_muted_by_bot[f'{member.id}_{member.guild.id}']
         if not batch:
@@ -805,14 +900,14 @@ async def log(bot, title=None, txt=None, author=None,
                                        content=this_content)
 
     except:
-        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        traceback.print_exc()
-        bot.logger.error("Something went wrong when logging")
+        # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        # traceback.print_exc()
+        bot.logger.error(f"Something went wrong when logging\n{traceback.format_exc()}")
 
 
 async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     if offender.id == bot.config['OWNER_ID']: return
-    print(meta)
+    # print(meta)
     bot.banlist[offender.id] = meta
     try:
         bb = BotBanlist.get(BotBlacklist.user == offender.id)
@@ -829,7 +924,7 @@ async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
 
 async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
     if offender.id == bot.config['OWNER_ID']: return
-    print(meta)
+    # print(meta)
     bot.blacklist[offender.id] = meta
     try:
         bb = BotBlacklist.get(BotBlacklist.user == offender.id)
@@ -986,7 +1081,7 @@ async def punish_based_on_arl(arl, message, bot, mentions=False):
                                author=bot.user, guild=message.guild, bot=bot, massbanning=True)
         else:
             m = message.guild.get_member(message.author.id)
-            print(str(m))
+            # print(str(m))
             if m:
                 try:
                     await message.author.kick(reason=rsn)

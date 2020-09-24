@@ -4,7 +4,7 @@ from discord import Member, Embed, File, utils, abc
 import utils.checks as checks
 import utils.timeStuff as tutils
 import utils.discordUtils as dutils
-
+import traceback
 
 class Quoting(commands.Cog):
 
@@ -136,7 +136,8 @@ class Quoting(commands.Cog):
 
                 await pin.unpin()
             except:
-                print(f'Archive error at message {pin.id}')
+                # print(f'Archive error at message {pin.id}')
+                self.bot.logger.error(f'Archive error at message {pin.id}\n{traceback.format_exc()}')
                 await ctx.send(embed=Embed(description=f'Archive error at message {pin.id}'))
 
         msg = await ctx.send(embed=Embed(description=f'Finished archiving pins '

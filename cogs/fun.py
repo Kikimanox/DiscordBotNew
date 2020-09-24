@@ -32,13 +32,13 @@ class Fun(commands.Cog):
         try:
             self.data = await ClaimsManager.get_data_from_server(self.bot, self.config)
         except:
-            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            print("Claims data not loaded")
-            traceback.print_exc()
+            # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+            self.bot.logger.error(f"Claims data not loaded\n{traceback.format_exc()}")
+            # traceback.print_exc()
             self.data = {'-1-1-1': '-1-1-1'}
             return
-        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        print("Claims data loaded")
+        # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        self.bot.logger.info("Claims data loaded")
 
     @commands.group(aliases=['bride', 'vtuber'])  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
     async def claim(self, ctx, *, subcmd=""):

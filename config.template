@@ -13,5 +13,11 @@
     "IMGUR_ACCESS_TOKEN": "",
     "IMGUR_REFRESH_TOKEN": "",
     "NEW_MAIN_D": "",
-    "NEW_BOT_LOOP": ""
+    "NEW_BOT_LOOP": "",
+    "BOT_DM_LOG": {
+        "CAN_SEND": 0,
+        "HOOK": 0,
+        "GUILD_ID": ,
+        "CHANNEL_ID":
+    },
 }

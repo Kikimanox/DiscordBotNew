@@ -144,6 +144,69 @@ def exit_bot(self):
     os._exit(0)
 
 
+@commands.check(owner_check)
+@bot.command()
+async def dmlu(ctx, *, urls_paste: str):
+    """Combine urls from a dm log"""
+    try:
+        lines = urls_paste.split('\n')
+        base = lines[0].split('...')[0]
+        ret = '\n'.join([f'<{base}{line}>' for line in lines[1:]])
+        await ctx.send(ret)
+    except:
+        await ctx.send("Somethign went wrong")
+        bot.logger.error(traceback.format_exc())
+
+
+@commands.check(owner_check)
+@bot.command()
+async def dm(ctx, user: discord.User, *, content=""):
+    """Send a direct message to an user [no arguments for user check]"""
+    if not content and not ctx.message.attachments and user:
+        return await ctx.send(embed=Embed(description=f"{user.mention} - `{user}` `{user.id}`"))
+    try:
+        async with ctx.typing():
+            m = None
+            if ctx.message.attachments:
+                m = await ctx.send("Saving files to re-send.")
+            atts = [await a.to_file(spoiler=a.is_spoiler()) for a in ctx.message.attachments]
+            icon_url = user.avatar_url if 'gif' in str(user.avatar_url).split('.')[-1] else str(
+                user.avatar_url_as(format="png"))
+            mm = await user.send(content, files=atts)
+            if m: await m.delete()
+            await ctx.send(embed=Embed(description=f"{user.mention} - `{user}` `{user.id}`", title='Message '
+                                                                                                   'delivered ✅')
+                           .set_thumbnail(url=icon_url).set_footer(text=f'{mm.channel.id} {mm.id}'))
+    except:
+        await ctx.send(f"Failed to send.\n```\n{traceback.format_exc()}```")
+
+
+@commands.check(owner_check)
+@bot.command(aliases=['dmr', 'dmrm', 'dmd'])
+async def dmdel(ctx, ch_id: int, msg_id: int):
+    """Delete a message in dms by *chid* and msgid"""
+    try:
+        ch = await bot.fetch_channel(ch_id)
+        msg = await ch.fetch_message(msg_id)
+        await msg.delete()
+        await ctx.sned("Deleted.")
+    except:
+        await ctx.send("Something went wrong when trying to delete.")
+
+
+@commands.check(owner_check)
+@bot.command(aliases=['dme'])
+async def dmedit(ctx, ch_id: int, msg_id: int, *, new_content):
+    """Edit a message in dms by *chid* and msgid"""
+    try:
+        ch = await bot.fetch_channel(ch_id)
+        msg = await ch.fetch_message(msg_id)
+        await msg.edit(content=new_content)
+        await ctx.sned("Edited.")
+    except:
+        await ctx.send("Something went wrong when trying to delete.")
+
+
 @commands.check(admin_check)
 @bot.command()
 async def prefix(ctx, *, new_prefix=""):
@@ -200,11 +263,10 @@ async def globalprefix(ctx, *, new_prefix=""):
 @bot.event
 async def on_message(message):
     # if message.guild.id != 202845295158099980: return  # Testing guild
-    if not bot.is_ready():
-        await bot.wait_until_ready()
+    # if message.author.id != 174406433603846145: return  # Testing stuff, stop spamming
 
     # check if it's even a user
-    if not isinstance(message.author, discord.Member) or message.author.bot:
+    if message.author.bot:
         return
 
     is_mod = await moderator_check_no_ctx(message.author, message.guild, bot)
@@ -228,7 +290,12 @@ async def on_message(message):
     # it was a dm
     if not message.guild and message.author.id != bot.config['CLIENT_ID']:
         arl = -1
-        print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
+        # print(f'DM LOG: {str(message.author)} (id: {message.author.id}) sent me this: {message.content}')
+        if not bot.is_ready():
+            return await message.channel.send("Bot is still starting up, hold on a few seconds.")
+        is_setup = await dutils.dm_log_try_setup(bot)
+        if is_setup:
+            await dutils.dm_log(bot, message)
 
     pfx = str(get_pre(bot, message))
     if message.content in [f'<@!{bot.config["CLIENT_ID"]}>', f'<@{bot.config["CLIENT_ID"]}>']:
@@ -275,6 +342,8 @@ async def on_message(message):
         if arl in [0, 1]:  # user can unblacklist themselves here
             if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
                 if possible_cmd and possible_cmd == 'unblacklistme':
+                    if not bot.is_ready():
+                        return await message.channel.send("Bot is still starting up, hold on a few seconds.")
                     return await bot.process_commands(message)
 
         if arl in [0, 1]:  # the journey for the blacklisted end shere
@@ -301,7 +370,7 @@ async def on_message(message):
                     del bot._auto_spam_count[author_id]
                     # await self.log_spammer(ctx, message, retry_after, autoblock=True)
                     out = f'[{retry_after} | {message.content}]({message.jump_url})'
-                    print(out)
+                    # print(out)
                     gid = 0
                     if message.guild: gid = message.guild.id
                     await dutils.blacklist_from_bot(bot, message.author, out, gid,
@@ -342,9 +411,13 @@ async def on_message(message):
                     return await message.channel.send("❌ This command is enabled only in the following channels:\n"
                                                       f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['only_e'])}")
 
+            if not bot.is_ready():
+                return await message.channel.send("Bot is still starting up, hold on a few seconds.")
             return await bot.process_commands(message)
 
         if ctype != -1:
+            if not bot.is_ready():
+                return await message.channel.send("Bot is still starting up, hold on a few seconds.")
             if arl == 1 and not is_mod:
                 return await message.channel.send(arl1_ret)
 
@@ -435,7 +508,9 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CommandNotFound):
         pass
     elif isinstance(error, commands.CommandInvokeError):
-        print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
+        # print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
+        bot.logger.info("Command invoke error exception in command '{}', "
+                        "{}".format(ctx.command.qualified_name, str(error)))
     elif isinstance(error, commands.CommandOnCooldown):
         extra = ""
         if error.cooldown.type.name != 'default':
@@ -468,9 +543,9 @@ async def on_command_error(ctx, error):
         await ctx.send("An unknown error occurred with the `{}` command.".format(ctx.command.name))
         trace = traceback.format_exception(type(error), error, error.__traceback__)
         trace_str = "".join(trace)
-        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        print(trace_str)
-        print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
+        # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        # print(trace_str)
+        # print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
         bot.logger.error(
             f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} (id: {str(ctx.author.id)}) "
             f"| Message: {ctx.message.content} | "
@@ -491,10 +566,10 @@ async def on_error(event, *args, **kwargs):
         bot.logger.error("exception occurred, restarting bot")
         exit_bot(0)
     else:
-        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         trace = traceback.format_exc()
         bot.logger.error(f"---------- ERROR ----------: {trace}")
-        print(trace)
+        # print(trace)
 
 
 @bot.before_invoke

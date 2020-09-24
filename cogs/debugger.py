@@ -197,11 +197,11 @@ class Debugger(commands.Cog):
     # List saved cmd/_scripts
     @commands.check(owner_check)
     @py.command(aliases=['ls'], pass_context=True)
-    async def list(self, ctx, txt: str = None):
+    async def list(self, ctx, page: str = None):
         """List all saved _scripts. Ex: [p]py list or [p]py ls"""
         try:
-            if txt:
-                numb = txt.strip()
+            if page:
+                numb = page.strip()
                 if numb.isdigit():
                     numb = int(numb)
                 else:

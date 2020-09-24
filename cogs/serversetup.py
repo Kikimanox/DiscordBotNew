@@ -993,10 +993,10 @@ class Serversetup(commands.Cog):
                             else:
                                 await send_with.send(embed=em, content=cnt)
             except:
-                print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-                traceback.print_exc()
+                # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+                # traceback.print_exc()
                 self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} "
-                                      f"in {str(member.guild)} {member.guild.id}")
+                                      f"in {str(member.guild)} {member.guild.id}\n{traceback.format_exc()}")
 
         if member.guild.id in self.bot.from_serversetup:
             try:  # log it
@@ -1112,7 +1112,8 @@ class Serversetup(commands.Cog):
                                          None, 0x960f0f, guild=g)
                         ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
                               f"(ch: {ch_id}) (guild: {g_id})"
-                        print(ret)
+                        # print(ret)
+                        self.bot.logger.info(ret)
         except:
             await asyncio.sleep(2)
 
@@ -1224,8 +1225,9 @@ class Serversetup(commands.Cog):
             return True
         except Exception as e:
             if str(e) == '_fail': return
-            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            traceback.print_exc()
+            # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+            # traceback.print_exc()
+            self.bot.logger.error(f'Something went wrong in serevsetup main fnc\n{traceback.format_exc()}')
             info = ""
             if quiet_succ:
                 for k, v in kwargs.items(): kwargs[k] = str(v)
