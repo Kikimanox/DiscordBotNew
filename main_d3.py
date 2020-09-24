@@ -228,7 +228,11 @@ async def prefix(ctx, *, new_prefix=""):
         "`.prefix bb{space_here}`")
     ctx.bot.config['B_PREF_GUILD'][str(ctx.guild.id)] = new_prefix
     if new_prefix == Prefix: del ctx.bot.config['B_PREF_GUILD'][str(ctx.guild.id)]
-    dataIOa.save_json("config.json", bot.config)
+    conf_copy = bot.config.copy()
+    conf_copy["BOT_DM_LOG"]["CAN_SEND"] = 0
+    conf_copy["BOT_DM_LOG"]["HOOK"] = 0
+    conf_copy['BOT_DEFAULT_EMBED_COLOR'] = 0
+    dataIOa.save_json("config.json", conf_copy)
     global Prefix_Per_Guild
     Prefix_Per_Guild = ctx.bot.config['B_PREF_GUILD']
     await ctx.send("Prefix changed.")
@@ -254,7 +258,11 @@ async def globalprefix(ctx, *, new_prefix=""):
         "with a space at the end, for example `bb command` then do: "
         "`.prefix bb{space_here}`")
     bot.config['BOT_PREFIX'] = new_prefix
-    dataIOa.save_json("config.json", bot.config)
+    conf_copy = bot.config.copy()
+    conf_copy["BOT_DM_LOG"]["CAN_SEND"] = 0
+    conf_copy["BOT_DM_LOG"]["HOOK"] = 0
+    conf_copy['BOT_DEFAULT_EMBED_COLOR'] = 0
+    dataIOa.save_json("config.json", conf_copy)
     global Prefix
     Prefix = new_prefix
     await ctx.send("Prefix changed.")
