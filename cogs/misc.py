@@ -8,6 +8,7 @@ from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
+import random
 
 
 class Misc(commands.Cog):
@@ -94,10 +95,32 @@ class Misc(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=["qs"])
-    async def quicksay(self, ctx, channel: discord.TextChannel, *, text: str):
+    async def quicksay(self, ctx, channel: discord.TextChannel, *, text: str = ""):
         """Say something in a specified channel quickly"""
+        if not text and not ctx.message.attachments:
+            return await ctx.send("You forgot the content or attachements")
+        atts = []
+        if len(ctx.message.attachments) > 0:
+            try:
+                with ctx.channel.typing():
+                    atts = [await a.to_file(spoiler=a.is_spoiler()) for a in ctx.message.attachments]
+            except:
+                traceback.print_exc()
+                return await ctx.send('Something went wrong with the `qs` command')
         await ctx.message.delete()
-        await channel.send(text)
+        async with ctx.channel.typing():
+            await channel.send(text, files=atts)
+
+    @commands.cooldown(3, 10, commands.BucketType.user)
+    @commands.command()
+    async def choose(self, ctx, *, options: str):
+        """Split options with | and have the bot pick one of them"""
+        opts = options.split('|')
+        if len(options) < 2:
+            return await ctx.send(f"You need to provite at least two options, cmd ex.: `{dutils.bot_pfx_by_ctx(ctx)}"
+                                  f"choose one | two | three`")
+        await ctx.send(embed=Embed(color=self.bot.config['BOT_DEFAULT_EMBED_COLOR'],
+                                   description=f'🤔 Hmmm, I choose: **{(random.choice(opts)).strip()}**'))
 
 
 def setup(bot):
