@@ -414,17 +414,52 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @censor.command()
-    async def add(self, ctx, *words):
-        """Add words to censor list"""
-        if len(words) == 0: await ctx.send("You didn't provide any words.")
-        await self.do_setup(add_c_words=list(words), ctx=ctx)
+    async def add(self, ctx, *, words):
+        """Add words to censor list (multi words use **"** between)"""
+        if words.count('"') % 2 != 0: return await ctx.send('Uneven number of " found.')
+        if '""' in words: return await ctx.send('You can not use `""` in words')
+        if '|!|' in words: return await ctx.send('You can not use `|!|` in words')
+        words = words.split()
+        if len(words) == 0: return await ctx.send("You didn't provide any words.")
+        wordss = []
+        w: str
+        tmp = ""
+        for w in words:
+            if tmp:
+                if not w.endswith('"'):
+                    tmp += f' {w}'
+                    continue
+            if w.endswith('"'):
+                tmp += f' {w[:-1]}'
+                wordss.append(tmp)
+                tmp = ""
+                continue
+            if w.startswith('"'):
+                tmp += w[1:]
+                continue
+            wordss.append(w)
+        await self.do_setup(add_c_words=list(wordss), ctx=ctx)
 
     @commands.check(checks.moderator_check)
     @censor.command()
-    async def remove(self, ctx, *words):
-        """Remove words from censor list"""
-        if len(words) == 0: await ctx.send("You didn't provide any words.")
+    async def remove(self, ctx, *, words):
+        """Remove words from censor list (multi words use **"** between)"""
+        if words.count('"') % 2 != 0: return await ctx.send('Uneven number of " found.')
+        if '""' in words: return await ctx.send('You can not use `""` in words')
+        if '|!|' in words: return await ctx.send('You can not use `|!|` in words')
+        words = words.split()
+        if len(words) == 0: return await ctx.send("You didn't provide any words.")
         await self.do_setup(remove_c_words=list(words), ctx=ctx)
+
+    @commands.check(checks.moderator_check)
+    @censor.command()
+    async def clear(self, ctx):
+        """Clear censor list"""
+        p = await dutils.prompt(ctx, "Are you sure you want to clear the entire censor list?")
+        if p:
+            await self.do_setup(clear_c_words=True, ctx=ctx)
+        else:
+            await ctx.send("Cancelled.")
 
     @commands.check(checks.moderator_check)
     @censor.command()
@@ -434,7 +469,8 @@ class Serversetup(commands.Cog):
         delim = '\n' if compact != 'compact' else ' '
         if db_guild.censor_list == "": return await ctx.send("No censored words here yet.")
         arrs = dutils.getParts2kByDelimiter(db_guild.censor_list, delim, limit=1000)
-        ems = dutils.getEmbedsFromTxtArrs(ctx.bot, arrs, '**Censor list**', cnt_join_instd_of_spc=delim)
+        ems = dutils.getEmbedsFromTxtArrs(ctx.bot, arrs, '**Censor list**', cnt_join_instd_of_spc=delim,
+                                          split_by='|!|')
         return await dutils.send_and_maybe_paginate_embeds(ctx, ems)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
@@ -1122,6 +1158,15 @@ class Serversetup(commands.Cog):
         if isinstance(before.channel, discord.DMChannel) or before.author.bot or \
                 before.guild.id not in self.bot.from_serversetup:
             return
+        is_mod = await checks.moderator_check_no_ctx(after.author, after.guild, self.bot)
+        ck = 'censor_list'
+        if not is_mod:
+            if after.guild and after.guild.id in self.bot.from_serversetup and \
+                    self.bot.from_serversetup[after.guild.id][ck]:
+                if any(w in self.bot.from_serversetup[after.guild.id][ck] for w in after.content.split()):
+                    return await after.delete()
+                if any(c in after.content for c in self.bot.from_serversetup[after.guild.id][ck]):
+                    return await after.delete()
         if str(before.channel.id) in self.bot.from_serversetup[before.guild.id]['ignored_chs_at_log']: return
         try:
             txt = f"By: {before.author.mention} (id: {before.author.id}) in {before.channel.mention}\n\n" \
@@ -1154,6 +1199,7 @@ class Serversetup(commands.Cog):
 
         add_c_words = kwargs.get('add_c_words', None)
         remove_c_words = kwargs.get('remove_c_words', None)
+        clear_c_words = kwargs.get('clear_c_words', False)
 
         db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
         try:
@@ -1201,12 +1247,15 @@ class Serversetup(commands.Cog):
                 cur_c = db_guild.censor_list.split()
                 cur_c.extend(add_c_words)
                 new_c = list(set(cur_c))
-                db_guild.censor_list = ' '.join(new_c)
+                db_guild.censor_list = '|!|'.join(new_c)
                 db_guild.save()
             elif remove_c_words and len(kwargs) == 2:
-                cur_c = db_guild.censor_list.split()
+                cur_c = db_guild.censor_list.split('|!|')
                 new_c = list(set(cur_c) - set(remove_c_words))
-                db_guild.censor_list = ' '.join(new_c)
+                db_guild.censor_list = '|!|'.join(new_c)
+                db_guild.save()
+            elif clear_c_words and len(kwargs) == 2:
+                db_guild.censor_list = ""
                 db_guild.save()
             elif cmds_chs_meta and len(kwargs) == 2:
                 c = json.dumps(cmds_chs_meta)

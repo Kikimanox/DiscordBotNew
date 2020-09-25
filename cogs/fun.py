@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import itertools
 import json
 import random
 
@@ -321,6 +322,84 @@ class Fun(commands.Cog):
             except:
                 pass
             await asyncio.sleep(86400 * 3)  # every 3 days
+
+    @commands.check(checks.owner_check)
+    @commands.command(hidden=True, aliases=["g_r"])
+    async def g_roulette(self, ctx, num_winners: int, msg_id: int, channel: discord.TextChannel,
+                         num_options: int, lines_in_font: int = 0, role_for_extra: discord.Role = None,
+                         num_of_extra_opts: int = 0):
+        """Leggo 1. stuff 2. stuff [for b only]3. stuff extra
+        Be sure that the roulette message's first line starts off with 1. right away.
+        Or else just adjust lines_in_front.
+        Always start extra options with one extra line before them!
+        """
+        if num_of_extra_opts != 0: num_of_extra_opts = num_of_extra_opts + num_options
+        msg = await channel.fetch_message(msg_id)
+        usrs = list(set(itertools.chain.from_iterable([[m for m in await r.users().flatten()] for r in msg.reactions])))
+        u_all = [u for u in usrs]
+        if role_for_extra:
+            u_extra = [u for u in usrs if role_for_extra.id in u._roles]
+            u_extra_minus = [u for u in usrs if role_for_extra.id not in u._roles]
+        else:
+            u_extra = u_all
+            u_extra_minus = u_all
+        only_one_type_extra = False
+        only_one_type = False
+        if not u_extra:
+            only_one_type = True
+            await ctx.send('No users with the extra role reacted to the message, defaulting to all users')
+            u_extra = u_all
+        if not u_extra_minus:
+            only_one_type_extra = True
+            await ctx.send('No users without the extra role reacted to the message, defaulting to all users')
+            u_extra_minus = u_all
+
+        random.shuffle(u_all)
+        random.shuffle(u_extra)
+        random.shuffle(u_extra_minus)
+
+        a = msg.content.split('\n')
+        options = [l for l in msg.content.split('\n')][lines_in_font:num_options + lines_in_font]
+        options_extra = [l for l in msg.content.split('\n')][
+                        (num_options + 1 + lines_in_font):num_of_extra_opts + lines_in_font]
+        options_both = options + options_extra
+
+        if len(u_all) < num_winners: return await ctx.send(f"Max num winners should be **{len(u_all)}**")
+
+        rets_o = []
+        rets_u = []
+        if only_one_type:
+            for i in range(num_winners): rets_o.append(random.choice(options))
+            rets_u.extend(u_extra_minus[:num_winners])
+        elif only_one_type_extra:
+            for i in range(num_winners): rets_o.append(random.choice(options_both))
+            rets_u.extend(u_extra[:num_winners])
+        else:
+            i_e = 0
+            i_reg = 0
+            i = num_winners
+            while True:
+                u_ = random.choice(u_all)
+                if (u_ in u_extra and role_for_extra) and i_e < len(u_extra):
+                    rets_o.append(random.choice(options_both))
+                    rets_u.append(u_extra[i_e])
+                    i_e += 1
+                    i -= 1
+                elif (u_ in u_extra_minus or not role_for_extra) and i_reg < len(u_extra_minus):
+                    rets_o.append(random.choice(options))
+                    rets_u.append(u_extra_minus[i_reg])
+                    i_reg += 1
+                    i -= 1
+                if (i_e == len(u_extra) and i_reg == len(u_extra_minus)) or i == 0: break
+
+        await ctx.send("🎉 **TIME TO ROLL THE ROULETTE** 🎉")
+        dr = await ctx.send("🥁 🥁 🥁 *que drumroll* 🥁 🥁 🥁")
+
+        for i in range(len(rets_o)):
+            await ctx.send(f"{rets_u[i].mention} has won ||{rets_o[i]}||")
+            # await asyncio.sleep(3)
+
+        await dr.delete()
 
 
 def setup(bot):

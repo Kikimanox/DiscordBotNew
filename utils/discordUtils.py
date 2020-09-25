@@ -171,11 +171,11 @@ def getParts2kByDelimiter(text, delimi, extra='', limit=1900):
     return ret
 
 
-def getEmbedsFromTxtArrs(bot, arrs, title, color=None, cnt_join_instd_of_spc=None):
+def getEmbedsFromTxtArrs(bot, arrs, title, color=None, cnt_join_instd_of_spc=None, split_by=' '):
     embeds = []
     for a in arrs:
         if cnt_join_instd_of_spc:
-            a = cnt_join_instd_of_spc.join(a.split())
+            a = cnt_join_instd_of_spc.join(a.split(split_by))
         embeds.append(Embed(title=f'{title}\n'
                                   f'Page {len(embeds) + 1}/[MAX]', description=a,
                             color=bot.config['BOT_DEFAULT_EMBED_COLOR'] if not color else color))

@@ -208,7 +208,7 @@ class SSManager:
             ret[g['id']] = {'muterole': g['muterole'],
                             'modrole': g['modrole'],
                             'ignored_chs_at_log': g['ignored_chs_at_log'],
-                            'censor_list': g['censor_list'].split(),
+                            'censor_list': g['censor_list'].split('|!|'),
                             'disabled_onlyEnabled_cmds_and_chs':
                                 json.loads(g['disabled_onlyEnabled_cmds_and_chs'])}
             for lg in lgs:

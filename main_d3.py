@@ -278,12 +278,16 @@ async def on_message(message):
 
     is_mod = await moderator_check_no_ctx(message.author, message.guild, bot)
     ck = 'censor_list'
+    was_deleted = False
     if not is_mod:
         if message.guild and message.guild.id in bot.from_serversetup and bot.from_serversetup[message.guild.id][ck]:
-            if any(w in bot.from_serversetup[message.guild.id][ck] for w in message.content.split()):
+            if any(w.lower() in bot.from_serversetup[message.guild.id][ck] for w in message.content.lower().split()):
                 await message.delete()
-            if any(c in message.content for c in bot.from_serversetup[message.guild.id][ck]):
+                was_deleted = True
+            if any(c in message.content.lower() for c in
+                   bot.from_serversetup[message.guild.id][ck]) and not was_deleted:
                 await message.delete()
+                was_deleted = True
 
     arl = 0
     # get anti raid level
@@ -351,6 +355,7 @@ async def on_message(message):
                 if possible_cmd and possible_cmd == 'unblacklistme':
                     if not bot.is_ready():
                         return await message.channel.send("Bot is still starting up, hold on a few seconds.")
+                    if was_deleted: return
                     return await bot.process_commands(message)
 
         if arl in [0, 1]:  # the journey for the blacklisted end shere
@@ -407,6 +412,8 @@ async def on_message(message):
 
         if not is_mod and (is_actually_cmd or ctype > 0) and arl > 1:
             return  # we don't want non mods triggering commands during a raid
+        if was_deleted:
+            return
         if is_actually_cmd:
             if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
                 return await message.channel.send(arl1_ret)
@@ -550,9 +557,9 @@ async def on_command_error(ctx, error):
         await ctx.send("An unknown error occurred with the `{}` command.".format(ctx.command.name))
         trace = traceback.format_exception(type(error), error, error.__traceback__)
         trace_str = "".join(trace)
-        # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        # print(trace_str)
-        # print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
+        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
+        print(trace_str)
+        print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
         bot.logger.error(
             f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} (id: {str(ctx.author.id)}) "
             f"| Message: {ctx.message.content} | "
