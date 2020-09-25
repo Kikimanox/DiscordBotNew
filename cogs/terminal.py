@@ -213,7 +213,6 @@ class Terminal(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):  # This is where the magic starts
-        return
         if message.channel.id in self.sessions and self.enabled and message.author.id == self.bot.config['OWNER_ID']:
             # DO NOT DEL
 
