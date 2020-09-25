@@ -211,6 +211,10 @@ class SSManager:
                             'censor_list': g['censor_list'].split('|!|'),
                             'disabled_onlyEnabled_cmds_and_chs':
                                 json.loads(g['disabled_onlyEnabled_cmds_and_chs'])}
+            try:
+                ret[g['id']]['censor_list'].remove('')
+            except:
+                pass
             for lg in lgs:
                 if lg['guild'] != g['id']: continue
                 try:

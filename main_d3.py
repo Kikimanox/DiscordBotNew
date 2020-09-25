@@ -269,7 +269,7 @@ async def globalprefix(ctx, *, new_prefix=""):
 
 @bot.event
 async def on_message(message):
-    if message.guild.id != 202845295158099980: return  # Testing guild
+    # if message.guild.id != 202845295158099980: return  # Testing guild
     # if message.author.id != 174406433603846145: return  # Testing stuff, stop spamming
 
     # check if it's even a user
