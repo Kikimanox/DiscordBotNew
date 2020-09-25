@@ -441,15 +441,32 @@ class Serversetup(commands.Cog):
         await self.do_setup(add_c_words=list(wordss), ctx=ctx)
 
     @commands.check(checks.moderator_check)
-    @censor.command()
-    async def remove(self, ctx, *, words):
+    @censor.command(name="remove")
+    async def _remove(self, ctx, *, words):
         """Remove words from censor list (multi words use **"** between)"""
         if words.count('"') % 2 != 0: return await ctx.send('Uneven number of " found.')
         if '""' in words: return await ctx.send('You can not use `""` in words')
         if '|!|' in words: return await ctx.send('You can not use `|!|` in words')
         words = words.split()
         if len(words) == 0: return await ctx.send("You didn't provide any words.")
-        await self.do_setup(remove_c_words=list(words), ctx=ctx)
+        wordss = []
+        w: str
+        tmp = ""
+        for w in words:
+            if tmp:
+                if not w.endswith('"'):
+                    tmp += f' {w}'
+                    continue
+            if w.endswith('"'):
+                tmp += f' {w[:-1]}'
+                wordss.append(tmp)
+                tmp = ""
+                continue
+            if w.startswith('"'):
+                tmp += w[1:]
+                continue
+            wordss.append(w)
+        await self.do_setup(remove_c_words=list(wordss), ctx=ctx)
 
     @commands.check(checks.moderator_check)
     @censor.command()
