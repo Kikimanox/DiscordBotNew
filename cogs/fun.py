@@ -394,10 +394,10 @@ class Fun(commands.Cog):
 
         await ctx.send("🎉 **TIME TO ROLL THE ROULETTE** 🎉")
         dr = await ctx.send("🥁 🥁 🥁 *que drumroll* 🥁 🥁 🥁")
-
+        await asyncio.sleep(5)
         for i in range(len(rets_o)):
             await ctx.send(f"{rets_u[i].mention} has won ||{rets_o[i]}||")
-            # await asyncio.sleep(3)
+            await asyncio.sleep(3)
 
         await dr.delete()
 
