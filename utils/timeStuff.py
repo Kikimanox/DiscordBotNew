@@ -384,6 +384,8 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
                     if was_at:
                         lastPart_just_right_one = f'{timestamp.year} {timestamp.month} {timestamp.day} {at_part}'
                         midPart2 = text[len(firstPart) + 1:idx4_at - 1]
+                    if min_replace:
+                        midPart2 = midPart2.replace(replace_with, 'min')
 
             # if idx == idx7:
             #    tomorrow = timestamp + datetime.timedelta(days=1)
