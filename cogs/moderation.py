@@ -768,7 +768,7 @@ class Moderation(commands.Cog):
 
         await dutils.mute_user(ctx, user, length, reason, new_mute=True, no_dm=True)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command()
     async def ban(self, ctx, user: discord.Member, *, reason=""):
         """Ban a user with an optional reason. Prefix with `s` for "no dm"
@@ -790,7 +790,7 @@ class Moderation(commands.Cog):
         `[p]ban USER_ID optional reason goes here here`"""
         await dutils.ban_function(ctx, user, reason)
 
-    @commands.check(checks.kick_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command()
     async def kick(self, ctx, user: discord.Member, *, reason=""):
         """Kick a user from the server
@@ -815,7 +815,7 @@ class Moderation(commands.Cog):
         except discord.Forbidden:
             await ctx.send('Could not kick user. Not enough permissions.')
 
-    @commands.check(checks.kick_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def skick(self, ctx, user: discord.Member, *, reason=""):
         """Kick a user from the server (no dm)
@@ -835,7 +835,7 @@ class Moderation(commands.Cog):
         except discord.Forbidden:
             await ctx.send('Could not kick user. Not enough permissions.')
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def sban(self, ctx, user: discord.Member, *, reason=""):
         """Ban a user with an optionally supplied reason. **(won't dm them)**
@@ -845,7 +845,7 @@ class Moderation(commands.Cog):
         `[p]sban USER_ID optional reason goes here here`"""
         await dutils.ban_function(ctx, user, reason, no_dm=True)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command()
     async def banish(self, ctx, user: discord.Member, *, reason=""):
         """Same as ban but also deletes message history (7 days)
@@ -855,7 +855,7 @@ class Moderation(commands.Cog):
         `[p]banish USER_ID optional reason goes here here`"""
         await dutils.ban_function(ctx, user, reason, removeMsgs=7)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def sbanish(self, ctx, user: discord.Member, *, reason=""):
         """Same as ban but also deletes message history (7 days) **(no dm)**
@@ -865,7 +865,7 @@ class Moderation(commands.Cog):
         `[p]sbanish USER_ID optional reason goes here here`"""
         await dutils.ban_function(ctx, user, reason, removeMsgs=7, no_dm=True)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command()
     async def softban(self, ctx, clear_messages_days: int, user: discord.Member, *, reason=""):
         """Ban then unban (see help for details)
@@ -884,7 +884,7 @@ class Moderation(commands.Cog):
         if clear_messages_days > 7: return await ctx.send("Min=0, **Max=7** for `clear_messages_days`")
         await dutils.ban_function(ctx, user, reason, softban=True, removeMsgs=clear_messages_days)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def ssoftban(self, ctx, clear_messages_days: int, user: discord.Member, *, reason=""):
         """Ban then unban right away (won't dm them)
@@ -903,7 +903,7 @@ class Moderation(commands.Cog):
         if clear_messages_days > 7: return await ctx.send("Min=0, **Max=7** for `clear_messages_days`")
         await dutils.ban_function(ctx, user, reason, softban=True, no_dm=True, removeMsgs=clear_messages_days)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command()
     async def softbanish(self, ctx, user: discord.Member, *, reason=""):
         """Ban, but unban right away also deletes message history (7 days)
@@ -913,7 +913,7 @@ class Moderation(commands.Cog):
         `[p]softbanish USER_ID optional reason goes here here`"""
         await dutils.ban_function(ctx, user, reason, removeMsgs=7, softban=True)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def ssoftbanish(self, ctx, user: discord.Member, *, reason=""):
         """Ban, but unban right away also dels msg history (7d) **(no dm)**
@@ -995,7 +995,7 @@ class Moderation(commands.Cog):
         else:
             await ctx.send("❌ Displaying wrong/bad arguments:\n\n" + wrong)
 
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command()
     async def blacklist(self, ctx, *user_ids: int):
         """Blacklist a user or users by id
@@ -1018,7 +1018,7 @@ class Moderation(commands.Cog):
         await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
 
     @commands.cooldown(1, 20, commands.BucketType.user)
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def blacklistshow(self, ctx):
         # bs = [b for b in Blacklist.select().dicts()]
@@ -1035,7 +1035,7 @@ class Moderation(commands.Cog):
         await ctx.send("Blacklist is empty.")
 
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
     async def whitelist(self, ctx, *user_ids: int):
         """Delete ids from the blacklist"""
