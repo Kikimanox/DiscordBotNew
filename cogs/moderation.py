@@ -35,7 +35,7 @@ class Moderation(commands.Cog):
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
 
     @commands.max_concurrency(1, commands.BucketType.channel)
-    @commands.check(checks.ban_members_check)
+    @commands.check(checks.moderator_check)
     @commands.command(aliases=['prune'])
     async def purge(self, ctx, count: int, *users: discord.Member):
         """Clears a given number of messages or until the given message id.
