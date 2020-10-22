@@ -1172,6 +1172,7 @@ class Serversetup(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
+        if before.content == after.content: return
         if isinstance(before.channel, discord.DMChannel) or before.author.bot or \
                 before.guild.id not in self.bot.from_serversetup:
             return
