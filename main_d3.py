@@ -34,6 +34,10 @@ import importlib
 import utils.discordUtils as dutils
 from models.bot import BotBlacklist, BotBanlist
 
+intents = discord.Intents.default()
+intents.members = True
+intents.presences = True
+
 Prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
 Prefix_Per_Guild = dataIOa.load_json('config.json')['B_PREF_GUILD']
 
@@ -50,7 +54,7 @@ def get_pre_or_mention(_bot, _message):
     return commands.when_mentioned_or(*extras)(_bot, _message)
 
 
-bot = commands.Bot(command_prefix=get_pre_or_mention)
+bot = commands.Bot(command_prefix=get_pre_or_mention, intents=intents)
 ###
 bot.all_cmds = {}
 bot.running_tasks = []

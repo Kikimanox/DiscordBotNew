@@ -387,8 +387,8 @@ class Serversetup(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @dontlogchannel.command()
-    async def add(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+    @dontlogchannel.command(name='add')
+    async def _add(self, ctx, channels: commands.Greedy[discord.TextChannel]):
         """Add chanenls (max 3 at once) to be ignore by the bot when logging"""
         if len(channels) > 3: return await ctx.send("Command takes up to 3 channels at once for a batch update.")
         for channel in channels:
@@ -397,8 +397,8 @@ class Serversetup(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @dontlogchannel.command()
-    async def remove(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+    @dontlogchannel.command(name='remove')
+    async def _remove(self, ctx, channels: commands.Greedy[discord.TextChannel]):
         """Remove chanenls (max 3 at once) from ignored channels when loggin"""
         if len(channels) > 3: return await ctx.send("Command takes up to 3 channels at once for a batch update.")
         for channel in channels:
@@ -441,8 +441,8 @@ class Serversetup(commands.Cog):
         await self.do_setup(add_c_words=list(wordss), ctx=ctx)
 
     @commands.check(checks.moderator_check)
-    @censor.command(name="remove")
-    async def _remove(self, ctx, *, words):
+    @censor.command()
+    async def remove(self, ctx, *, words):
         """Remove words from censor list (multi words use **"** between)"""
         if words.count('"') % 2 != 0: return await ctx.send('Uneven number of " found.')
         if '""' in words: return await ctx.send('You can not use `""` in words')
