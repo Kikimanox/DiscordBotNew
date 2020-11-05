@@ -376,7 +376,8 @@ class Reminders(commands.Cog):
                     rolePing = True
                     roleId = reminder.meta.split('rolePing_')[-1]
                     role = discord.utils.get(g.roles, id=int(roleId))
-
+            else:
+                target = self.bot.get_user(reminder.executed_by)
             p = "" if target else "~~"
             if target:
                 target = target.mention
@@ -396,7 +397,7 @@ class Reminders(commands.Cog):
                 desc += f'{p}🔁 **Periodic reminder:** every {tutils.convert_sec_to_smhd(reminder.periodic)}{p}\n'
 
             if not target or p == "~~":
-                desc += '⚠ **Target or role is gone for some reason, delete this reminder**\n'
+                desc += '⚠ **Target or role is gone for some reason, delete this reminder please**\n'
                 # g.delete_instance()
             rms.append(desc)
 
