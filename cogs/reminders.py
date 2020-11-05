@@ -396,8 +396,8 @@ class Reminders(commands.Cog):
                 desc += f'{p}🔁 **Periodic reminder:** every {tutils.convert_sec_to_smhd(reminder.periodic)}{p}\n'
 
             if not target or p == "~~":
-                desc += '\n⚠ **Target or role is gone for some reason, deleting this reminder**'
-                g.delete_instance()
+                desc += '\n⚠ **Target or role is gone for some reason, delete this reminder**'
+                # g.delete_instance()
             rms.append(desc)
 
         title = f"Reminders for {ctx.author}"
