@@ -57,8 +57,10 @@ class Stats(commands.Cog):
         """Tells you information about the bot itself."""
         if not hasattr(self.bot, 'uptime'): return await ctx.send("I am still starting up, hold on please.")
         revision = self.get_last_commits()
-        itext = 'Made by: <@!174406433603846145> (Kiki#0002)\n' \
-                'Special thanks to Appu for the help with learning how to make the bot.'
+        inv = discord.utils.oauth_url(ctx.bot.user.id) + '&permissions=8'
+        itext = f'Made by: <@!174406433603846145> (Kiki#0002)\n' \
+                f'Special thanks to Appu for the help with learning how to make the bot.\n' \
+                f'[Bot invite link (currently not public)]({inv})'
         embed = discord.Embed(description=itext + '\n\nLatest Changes:\n' + revision)
         embed.title = 'About page'
         # embed.url = 'https://discord.gg/DWEaqMy'
