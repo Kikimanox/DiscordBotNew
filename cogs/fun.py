@@ -15,6 +15,9 @@ import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 
+conf = dataIOa.load_json('settings/claims_settings.json')
+possible_for_bot = conf['use_these']
+
 
 class Fun(commands.Cog):
     def __init__(self, bot):
@@ -22,16 +25,15 @@ class Fun(commands.Cog):
         # _ in channel names is not allowed!!
         # if you want an - instead of a space prefix ch name with _
         self.data = {}
-        self.config = dataIOa.load_json('settings/claims_settings.json')
         bot.loop.create_task(self.set_setup())
         self.just_claimed = {}
-        self.possible = ['bride', 'vtuber']  # THESE TWO HAVE TO BE THE SAME
+        self.possible = possible_for_bot  # THESE TWO HAVE TO BE THE SAME
 
     async def set_setup(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
         try:
-            self.data = await ClaimsManager.get_data_from_server(self.bot, self.config)
+            self.data = await ClaimsManager.get_data_from_server(self.bot, conf)
         except:
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             self.bot.logger.error(f"Claims data not loaded\n{traceback.format_exc()}")
@@ -41,19 +43,19 @@ class Fun(commands.Cog):
         # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         self.bot.logger.info("Claims data loaded")
 
-    @commands.group(aliases=['bride', 'vtuber'])  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
+    @commands.group(aliases=possible_for_bot)  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
     async def claim(self, ctx, *, subcmd=""):
         """Get your daily claim for a certain theme
 
         Command usages:
         `[p]claim` - shows this output
 
-        `[p]bride` - get your bride
-        `[p]vtuber` - get your daily vtuber
+        `[p]any_of_the_possible_above_listed_subcommands`
+        (See the part right from `Syntax:` at the top)
+        Example: `[p]bride`
 
         Use subcommands for other functionalities
         """
-        return await ctx.send("Currently disabled unti the bot is oficially live.")
         cmd = ctx.invoked_with
         if cmd == 'claim' and not subcmd:
             raise commands.errors.BadArgument
@@ -87,7 +89,7 @@ class Fun(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @claim.command()
     async def current(self, ctx, *user):
-        """See currently claimed claim"""
+        """Display currently claimed claim"""
         users = ' '.join(user)
         if not self.data:
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
@@ -163,6 +165,8 @@ class Fun(commands.Cog):
         del his['last_3_claims']
         his = ({k: v for k, v in sorted(his.items(), key=lambda item: item[1], reverse=True)[:10]})
         his['last_3_claims'] = hiss['last_3_claims']
+        if not his['last_3_claims']: return await ctx.send(f"{ctx.author.mention} you have no claim history for the "
+                                                           f"**{claim_type}** command")
         his['last_3_claims'][0] += ' (last claim)'
 
         color = None
@@ -262,7 +266,7 @@ class Fun(commands.Cog):
                                          Claimed.type == c_type,
                                          Claimed.expires_on > utcnow)
             if usr:
-                usr.get()
+                usr = usr.get()
                 await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
                                f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**")
                 if d_key in self.just_claimed:
@@ -301,6 +305,11 @@ class Fun(commands.Cog):
             await asyncio.sleep(anti_spam_cd + 1)
             if d_key in self.just_claimed:
                 del self.just_claimed[d_key]
+
+    @commands.command(hidden=True, aliases=['m'])
+    async def mood(self, ctx):
+        """Will be back soonTM"""
+        await ctx.send("Command will be back soon™")
 
     @staticmethod
     def prepare_for_history(d):
