@@ -33,6 +33,7 @@ import fileinput
 import importlib
 import utils.discordUtils as dutils
 from models.bot import BotBlacklist, BotBanlist
+from models.afking import AfkManager
 
 intents = discord.Intents.default()
 intents.members = True
@@ -60,6 +61,7 @@ bot.all_cmds = {}
 bot.running_tasks = []
 bot.from_serversetup = {}
 bot.anti_raid = ArManager.get_ar_data()
+bot.currently_afk = AfkManager.return_whole_afk_list()
 bot.moderation_blacklist = {-1: 'dummy'}
 ###
 bot.config = dataIOa.load_json('config.json')
@@ -70,6 +72,7 @@ bot.just_banned_by_bot = {}
 bot.just_kicked_by_bot = {}
 bot.just_muted_by_bot = {}
 bot.banned_cuz_blacklist = {}
+
 
 bot.emote_servers_tmp = [
     777942981197299732,
@@ -90,6 +93,7 @@ async def on_ready():
     if hasattr(bot, 'running_tasks') and not bot.running_tasks: bot.running_tasks = []
     if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
     if hasattr(bot, 'anti_raid') and not bot.anti_raid: bot.anti_raid = ArManager.get_ar_data()
+    if hasattr(bot, 'currently_afk') and not bot.currently_afk: bot.currently_afk = AfkManager.return_whole_afk_list()
     if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
     ###
     bot.config = dataIOa.load_json('config.json')
