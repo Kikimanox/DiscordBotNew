@@ -37,7 +37,7 @@ class Moderation(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.check(checks.moderator_check)
     @commands.command(aliases=['prune'])
-    async def purge(self, ctx, count: int, *users: discord.Member):
+    async def purge(self, ctx, count: int, *users: discord.User):
         """Clears a given number of messages or until the given message id.
 
         `[p]purge n` - purges the last n messages. Ex: .purge 100
@@ -689,6 +689,9 @@ class Moderation(commands.Cog):
                                                        f"<role>`")
         rets = []
         if len(users) == 1:
+            if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, users[0]): return
+            if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.guild.get_member(ctx.bot.user.id),
+                                                                     users[0], True): return
             await dutils.mute_user(ctx, users[0], length, reason, no_dm=no_dm)
         else:
             p = dutils.bot_pfx(ctx.bot, ctx.message)
@@ -770,13 +773,13 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def ban(self, ctx, user: discord.Member, *, reason=""):
+    async def ban(self, ctx, user: discord.User, *, reason=""):
         """Ban a user with an optional reason. Prefix with `s` for "no dm"
 
         Tip:
 
         **Every ban/banish/softban/softbanish/mute/kick
-        command (except massban)
+        command (except **massban**)
         has another copy of it but with a `s` prefix**
         For example: `[p]sban @user` will ban them but
         will not dm them that they were banned.
@@ -788,6 +791,14 @@ class Moderation(commands.Cog):
         `[p]ban @user`
         `[p]ban USER_ID`
         `[p]ban USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'ban', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'ban', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         await dutils.ban_function(ctx, user, reason)
 
     @commands.check(checks.moderator_check)
@@ -798,6 +809,9 @@ class Moderation(commands.Cog):
         `[p]sban @user`
         `[p]sban USER_ID`
         `[p]sban USER_ID optional reason goes here here`"""
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'kick', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'kick', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         try:
             await user.kick(reason=reason)
             return_msg = f"Kicked the user {user.mention} (id: {user.id})"
@@ -823,6 +837,9 @@ class Moderation(commands.Cog):
         `[p]sban @user`
         `[p]sban USER_ID`
         `[p]sban USER_ID optional reason goes here here`"""
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'kick', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'kick', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         try:
             await user.kick(reason=reason)
             return_msg = f"Kicked the user {user.mention} (id: {user.id})"
@@ -837,37 +854,61 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def sban(self, ctx, user: discord.Member, *, reason=""):
+    async def sban(self, ctx, user: discord.User, *, reason=""):
         """Ban a user with an optionally supplied reason. **(won't dm them)**
 
         `[p]sban @user`
         `[p]sban USER_ID`
         `[p]sban USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'sban', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'sban', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         await dutils.ban_function(ctx, user, reason, no_dm=True)
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def banish(self, ctx, user: discord.Member, *, reason=""):
+    async def banish(self, ctx, user: discord.User, *, reason=""):
         """Same as ban but also deletes message history (7 days)
 
         `[p]banish @user`
         `[p]banish USER_ID`
         `[p]banish USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'banish', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'banish', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         await dutils.ban_function(ctx, user, reason, removeMsgs=7)
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def sbanish(self, ctx, user: discord.Member, *, reason=""):
+    async def sbanish(self, ctx, user: discord.User, *, reason=""):
         """Same as ban but also deletes message history (7 days) **(no dm)**
 
         `[p]sbanish @user`
         `[p]sbanish USER_ID`
         `[p]sbanish USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'sbanish', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'sbanish', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         await dutils.ban_function(ctx, user, reason, removeMsgs=7, no_dm=True)
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def softban(self, ctx, clear_messages_days: int, user: discord.Member, *, reason=""):
+    async def softban(self, ctx, clear_messages_days: int, user: discord.User, *, reason=""):
         """Ban then unban (see help for details)
 
         This command allows you to specifiy the amount of days worth
@@ -880,13 +921,21 @@ class Moderation(commands.Cog):
         `[p]softban @user`
         `[p]softban USER_ID`
         `[p]softban USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'softban', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'softban', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         if clear_messages_days < 0: return await ctx.send("**Min=0**, Max=7 for `clear_messages_days`")
         if clear_messages_days > 7: return await ctx.send("Min=0, **Max=7** for `clear_messages_days`")
         await dutils.ban_function(ctx, user, reason, softban=True, removeMsgs=clear_messages_days)
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def ssoftban(self, ctx, clear_messages_days: int, user: discord.Member, *, reason=""):
+    async def ssoftban(self, ctx, clear_messages_days: int, user: discord.User, *, reason=""):
         """Ban then unban right away (won't dm them)
 
          This command allows you to specifiy the amount of days worth
@@ -899,40 +948,66 @@ class Moderation(commands.Cog):
         `[p]ssoftban @user`
         `[p]ssoftban USER_ID`
         `[p]ssoftban USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'ssoftban', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'ssoftban', ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         if clear_messages_days < 0: return await ctx.send("**Min=0**, Max=7 for `clear_messages_days`")
         if clear_messages_days > 7: return await ctx.send("Min=0, **Max=7** for `clear_messages_days`")
         await dutils.ban_function(ctx, user, reason, softban=True, no_dm=True, removeMsgs=clear_messages_days)
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def softbanish(self, ctx, user: discord.Member, *, reason=""):
+    async def softbanish(self, ctx, user: discord.User, *, reason=""):
         """Ban, but unban right away also deletes message history (7 days)
 
         `[p]softbanish @user`
         `[p]softbanish USER_ID`
         `[p]softbanish USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'softbanish', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'softbanish',
+                                                                 ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         await dutils.ban_function(ctx, user, reason, removeMsgs=7, softban=True)
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def ssoftbanish(self, ctx, user: discord.Member, *, reason=""):
+    async def ssoftbanish(self, ctx, user: discord.User, *, reason=""):
         """Ban, but unban right away also dels msg history (7d) **(no dm)**
 
         `[p]ssoftbanish @user`
         `[p]ssoftbanish USER_ID`
         `[p]ssoftbanish USER_ID optional reason goes here here`"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+        except:
+            pass
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'ssoftbanish', ctx.author, user): return
+        if not await dutils.can_execute_based_on_top_role_height(ctx, 'ssoftbanish',
+                                                                 ctx.guild.get_member(ctx.bot.user.id),
+                                                                 user, True): return
         await dutils.ban_function(ctx, user, reason, removeMsgs=7, softban=True, no_dm=True)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.ban_members_check)
     @commands.command()
-    async def massban(self, ctx, delete_messages_days: int, *users: discord.Member):
+    async def massban(self, ctx, delete_messages_days: int, *users: discord.User):
         """Ban multiple users at once (no dm by default)
 
         **delete_messages_days** => Has to be 0 or more and 7 or less
 
-        `[p]multiple 0 @user1 @user2 @user3` ...
-        `[p]ban 7 USER_ID1 USER_ID2 USER_ID3 USER_ID4` ...
+        `[p]massban 0 @user1 @user2 @user3` ...
+        `[p]massban 7 USER_ID1 USER_ID2 USER_ID3 USER_ID4` ...
 
         ⚠If you got the invalid arguments error. Check the ids or user names/pings.
         Some are wrong.
@@ -941,10 +1016,12 @@ class Moderation(commands.Cog):
         To test which of these users/ids/names/pings is wrong."""
         if len(users) == 1: return await ctx.send("Why would you *massban* only 1 user? Aborting.")
         if len(users) > 50: return await ctx.send("Can mass ban up to max 50 users at once.")
-        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("**delete_messages_days**"
-                                                                                       " has to be"
-                                                                                       " 0 or more and 7 or less. Fix "
-                                                                                       "that first...")
+        if delete_messages_days > 7 or delete_messages_days < 0:
+            await ctx.send("**delete_messages_days**"
+                           " has to be"
+                           " 0 or more and 7 or less. Fix "
+                           "that first...")
+            raise commands.errors.BadArgument
         users = list(set(users))  # remove dupes
         m = await ctx.send("Massbanning...")
         rets = []
@@ -965,7 +1042,7 @@ class Moderation(commands.Cog):
             await ctx.send("**F1** means that the user couldn't be found.\n"
                            "**F2** means that I couldn't ban the user because not enough permissions")
         await ctx.send(embed=Embed(description=ret_msg))
-        act_id = await dutils.moderation_action(ctx, ', '.join([u.id for u in users]), "massban", None)
+        act_id = await dutils.moderation_action(ctx, ', '.join([str(u.id) for u in users]), "massban", None)
         await dutils.post_mod_log_based_on_type(ctx, 'massban', act_id)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
@@ -973,17 +1050,22 @@ class Moderation(commands.Cog):
     @commands.command(hidden=True)
     async def massbantest(self, ctx, delete_messages_days: int, *users):
         """Test if massban would work with these arguments"""
-        if delete_messages_days > 7 or delete_messages_days < 0: return await ctx.send("**delete_messages_days**"
-                                                                                       " has to be"
-                                                                                       " 0 or more and 7 or less. Fix "
-                                                                                       "that first...")
+        if delete_messages_days > 7 or delete_messages_days < 0:
+            await ctx.send("**delete_messages_days**"
+                           " has to be"
+                           " 0 or more and 7 or less. Fix "
+                           "that first...")
+            raise commands.errors.BadArgument
+
         wrong = ""
         for _u in users:
             try:
                 if _u[:3] == "<@!" and _u[-1] == ">":
                     u = ctx.guild.get_member(int(_u[3:-1]))
+                    if not u: u = ctx.bot.get_user(int(_u))
                 else:
                     u = ctx.guild.get_member(int(_u))
+                    if not u: u = ctx.bot.get_user(int(_u))
                 if not u: wrong += (_u + '\n')
             except:
                 u = discord.utils.get(ctx.guild.members, name=_u)
@@ -1274,7 +1356,7 @@ class Moderation(commands.Cog):
         await dutils.unlock_channels(ctx, channels)
 
     @commands.check(checks.moderator_check)
-    @commands.command()
+    @commands.command(aliases=['slow'])
     async def slowmode(self, ctx, seconds: int, *, channels=""):
         """Set a slowmode
 
@@ -1286,7 +1368,7 @@ class Moderation(commands.Cog):
         `[p]slowmode 120 all silent` - Slowmodes all channels silently
         """
         if seconds > 21600: return await ctx.send("Max delay is 21600")
-        if seconds < 0: return await ctx.send("Max is 0")
+        if seconds < 0: return await ctx.send("Min is 0")
         try:
             all_ch = False
             silent = False
@@ -1310,7 +1392,8 @@ class Moderation(commands.Cog):
             for c in channels:
                 await c.edit(slowmode_delay=seconds)
                 if not silent:
-                    await c.send(f"Slowmode set to **{tutils.convert_sec_to_smhd(seconds)}**")
+                    await c.send(f"{'🚦' if seconds != 0 else '🟢'} Slowmode set to "
+                                 f"**{tutils.convert_sec_to_smhd(seconds)}**")
             if all_ch:
                 await ctx.send('Done.')
         except discord.errors.Forbidden:

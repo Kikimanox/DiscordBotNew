@@ -451,14 +451,17 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
     if member:
         try:
             if massbanning:
-                bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 2
+                bot.banned_cuz_blacklist[f'{member.id}_{guild.id}'] = 2
             if not massbanning:
-                bot.just_banned_by_bot[f'{member.id}_{member.guild.id}'] = 1
-            await member.ban(reason=reason, delete_message_days=removeMsgs)
+                bot.just_banned_by_bot[f'{member.id}_{guild.id}'] = 1
+            # await member.ban(reason=reason, delete_message_days=removeMsgs)
+            await guild.ban(member, reason=reason, delete_message_days=removeMsgs)
             if softban:
-                await member.unban(reason='Softbanned')
+                # await member.unban(reason='Softbanned')
+                await guild.unban(member, reason='Softbanned')
             try:
-                if not no_dm and not massbanning:
+                aa = isinstance(member, discord.Member)
+                if not no_dm and not massbanning and isinstance(member, discord.Member):
                     await member.send(f'You have been {"banned" if not softban else "soft-banned"} '
                                       f'from the {str(guild)} '
                                       f'server {"" if not reason else f", reason: {reason}"}')
@@ -1152,3 +1155,24 @@ async def add_tmp_emote(bot, ctx, emoteName, picUrl, ext, servID=0, additForGood
 
     # if additForGood: await ctx.send('Could not add emote for some reason')
     return False, err  # no appropriate servers found
+
+
+def left_member_top_role_is_compared_to_right(user1, user2):
+    # owner is higher by default regardless of roles
+    if user1.id == user1.guild.owner_id: return "higher"
+    if user2.id == user1.guild.owner_id: return "lower"
+    role1 = user1.top_role
+    role2 = user2.top_role
+    if role1 > role2: return "higher"
+    if role1 < role2: return "lower"
+    return "same"
+
+
+async def can_execute_based_on_top_role_height(ctx, cmd, user1, user2, bot_test=False):
+    if isinstance(user2, discord.Member):
+        h = left_member_top_role_is_compared_to_right(user1, user2)
+        if h != "higher":
+            await ctx.send(f"Can not {cmd} since {'your' if not bot_test else 'my'} top role is"
+                           f" {'**the same** as' if h == 'same' else '**lower** than'} {user2}")
+            return False
+    return True
