@@ -539,6 +539,8 @@ async def on_command_error(ctx, error):
         await ctx.send(f"⏲ Command on cooldown, try again"
                        f" in **{tim}**" + extra, delete_after=5)
     elif isinstance(error, commands.errors.CheckFailure):
+        if ctx.command.qualified_name == 'getrole booster':
+            return await ctx.send("⚠ Only server boosters may use this command.")
         await ctx.send("⚠ You don't have permissions to use that command.")
         bot.logger.error('CMD ERROR NoPerms'
                          f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
@@ -555,6 +557,8 @@ async def on_command_error(ctx, error):
         bot.logger.error('CMD ERROR BadArg '
                          f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
     elif isinstance(error, commands.errors.MaxConcurrencyReached):
+        if ctx.command.qualified_name == 'getrole booster':
+            return await ctx.send(bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['WARN_MSG'])
         await ctx.send(f"This command has reached the max number of concurrent jobs: "
                        f"`{error.number}`. Please wait for the running commands to finish before requesting again.")
     else:

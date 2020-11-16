@@ -20,4 +20,12 @@
         "GUILD_ID": ,
         "CHANNEL_ID":
     },
+    "BOOSTER_CUSTOM_ROLES_GETTER": {
+        "GID_1": {
+            "ANCHOR_TOP": ,
+            "ANCHOR_BOTTOM": ,
+            "BOOSTER_ROLE_ID": ,
+            "WARN_MSG": "Someone else is already getting their custom role on this server, please wait a little bit."
+        }
+    }
 }
