@@ -71,6 +71,17 @@ bot.just_kicked_by_bot = {}
 bot.just_muted_by_bot = {}
 bot.banned_cuz_blacklist = {}
 
+bot.emote_servers_tmp = [
+    777942981197299732,
+    777943001539411968,
+    777943027241975828,
+    777943043223060511,
+    777943082300604447,
+    777943112764489769
+]
+bot.emote_servers_perm = [
+    777943294353080380
+]
 
 @bot.event
 async def on_ready():

@@ -1,4 +1,6 @@
 import asyncio
+import datetime
+
 import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
@@ -9,6 +11,7 @@ import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 import random
+import re
 
 
 class Misc(commands.Cog):
@@ -121,6 +124,58 @@ class Misc(commands.Cog):
                                   f"choose one | two | three`")
         await ctx.send(embed=Embed(color=self.bot.config['BOT_DEFAULT_EMBED_COLOR'],
                                    description=f'🤔 Hmmm, I choose: **{(random.choice(opts)).strip()}**'))
+
+
+
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.check(checks.manage_emojis_check)
+    @commands.command(aliases=['addemotes', "ae"])
+    async def addemote(self, ctx, *, emotes):
+        """Add emotes to the server.
+
+        `[p]addemote newEmoteName image_url`
+        Ex: `[p]addemote ninosmug https://domain/ninopic.png`
+        `[p]addemote name url name2 url2` - (etc., can add multiple at once)"""
+        await self.add_emote_or_yoink(ctx, emotes, False)
+
+    @commands.check(checks.owner_check)
+    @commands.command()
+    async def yoink(self, ctx, *, emotes):
+        """Yoink some emotes:
+
+        `[p]yoink name url`
+        `[p]yoink name url name2 url2` (etc., can have multiple)"""
+        await self.add_emote_or_yoink(ctx, emotes, True)
+
+    async def add_emote_or_yoink(self, ctx, emotes, yoink):
+        emotes = str(emotes).replace('\n', ' ') + ' '
+        await ctx.message.delete()
+        member = ctx.author
+        icon_url = member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else str(
+            member.avatar_url_as(format="png"))
+        await ctx.send(embed=Embed(description=ctx.message.content, color=ctx.author.color)
+                       .set_author(name=f"{'Add' if not yoink else 'Yoink'} emotes command invoked",
+                                   icon_url=icon_url))
+        if not yoink: yo = await ctx.send('Adding ...')
+        else: yo = await ctx.send("Yoinking ...")
+        p = re.compile(r'(\w+)\s*\s\s*(.*?)\s+')
+        for e in p.finditer(emotes):
+            name = e.group(1).strip()
+            try:
+                url = e.group(2).strip().split('?')[0]
+                ext = url.split('.')[-1]
+                if not yoink:
+                    renEm, err = await dutils.add_tmp_emote(self.bot, ctx, name, url, ext, ctx.guild.id, True)
+                else:
+                    renEm, err = await dutils.add_tmp_emote(self.bot, ctx, name, url, ext, 0, True)
+                if renEm:
+                    await ctx.send(f"{'Added' if not yoink else 'Yoinked'} {renEm}")
+                else:
+                    await ctx.send(err)
+            except:
+                nn = name.replace('@', '@\u200b')
+                await ctx.send(f'Something went wrong when trying to add **{nn}**')
+        await yo.delete()
 
 
 def setup(bot):

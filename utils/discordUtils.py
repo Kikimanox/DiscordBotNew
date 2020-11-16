@@ -381,8 +381,10 @@ async def dm_log_try_setup(bot):
     else:  # == 1
         return True
 
+
 def icon_url(user):
     return user.avatar_url if 'gif' in str(user.avatar_url).split('.')[-1] else str(user.avatar_url_as(format="png"))
+
 
 async def dm_log(bot, message: discord.Message):
     cnt = message.content
@@ -1109,3 +1111,44 @@ async def try_get_member(ctx, user):
     else:
         member = discord.utils.get(ctx.guild.members, name=user)
     return member
+
+
+async def add_tmp_emote(bot, ctx, emoteName, picUrl, ext, servID=0, additForGood=False):
+    loopOver = bot.emote_servers_tmp if not additForGood else bot.emote_servers_perm
+    if servID != 0:
+        loopOver = [servID]
+    err = ""
+    for servId in loopOver:
+        serv = bot.get_guild(int(servId))
+        if not serv: continue
+        nonAni = [e for e in serv.emojis if not e.animated]
+        if ext != 'gif':
+            if len(nonAni) == serv.emoji_limit:
+                if servID and additForGood:
+                    return "", f"**{str(serv)}** is packed on normal emotes"
+                print(f'EMOTE LOG {str(serv)} - {servId}: packed on normal emotes')
+                continue
+        else:
+            if len(serv.emojis) - len(nonAni) == serv.emoji_limit:
+                if servID and additForGood:
+                    return "", f"**{str(serv)}** is packed on animated emotes"
+                print(f'EMOTE LOG {str(serv)} - {servId}: packed on animated emotes')
+                continue
+
+        fn = await saveFiles([picUrl], 'tmp', emoteName)
+        fnn = str(fn).split('/')[-1].split('.')[-2] if not additForGood else emoteName
+        size = os.stat(fn[0]).st_size
+        if size < 256000:
+            with open(fn[0], 'rb') as fp:
+                emoji = await serv.create_custom_emoji(name=fnn[:32], image=fp.read())
+        else:
+            nn = fnn[:32].replace('@', '@\u200b')
+            os.remove(fn[0])
+            return "", f'File size for **{nn}** is too big after saving the tmp file. ' \
+                       f'Please give me a smaller or more compressed ' \
+                       'vesrion of this file.'
+        os.remove(fn[0])
+        return str(emoji), err
+
+    # if additForGood: await ctx.send('Could not add emote for some reason')
+    return False, err  # no appropriate servers found
