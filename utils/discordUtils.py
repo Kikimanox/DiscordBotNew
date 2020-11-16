@@ -877,9 +877,9 @@ async def log(bot, title=None, txt=None, author=None,
             for txt in desc:
                 em = discord.Embed(description=txt, color=colorr)
                 if author:
-                    icon_url = author.avatar_url if 'gif' in str(author.avatar_url).split('.')[-1] else str(
+                    iconn_url = author.avatar_url if 'gif' in str(author.avatar_url).split('.')[-1] else str(
                         author.avatar_url_as(format="png"))
-                    em.set_author(name=f"{title}", icon_url=icon_url)
+                    em.set_author(name=f"{title}", icon_url=iconn_url)
                 em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')}")
                 if imageUrl:
                     try:
