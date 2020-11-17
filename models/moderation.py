@@ -1,6 +1,6 @@
 """
 Mutes: id, guild, user, reason, length_str, expires_on
-Actions: id, guild, reason, type, date, channel, msg_jump,
+Actions: id, guild, reason, type, date, channel, msg_jump
 responsible, offender
 """
 
