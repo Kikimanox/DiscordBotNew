@@ -15,6 +15,7 @@ from utils.dataIOa import dataIOa
 DB = "data/serversetup.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
 
+clr = dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]
 
 class BaseModel(Model):
     class Meta:
@@ -36,7 +37,7 @@ class WelcomeMsg(BaseModel):
     desc = CharField(default='')
     images = CharField(default='')
     title = CharField(default='')
-    color = IntegerField(default=int(f"0x{dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16))
+    color = IntegerField(default=int(f"0x{clr}", 16))
     target_ch = IntegerField()  # target channel
     backup_hook = IntegerField()  # target channel
     display_mem_count = BooleanField(default=True)
