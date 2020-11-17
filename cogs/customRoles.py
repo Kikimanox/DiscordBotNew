@@ -45,7 +45,7 @@ class CustomRoles(commands.Cog):
             "Someone is already getting/removing their role, please wait a little bit.")
         await self.getRoleFunction(ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['ANCHOR_TOP'],
                                    ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['ANCHOR_BOTTOM'],
-                                   ctx, roleName, roleHexColor[:6])
+                                   ctx, roleName, roleHexColor[-6:])
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.cooldown(1, 5, commands.BucketType.user)

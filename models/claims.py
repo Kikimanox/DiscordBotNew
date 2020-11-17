@@ -60,7 +60,7 @@ class ClaimsManager:
                         attachements.extend([[a, a.is_spoiler()] for a in m.attachments])
                         if m.content:
                             if m.content.lower().startswith('color: '):
-                                color = m.content.lower().split('color: ')[-1][:6]
+                                color = m.content.lower().split('color: ')[-1][-6:]
                             if m.content.lower().startswith('resps:'):  # be sure it's resps:
                                 rs = "resps:".join(m.content.split('resps:')[1:])
                                 resps_for_char.extend(rs.split('```')[1].split('```')[0].split('\n'))
