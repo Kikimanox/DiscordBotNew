@@ -1168,11 +1168,14 @@ def left_member_top_role_is_compared_to_right(user1, user2):
     return "same"
 
 
-async def can_execute_based_on_top_role_height(ctx, cmd, user1, user2, bot_test=False):
+async def can_execute_based_on_top_role_height(ctx, cmd, user1, user2, bot_test=False, silent=False, can_be_same=False):
     if isinstance(user2, discord.Member):
         h = left_member_top_role_is_compared_to_right(user1, user2)
-        if h != "higher":
-            await ctx.send(f"Can not {cmd} since {'your' if not bot_test else 'my'} top role is"
-                           f" {'**the same** as' if h == 'same' else '**lower** than'} {user2}")
+        allowed = ["higher"]
+        if can_be_same: allowed = ["higher", "same"]
+        if h not in allowed:
+            if not silent:
+                await ctx.send(f"Can not {cmd} since {'your' if not bot_test else 'my'} top role is"
+                               f" {'**the same** as' if h == 'same' else '**lower** than'} {user2}")
             return False
     return True

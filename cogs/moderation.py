@@ -696,7 +696,19 @@ class Moderation(commands.Cog):
         else:
             p = dutils.bot_pfx(ctx.bot, ctx.message)
             for u in users:
-                ret = await dutils.mute_user(ctx, u, length, reason, no_dm=no_dm, batch=True)
+                try_muting = 1
+                if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, u, silent=True,
+                                                                         can_be_same=True):
+                    try_muting = 1234  # author top role lower
+                    ret = "Has a higher role than you (wasn't muted) ℹ"
+                if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute',
+                                                                         ctx.guild.get_member(ctx.bot.user.id),
+                                                                         u, bot_test=True, silent=True,
+                                                                         can_be_same=True):
+                    try_muting = 4321  # bot top role lower
+                    ret = "Has a higher role than the bot (wasn't muted) ℹ"
+                if try_muting == 1:
+                    ret = await dutils.mute_user(ctx, u, length, reason, no_dm=no_dm, batch=True)
                 if ret == -1000: return ctx.send("Mute role not setup, can not complete mute.")
                 if ret == -35: return await ctx.send(f"Could not parse mute length. Are you sure you're "
                                                      f"giving it in the right format? Ex: `{p}mute @user 30m`, "
