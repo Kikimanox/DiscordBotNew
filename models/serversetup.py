@@ -15,8 +15,7 @@ from utils.dataIOa import dataIOa
 DB = "data/serversetup.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
 
-# clr = dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]
-clr = "123123"
+clr = dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]
 
 class BaseModel(Model):
     class Meta:
