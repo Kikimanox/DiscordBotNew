@@ -1,6 +1,7 @@
 config.json
 config.json*
 config.json.bak
+settings/claims_settings.json
 venv/
 .idea
 __pycache__
