@@ -48,7 +48,7 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
         for line in oldfile:
             if not any(bad_line in line for bad_line in remove_lines):
                 newfile.write(line)
-        newfile.write(f"NEW_MAIN_D = '{m_d}'\nNEW_BOT_LOOP = '{b_l}'")
+        newfile.write(f'"NEW_MAIN_D: "{m_d}"\nNEW_BOT_LOOP: "{b_l}"') # TODO: fix this shiz
 
     with open('scripts/start.sh', 'w') as f:
         f.write('#!/bin/bash\n')
