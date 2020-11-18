@@ -1179,3 +1179,24 @@ async def can_execute_based_on_top_role_height(ctx, cmd, user1, user2, bot_test=
                                f" {'**the same** as' if h == 'same' else '**lower** than'} {user2}")
             return False
     return True
+
+async def try_to_react(msg, reactionArr):
+    for e in reactionArr:
+        try:
+            await msg.add_reaction(e)
+        except:
+            return False, e
+    return True, ""
+
+async def try_if_role_exists(guild, roleIdOrName):
+    role = None
+    try:
+        if roleIdOrName.isdigit():
+            role = discord.utils.get(guild.roles, id=int(roleIdOrName))
+        if not role:
+            role = discord.utils.get(guild.roles, name=str(roleIdOrName))
+            if not role:
+                raise
+    except:
+        return False, roleIdOrName, ''
+    return True, "", role

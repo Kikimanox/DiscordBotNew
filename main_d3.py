@@ -34,6 +34,7 @@ import importlib
 import utils.discordUtils as dutils
 from models.bot import BotBlacklist, BotBanlist
 from models.afking import AfkManager
+from models.reactionroles import RRManager
 
 intents = discord.Intents.default()
 intents.members = True
@@ -63,6 +64,7 @@ bot.from_serversetup = {}
 bot.anti_raid = ArManager.get_ar_data()
 bot.currently_afk = AfkManager.return_whole_afk_list()
 bot.moderation_blacklist = {-1: 'dummy'}
+bot.reaction_roles = RRManager.return_whole_rr_list()
 ###
 bot.config = dataIOa.load_json('config.json')
 bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
@@ -72,7 +74,6 @@ bot.just_banned_by_bot = {}
 bot.just_kicked_by_bot = {}
 bot.just_muted_by_bot = {}
 bot.banned_cuz_blacklist = {}
-
 
 bot.emote_servers_tmp = [
     777942981197299732,
@@ -86,6 +87,7 @@ bot.emote_servers_perm = [
     777943294353080380
 ]
 
+
 @bot.event
 async def on_ready():
     ###
@@ -95,6 +97,7 @@ async def on_ready():
     if hasattr(bot, 'anti_raid') and not bot.anti_raid: bot.anti_raid = ArManager.get_ar_data()
     if hasattr(bot, 'currently_afk') and not bot.currently_afk: bot.currently_afk = AfkManager.return_whole_afk_list()
     if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
+    if hasattr(bot, 'reaction_roles') and not bot.reaction_roles: bot.reaction_roles = RRManager.return_whole_rr_list()
     ###
     bot.config = dataIOa.load_json('config.json')
     bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
