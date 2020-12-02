@@ -47,10 +47,15 @@ class ReactionRoles(commands.Cog):
         await ctx.send(f"✅ Message with the id {msg.id} and in the "
                        f"channel {ch.mention} has been added to the save.")
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @reactionrole.command(aliases=['cur'])
     async def current(self, ctx, msg_id: int = 0):
         """Display current info, can check all or just one (by msg id)"""
+        if msg_id == 0:
+            confirm = await dutils.prompt(ctx, "Are you sure you want to check **all** the rrs?")
+            if not confirm:
+                return await ctx.send("Cancelled.")
         if msg_id != 0:
             r: ReactionRolesModel = ReactionRolesModel.get_or_none(msgid=msg_id)
             if not r:
@@ -67,7 +72,8 @@ class ReactionRoles(commands.Cog):
                 return await ctx.send("No rrs initialized")
 
         embeds = []
-
+        if msg_id == 0:
+            mm = await ctx.send("Preparing rr current...")
         for kk, vv in grrs.items():  # ch_id, [[
             for k, v in vv.items():  # msg_id, [{ch, rrs}, jump]
                 chan = ctx.guild.get_channel(kk)
@@ -96,6 +102,8 @@ class ReactionRoles(commands.Cog):
                     E.set_footer(text=f'{dutils.bot_pfx_by_ctx(ctx)}rr remove {k}')
                 embeds.append(E)
         for e in embeds: await ctx.channel.send(embed=e)
+        if msg_id == 0:
+            await mm.delete()
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)

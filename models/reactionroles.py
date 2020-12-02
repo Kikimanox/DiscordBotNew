@@ -30,8 +30,8 @@ class RRManager:
         for aa in rrs:
             if aa['gid'] not in ret:
                 ret[aa['gid']] = {}
-                if aa['chid'] not in ret[aa['gid']]:
-                    ret[aa['gid']][aa['chid']] = {}
+            if aa['chid'] not in ret[aa['gid']]:
+                ret[aa['gid']][aa['chid']] = {}
             ret[aa['gid']][aa['chid']][aa['msgid']] = [aa['meta'].split(' '), aa['msg_link']]
         return ret
 
@@ -39,8 +39,8 @@ class RRManager:
     def add_or_update_rrs_bot(bot, gid, chid, msgid, jump, meta):
         if gid not in bot.reaction_roles:
             bot.reaction_roles[gid] = {}
-            if chid not in bot.reaction_roles[gid]:
-                bot.reaction_roles[gid][chid] = {}
+        if chid not in bot.reaction_roles[gid]:
+            bot.reaction_roles[gid][chid] = {}
         bot.reaction_roles[gid][chid][msgid] = [meta, jump]
 
     @staticmethod
