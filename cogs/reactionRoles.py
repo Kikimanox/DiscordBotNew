@@ -192,8 +192,10 @@ class ReactionRoles(commands.Cog):
                     role = discord.utils.get(guild.roles, id=int(rrs[i-1]))
                     if addIt:
                         await user.add_roles(role)
+                        return  # don't add multiple
                     else:
                         await user.remove_roles(role)
+                        return  # don't remove multiple
         except:
             pass
 
