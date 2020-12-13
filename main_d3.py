@@ -301,7 +301,10 @@ async def on_message(message):
     #TEMPORARY
     if message.guild and message.guild.id == 442952794480050177:
         if message.channel.id == 693792405882929173:  # verification
-            await message.delete()
+            try:
+                await message.delete()
+            except:
+                pass
             if message.content.lower() == 'i agree to the rules':
                 r = discord.utils.get(message.guild.roles, id=693790666249207808)
                 try:
