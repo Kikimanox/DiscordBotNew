@@ -298,6 +298,17 @@ async def on_message(message):
     if message.author.bot:
         return
 
+    #TEMPORARY
+    if message.guild and message.guild.id == 442952794480050177:
+        if message.channel.id == 693792405882929173:  # verification
+            await message.delete()
+            if message.content.lower() == 'i agree to the rules':
+                r = discord.utils.get(message.guild.roles, id=693790666249207808)
+                try:
+                    await message.author.add_roles(r)
+                except:
+                    pass
+
     is_mod = await moderator_check_no_ctx(message.author, message.guild, bot)
     ck = 'censor_list'
     was_deleted = False
