@@ -11,3 +11,5 @@ _scripts/
 logs/
 scripts/start.sh
 scripts/stop.sh
+scripts/_start.sh
+scripts/_stop.sh
