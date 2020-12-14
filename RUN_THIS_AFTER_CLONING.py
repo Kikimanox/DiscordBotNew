@@ -28,12 +28,20 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     b_l = input('Enter the new name for the bot_loop3.py file (example: "the_loop.py"): ')
     m_d = input('Enter the new name for the main_d3.py file (example: "othermain.py"): ')
 
+    cur_l = 'bot_loop3.py'
+    if not os.path.exists(cur_l):
+        cur_l = b_l # in case of replacing
+        if not os.path.exists(cur_l):
+            print(f"Missing new or old bot loop name (aka. no bot_loop3.py or {cur_l} in the dir.")
+            raise Exception("Bleh")
+
     with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('main_d3.py', m_d), end='')
     with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('[m]ain_d3.py', f'[{m_d[:1]}]{m_d[1:]}'), end='')
+
     # with fileinput.FileInput('scripts/start.sh', inplace=True, backup='.bak') as file:
     #    for line in file:
     #        print(line.replace('bot_loop3.py', b_l), end='')
