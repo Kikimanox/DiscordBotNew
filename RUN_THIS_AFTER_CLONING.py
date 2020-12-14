@@ -35,10 +35,10 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
             print(f"Missing new or old bot loop name (aka. no bot_loop3.py or {cur_l} in the dir.")
             raise Exception("Bleh")
 
-    with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
+    with fileinput.FileInput(cur_l, inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('main_d3.py', m_d), end='')
-    with fileinput.FileInput('bot_loop3.py', inplace=True, backup='.bak') as file:
+    with fileinput.FileInput(cur_l, inplace=True, backup='.bak') as file:
         for line in file:
             print(line.replace('[m]ain_d3.py', f'[{m_d[:1]}]{m_d[1:]}'), end='')
 
