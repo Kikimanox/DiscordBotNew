@@ -30,7 +30,7 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
 
     cur_l = 'bot_loop3.py'
     if not os.path.exists(cur_l):
-        cur_l = b_l # in case of replacing
+        cur_l = b_l  # in case of replacing
         if not os.path.exists(cur_l):
             print(f"Missing new or old bot loop name (aka. no bot_loop3.py or {cur_l} in the dir.")
             raise Exception("Bleh")
@@ -46,8 +46,10 @@ if not skipRenaming and not str(skipRenaming).lower().strip() == 'skip':
     #    for line in file:
     #        print(line.replace('bot_loop3.py', b_l), end='')
 
-    os.rename('main_d3.py', f'{m_d}')
-    os.rename('bot_loop3.py', f'{b_l}')
+    if os.path.exists('main_d3.py'):
+        os.rename('main_d3.py', f'{m_d}')
+    if os.path.exists('bot_loop3.py'):
+        os.rename('bot_loop3.py', f'{b_l}')
 
     shutil.copy('config.json', 'config.json.bak')
     remove_lines = ['NEW_MAIN_D', 'NEW_BOT_LOOP']
