@@ -9,3 +9,5 @@ data/
 tmp/
 _scripts/
 logs/
+scripts/start.sh
+scripts/stop.sh
