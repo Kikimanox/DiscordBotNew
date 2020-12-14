@@ -1,6 +1,6 @@
 {
-    "OWNER_ID": ,
-    "CLIENT_ID": ,
+    "OWNER_ID": 0,
+    "CLIENT_ID": 0,
     "CLIENT_SECRET": "",
     "BOT_TOKEN": "",
     "OWNER_TOKEN": "",
@@ -17,14 +17,14 @@
     "BOT_DM_LOG": {
         "CAN_SEND": 0,
         "HOOK": 0,
-        "GUILD_ID": ,
-        "CHANNEL_ID":
+        "GUILD_ID": 0,
+        "CHANNEL_ID": 0
     },
     "BOOSTER_CUSTOM_ROLES_GETTER": {
         "GID_1": {
-            "ANCHOR_TOP": ,
-            "ANCHOR_BOTTOM": ,
-            "BOOSTER_ROLE_ID": ,
+            "ANCHOR_TOP": 0,
+            "ANCHOR_BOTTOM": 0,
+            "BOOSTER_ROLE_ID": 0,
             "WARN_MSG": "Someone else is already getting their custom role on this server, please wait a little bit."
         }
     }
