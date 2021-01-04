@@ -117,10 +117,11 @@ return ret_7
                 await self.el_get_no_mp3(ctx, driver)
 
             await ctx.send("🔹 Starting catbox process")
-            d_code = await self.el_catboxpls(ctx)
+            d_code = await self.el_catboxpls(ctx, True)
             await ctx.send("🔹 Running the final socket command")
 
             await self.el_get_no_mp3(ctx, driver, True, d_code)
+            await ctx.send(f'{ctx.author.mention} we are done!')
         except:
             await ctx.send(embed=Embed(description="Somethign odd went wrong [(maybe rate "
                                                    "limit on the login page?)](https://animemusicquiz.com/)"))
@@ -490,10 +491,10 @@ return ret_7
             else:
                 await ctx.send("MAL Update failed.")
                 raise
-            #kk = driver.find_element_by_xpath("""/html/body/div[4]/div/div[3]/button[1]""")
-            #kk.click()
-            #cls = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[1]/div/button""")
-            #cls.click()
+            # kk = driver.find_element_by_xpath("""/html/body/div[4]/div/div[3]/button[1]""")
+            # kk.click()
+            # cls = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[1]/div/button""")
+            # cls.click()
 
         # GO TO EXPAND
         driver.get("https://animemusicquiz.com/?forceLogin=True")
@@ -514,7 +515,7 @@ return ret_7
             driver.execute_script(d_script)
             await ctx.send("Done.")
 
-    async def el_catboxpls(self, ctx):
+    async def el_catboxpls(self, ctx, auto=False):
         ret = ""
         to_ret = """
         socket.sendCommand({
@@ -598,7 +599,8 @@ return ret_7
                 ```""")
         LB = "{"
         RB = "}"
-        await ctx.send(f"{ctx.author.mention} **All:**")
+        if not auto:
+            await ctx.send(f"{ctx.author.mention} **All:**")
         rr = "{socket.sendCommand(ex[ii]);\nconsole.log(ex[ii]);\nawait _sleep(700);}"
         deff = """function _sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }"""
         rett = (f'{deff}\n\nvar ex=[{ret}]\nasync '
