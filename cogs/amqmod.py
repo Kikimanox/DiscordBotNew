@@ -99,7 +99,7 @@ return ret_7
         """
         try:
             options = Options()
-            # options.headless = True
+            options.headless = True
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
             driver = webdriver.Chrome(c, chrome_options=options)
