@@ -388,7 +388,6 @@ class Ignorethis(commands.Cog):
     async def recc(self, event):
         # event.guild_id event.user_id event.message_id event.channel_id
         if event.channel_id == self.verification_channel_id:
-            if event.event_type != 'REACTION_ADD': return
             g = self.bot.get_guild(int(event.guild_id))
             ch = g.get_channel(int(event.channel_id))
             msg = await ch.fetch_message(event.message_id)
