@@ -65,9 +65,15 @@ async def moderator_check_no_ctx(author, guild, bot):
                     return True
     return False
 
+
 async def custom_role_is_booster_check(ctx):
     if str(ctx.guild.id) in ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER']:
         return isinstance(ctx.author, Member) and \
                ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['BOOSTER_ROLE_ID'] in \
                [r.id for r in ctx.author.roles]
     return False
+
+
+async def light_server_check(ctx):
+    if ctx.guild.id != 464231424820772866: return False
+    return True
