@@ -111,7 +111,7 @@ class Ignorethis(commands.Cog):
                                                                        f"({ctx.message.jump_url})",
                              'members': [ctx.message.author.id], 'pings': 0}
             ret += f"✅ {c}\n"
-        clbs = '\n'.join([f'`{c.lower}`' for c in clubs])
+        clbs = '\n'.join([f'`{c.lower()}`' for c in clubs])
         confirm = await dutils.prompt(ctx, f"This will create the club(s):\n{clbs}".replace('@', '@\u200b'))
         if confirm:
             dataIOa.save_json(path, clubs_data)
@@ -392,7 +392,7 @@ class Ignorethis(commands.Cog):
             else:
                 notIn += f"{c} "
 
-        # clbs = '\n'.join([f'`{c.lower}`' for c in clubs_to_delete])
+        # clbs = '\n'.join([f'`{c.lower()}`' for c in clubs_to_delete])
         confirm = await dutils.prompt(ctx, "https://tenor.com/view/are-you-sure"
                                            "-john-cena-ru-sure-about-dat-gif-14258954")
         if confirm:
