@@ -66,7 +66,6 @@ class Ignorethis(commands.Cog):
         """
         return await ctx.send("Currently disabled here. Just use -createclubs. ALSO NO DESC, just club names!")
         club_name = club_name.lower()
-        club_name = club_name.lower()
         if '*' in club_name or '*' in description:
             return await ctx.send("The club name can not include the character `*`, please try again.")
 
