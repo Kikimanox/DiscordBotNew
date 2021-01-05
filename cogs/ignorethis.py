@@ -64,6 +64,7 @@ class Ignorethis(commands.Cog):
         After you have created a club it will be active once
         a server staff member will verify the club.
         """
+        return await ctx.send("Currently disabled here. Just use -createclubs. ALSO NO DESC, just club names!")
         club_name = club_name.lower()
         club_name = club_name.lower()
         if '*' in club_name or '*' in description:
@@ -90,7 +91,7 @@ class Ignorethis(commands.Cog):
         await m.add_reaction('✅')
         await m.add_reaction('❌')
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.light_server_check_admin)
     @commands.command()
     async def createclubs(self, ctx, *, clubs):
         """Multiple clubs"""
@@ -111,8 +112,13 @@ class Ignorethis(commands.Cog):
                                                                        f"({ctx.message.jump_url})",
                              'members': [ctx.message.author.id], 'pings': 0}
             ret += f"✅ {c}\n"
-        dataIOa.save_json(path, clubs_data)
-        await ctx.send(ret)
+        clbs = '\n'.join([f'`{c.lower}`' for c in clubs])
+        confirm = await dutils.prompt(ctx, f"This will create the club(s):\n{clbs}".replace('@', '@\u200b'))
+        if confirm:
+            dataIOa.save_json(path, clubs_data)
+            await ctx.send(ret)
+        else:
+            await ctx.send("Cancelling.")
 
     @commands.check(checks.light_server_check)
     @commands.command()
@@ -370,6 +376,31 @@ class Ignorethis(commands.Cog):
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
+
+    @commands.check(checks.light_server_check_admin)
+    @commands.command()
+    async def deleteclubs(self, ctx, *, clubs_to_delete):
+        """Delete clubs, seperate with a space if deleting many"""
+        path = 'data/clubs.json'
+        dataIOa.create_file_if_doesnt_exist(path, '{}')
+        clubs_data = dataIOa.load_json(path)
+        notIn = ""
+        wasIn = ""
+        for c in clubs_to_delete.split(' '):
+            if c in clubs_data:
+                del clubs_data[c]
+                wasIn += f"{c} "
+            else:
+                notIn += f"{c} "
+
+        # clbs = '\n'.join([f'`{c.lower}`' for c in clubs_to_delete])
+        confirm = await dutils.prompt(ctx, "https://tenor.com/view/are-you-sure"
+                                           "-john-cena-ru-sure-about-dat-gif-14258954")
+        if confirm:
+            await ctx.send(f"Deleted: {wasIn}\nFailed to delete: {notIn}")
+            dataIOa.save_json(path, clubs_data)
+        else:
+            await ctx.send("Cancelling.")
 
     @staticmethod
     def get_emote_if_exists_else(guild, emoteName, elseEmote):
