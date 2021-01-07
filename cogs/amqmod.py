@@ -32,6 +32,7 @@ def get_valid_filename(s):
 class AmqMod(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.ignored_ann_ids = [7429]
         self._gib_code = """```js\n
     // DONT FORGET TO UPDATE MAL FIRST BEFORE ENTERING EXPAND!!
     var copyToClipboard = str => {
@@ -126,6 +127,11 @@ return ret_7
             await ctx.send(embed=Embed(description="Somethign odd went wrong [(maybe rate "
                                                    "limit on the login page?)](https://animemusicquiz.com/)"))
             ctx.bot.logger.error(traceback.format_exc())
+        finally:
+            try:
+                driver.close()
+            except:
+                pass
 
     @commands.check(checks.owner_check)
     @commands.command()
@@ -378,6 +384,14 @@ return ret_7
                 driver.get("https://myanimelist.net/login.php")
                 driver.implicitly_wait(10)
                 # https://selenium-python.readthedocs.io/waits.html
+
+                try:
+                    await asyncio.sleep(2)
+                    privAgg = driver.find_element_by_xpath("""//*[@id="qc-cmp2-ui"]/div[2]/div/button[3]""")
+                    privAgg.click()
+                except:
+                    pass
+
                 un = driver.find_element_by_xpath("""//*[@id="loginUserName"]""")
                 un.click()
                 un.send_keys(self.bot.config['MAL_USERNAME'])
@@ -514,6 +528,32 @@ return ret_7
             await ctx.send("Invoking sockets.")
             driver.execute_script(d_script)
             await ctx.send("Done.")
+            try:
+                await asyncio.sleep(2)
+                opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
+                opt.click()
+                await asyncio.sleep(2)
+                sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+                sett.click()
+                mmm = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[2]/div[2]""")
+                mmm.click()
+                mn = driver.find_element_by_xpath("""//*[@id="malUserNameInput"]""")
+                mn.click()
+                mn.send_keys(Keys.CONTROL, "a")
+                mn.clear()
+                mn.send_keys("kikimanox2")
+                getMal = driver.find_element_by_xpath("""//*[@id="malUpdateButton"]""")
+                getMal.click()
+                await ctx.send("Trying to update MAL back to kikimanox2")
+                driver.implicitly_wait(60)
+                succ = driver.find_element_by_xpath("""//*[@id="swal2-title"]""")
+                # print(succ.text)
+                if succ.text == "Updated Successful":
+                    await ctx.send("MAL Updated.")
+                else:
+                    await ctx.send("MAL Update failed.")
+            except:
+                await ctx.send("Something went wrong when updagint MAL list back to kikimanox2")
 
     async def el_catboxpls(self, ctx, auto=False):
         ret = ""
@@ -537,6 +577,8 @@ return ret_7
         uploaded_l = dataIOa.load_json('data/_amq/uploaded_links.json')
         while len(data) > 0:
             upl = data.pop()
+            if int(upl["annID"]) in self.ignored_ann_ids:
+                continue
             loop = asyncio.get_event_loop()
             ll = 'link_7'
             if 'link_4' in upl:
