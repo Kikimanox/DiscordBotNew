@@ -303,7 +303,8 @@ return ret_7
         lp = 0
         for i in range(start_from_page, 200):
             driver.get(f"https://animemusicquiz.com/admin/fixIds?known=true&page={i}")
-            await asyncio.sleep(0.2)
+            print(f"page {i}")
+            await asyncio.sleep(0.3)
             lastPage = False
             try:
                 driver.find_element_by_xpath("""//*[@id="adminPage"]/div/table/tbody/tr[2]""")
@@ -319,7 +320,6 @@ return ret_7
                 aID = t.get_attribute("data-annid")
                 # print(f'{aID} {t.text}')
                 cur_data[str(aID)] = t.text
-                await asyncio.sleep(0.2)
 
         dataIOa.save_json('data/_amq/annMal.json', cur_data)
         await ctx.send(f"Done. (Last page that worked was `{lp}` (for `docrawl`))")

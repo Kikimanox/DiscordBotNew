@@ -461,6 +461,7 @@ class Ignorethis(commands.Cog):
             e = str(event.emoji).replace('<a:', '<:')
             if e in dic:
                 club_name = dic[e]
+                club_name = club_name.lower()
                 path = 'data/clubs.json'
                 dataIOa.create_file_if_doesnt_exist(path, '{}')
                 clubs_data = dataIOa.load_json(path)
