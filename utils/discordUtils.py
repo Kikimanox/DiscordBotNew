@@ -124,7 +124,7 @@ async def print_hastebin_or_file(ctx, result):
         #            return await ctx.send(result)
         #        else:
         file = str(int(datetime.datetime.utcnow().timestamp()) - random.randint(100, 100000))
-        with open(f"tmp/{file}.txt", "w") as f:
+        with open(f"tmp/{file}.txt", "w", encoding='utf-8') as f:
             f.write(str(result))
         with open(f"tmp/{file}.txt", "rb") as f:
             py_output = File(f, f"{file}.txt")
@@ -144,7 +144,7 @@ async def print_hastebin_or_file(ctx, result):
 
 async def result_printer(ctx, result):
     if len(str(result)) > 2000:
-        with open(f"tmp/{ctx.message.id}.txt", "w") as f:
+        with open(f"tmp/{ctx.message.id}.txt", "w", encoding='utf-8') as f:
             f.write(str(result.strip("```")))
         with open(f"tmp/{ctx.message.id}.txt", "rb") as f:
             py_output = File(f, "output.txt")

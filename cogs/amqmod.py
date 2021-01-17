@@ -96,36 +96,59 @@ return ret_7
     @commands.check(checks.owner_check)
     @commands.command()
     async def amqmp3(self, ctx, start_from_page: int, up_to_id: int):
-        """Crawl (start_from_page), parse (up_to_id) from #komugi & upload | Do -1 -1 for both if you want to skip any
+        """Crawl (start_from_page), parse (up_to_id) from #komugi & upload
+        Do -1 -1 for both if you want to skip any
+        do -2 X to skip MAL update
         """
         try:
             options = Options()
-            options.headless = True
+            options.headless = False
+            options.headless = True  # mainheadless
+            options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
             driver = webdriver.Chrome(c, chrome_options=options)
-            if start_from_page == -1:
+            if not options.headless:
+                driver.minimize_window()
+            if start_from_page < 0:
                 await ctx.send("🔸 Skipping crawl")
             else:
                 await ctx.send("🔹 Starting crawl process")
                 await self.el_crawl(ctx, start_from_page, driver)
-            if up_to_id == -1:
+            if up_to_id < 0:
                 await ctx.send("🔸 Skipping parse")
             else:
-                await ctx.send("🔹 Starting to add shows to MAL")
-                await self.el_mal(ctx, up_to_id, driver)
-                await ctx.send("🔹 Starting list update process")
-                await self.el_get_no_mp3(ctx, driver)
+                doListUpdate = True
+                if start_from_page < -1:
+                    await ctx.send("🔸 Skipping adding to MAL")
+                else:
+                    await ctx.send("🔹 Starting to add shows to MAL")
+                    doListUpdate = await self.el_mal(ctx, up_to_id, driver)
+
+                if start_from_page < -1:
+                    await ctx.send("🔸 Skipping list update process")
+                else:
+                    if doListUpdate:
+                        await ctx.send("🔹 Starting list update process")
+                        await self.el_get_no_mp3(ctx, driver)
+                    else:
+                        await ctx.send("🔸 Skipping list update process")
 
             await ctx.send("🔹 Starting catbox process")
             d_code = await self.el_catboxpls(ctx, True)
-            await ctx.send("🔹 Running the final socket command")
+            if not d_code:
+                return await ctx.send("🔸 Skipping final socket command (nothing new to add) (this also means "
+                                      "the list wasn't reverted back to `kikimanox2`)")
+            else:
+                await ctx.send("🔹 Running the final socket command")
+                await self.el_get_no_mp3(ctx, driver, True, d_code)
 
-            await self.el_get_no_mp3(ctx, driver, True, d_code)
             await ctx.send(f'{ctx.author.mention} we are done!')
         except:
             await ctx.send(embed=Embed(description="Somethign odd went wrong [(maybe rate "
                                                    "limit on the login page?)](https://animemusicquiz.com/)"))
+            await dutils.print_hastebin_or_file(ctx, f'```\n{traceback.format_exc()}```')
+            traceback.print_exc()
             ctx.bot.logger.error(traceback.format_exc())
         finally:
             try:
@@ -230,15 +253,26 @@ return ret_7
         return requests.post("https://catbox.moe/user/api.php", data=p, files=f)
 
     @staticmethod
-    async def is_catbox_alve():
+    async def is_catbox_alive():
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get("https://catbox.moe/") as r:
+                async with session.get("https://catbox.moe/", headers={'user-agent': '"Mozilla/5.0 '
+                                                                                     '(Windows NT 6.1; WOW64; '
+                                                                                     'Trident/7.0; '
+                                                                                     'rv:11.0) like Gecko"'}) as r:
                     if r.status == 200:
                         return True
                     else:
+                        print('--Catbox not alive?')
+                        print(r.status)
+                        print('--Content:\n')
+                        print(r.content)
+                        print('--Reson:\n')
+                        print(r.reason)
                         return False
         except:
+            print('--Catbox not alive??')
+            traceback.print_exc()
             return False
 
     async def el_crawl(self, ctx, start_from_page: int, _driver=None):
@@ -247,6 +281,7 @@ return ret_7
         await ctx.send("Starting to crawl")
         options = Options()
         options.headless = True
+        options.add_argument('window-size=1920x1080')
         options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
         c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
         if not _driver:
@@ -367,9 +402,13 @@ return ret_7
                 if mid not in malIds:
                     to_add_to_mall.append(mid)
 
+            if not to_add_to_mall:
+                await ctx.send("No new shows needed to be added ot MAL.")
+                return False
             await ctx.send("starting to add shows to mal")
             options = Options()
             options.headless = True
+            options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
             if not _driver:
@@ -378,30 +417,65 @@ return ret_7
                 driver = _driver
             print('strating...')
             didnt_work = []
-            if not to_add_to_mall:
-                await ctx.send("No new shows needed to be added ot MAL.")
             if to_add_to_mall:
                 driver.get("https://myanimelist.net/login.php")
                 driver.implicitly_wait(10)
                 # https://selenium-python.readthedocs.io/waits.html
 
                 try:
-                    await asyncio.sleep(2)
-                    privAgg = driver.find_element_by_xpath("""//*[@id="qc-cmp2-ui"]/div[2]/div/button[3]""")
-                    privAgg.click()
+                    driver.find_element_by_xpath("""//*[@id="loginUserName"]""")
                 except:
                     pass
 
-                un = driver.find_element_by_xpath("""//*[@id="loginUserName"]""")
-                un.click()
-                un.send_keys(self.bot.config['MAL_USERNAME'])
-                pw = driver.find_element_by_xpath("""//*[@id="login-password"]""")
-                pw.click()
-                pw.send_keys(self.bot.config['MAL_PASSWORD'])
-                signIn = driver.find_element_by_xpath("""//*[@id="dialog"]/tbody/tr/td/form/div/p[6]/input""")
-                signIn.click()
-                await asyncio.sleep(3)
+                async def check_for_dmca_shiz():
+                    driver.implicitly_wait(2)
+                    try:
+                        await asyncio.sleep(1)  # waiting a bit
+                        privAgg = driver.find_element_by_xpath("""//*[@id="qc-cmp2-ui"]/div[2]/div/button[3]""")
+                        privAgg.click()
+                    except:
+                        pass
+                    try:
+                        await asyncio.sleep(1)
+                        reeee = driver.find_element_by_xpath("""//*[@id="gdpr-modal-bottom"]/div/div/div[2]/button""")
+                        reeee.click()
+                    except:
+                        pass
+                    driver.implicitly_wait(10)
+
+                ded = 0
+                exx = ""
+                for pls in range(3):
+                    try:
+                        await asyncio.sleep(1)
+                        await check_for_dmca_shiz()
+                        un = driver.find_element_by_xpath("""//*[@id="loginUserName"]""")
+                        un.click()
+                        un.send_keys(Keys.CONTROL, "a")
+                        un.clear()
+                        un.send_keys(self.bot.config['MAL_USERNAME'])
+                        await check_for_dmca_shiz()
+                        pw = driver.find_element_by_xpath("""//*[@id="login-password"]""")
+                        pw.click()
+                        pw.send_keys(Keys.CONTROL, "a")
+                        pw.clear()
+                        pw.send_keys(self.bot.config['MAL_PASSWORD'])
+                        await check_for_dmca_shiz()
+                        signIn = driver.find_element_by_xpath("""//*[@id="dialog"]/tbody/tr/td/form/div/p[6]/input""")
+                        signIn.click()
+                        await asyncio.sleep(3)
+                        break
+                    except:
+                        driver.save_screenshot('tmp/NANDEKOREWA.png')
+                        ded += 1
+                        exx = traceback.format_exc()
+                        print("Trying again zzzzzzzzzzzzzzzzzz")
+                        pass
+                if ded == 3:
+                    print(exx)
+                    raise
                 to_add_to_mall = list(set(to_add_to_mall))
+                await check_for_dmca_shiz()
                 for mid in to_add_to_mall:
                     ok = await self.add_anime_to_list(mid, driver)
                     if not ok:
@@ -420,11 +494,14 @@ return ret_7
                     await ctx.send(self.gib_code)
                     await ctx.send(f"copy the content to `toProcessNoMp3.json`\n"
                                    f"then run `{dutils.bot_pfx_by_ctx(ctx)}catboxpls`")
+            return True
         except:
             traceback.print_exc()
-            await ctx.send("Something went wrong!!")
+            await ctx.send("Something went wrong in el_mal!!")
+            return False
+            raise
 
-    async def el_get_no_mp3(self, ctx, driver, just_last_invoke=False, d_script=""):
+    async def el_get_no_mp3(self, ctx, driver, just_last_invoke=False, d_scripts=None):
         driver.get("https://animemusicquiz.com/?forceLogin=True")
         driver.implicitly_wait(10)
 
@@ -526,8 +603,11 @@ return ret_7
 
         if just_last_invoke:
             await ctx.send("Invoking sockets.")
-            driver.execute_script(d_script)
-            await ctx.send("Done.")
+
+            for scr in d_scripts:
+                val = driver.execute_async_script(scr)
+                await ctx.send(f"Done. ({val})")
+
             try:
                 await asyncio.sleep(2)
                 opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
@@ -556,6 +636,7 @@ return ret_7
                 await ctx.send("Something went wrong when updagint MAL list back to kikimanox2")
 
     async def el_catboxpls(self, ctx, auto=False):
+        rets = []
         ret = ""
         to_ret = """
         socket.sendCommand({
@@ -588,23 +669,31 @@ return ret_7
             out = f'tmp/amq/{upl["annID"]}_{upl["annSongId"]}_{ee}.mp3'
 
             if not os.path.exists(out) or (os.path.exists(out) and (out not in uploaded)):
-                await ctx.send(f"Creating **{out}**")
+                await ctx.send(f"Creating **{out}** from <{upl[ll]}>")
+                if os.path.exists(out):
+                    os.remove(out)  # we go agane
+                fil = upl[ll].replace('files.', 'nl.')
+                fil = upl[ll]  # better safe than sorry zzzzzzzzzzzzzz
+                # panic for no log basically
                 process = subprocess.Popen(
-                    ["ffmpeg", "-y", "-i", upl[ll].replace('files.', 'nl.'), "-b:a", "320k",
-                     "-ac", "2", "-map", "a", out],
+                    ["ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", fil,
+                     "-b:a", "320k",
+                     "-ac", "2", "-map", "a", out, "-y"],
                     stdout=subprocess.PIPE)
                 await loop.run_in_executor(None, process.communicate)
                 await asyncio.sleep(0.1)
                 if not os.path.exists(out):
                     process = subprocess.Popen(
-                        ["ffmpeg", "-y", "-i", upl[ll], "-b:a", "320k",
-                         "-ac", "2", "-map", "a", out],
+                        ["ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", fil, "-b:a", "320k",
+                         "-ac", "2", "-map", "a", out, "-y"],
                         stdout=subprocess.PIPE)
                     await loop.run_in_executor(None, process.communicate)
                     await asyncio.sleep(0.1)
 
-            if not await self.is_catbox_alve():
-                return await ctx.send("Catbox ded rn. Continue later..")
+            if not await self.is_catbox_alive():
+                await ctx.send("❗❗Catbox ded rn. Continue later..(don't forget to copy `BACKUP_toProcessNoMp3.json`\n"
+                               " over to `toProcessNoMp3.json`")
+                raise
             feedback = True
             if out not in uploaded:
                 await ctx.send(f"Uploading **{out}**")
@@ -629,26 +718,37 @@ return ret_7
             if feedback:
                 await ctx.send(to_ret.replace('[ANNID]', str(upl["annID"])).
                                replace('[ANNSONGID]', str(upl["annSongId"])).replace('[URL]', str(link)))
-            if len(data) != 0:
+            if len(data) != 0 or (len(rets) < 21 and len(data) != 0):
                 ret += ','
-            dataIOa.save_json('data/_amq/toProcessNoMp3.json', data)
+            if len(rets) < 21 and len(data) != 0:
+                rets.append(ret)
+                ret = ""
+            if len(data) == 0:
+                if ret:
+                    rets.append(ret)
 
-        await ctx.send("""```js
-        socket.sendCommand({
-            type: "library",
-            command: "expandLibrary questions"
-        })
-                ```""")
+            dataIOa.save_json('data/_amq/toProcessNoMp3.json', data)  # TODO: wait why do you keep overwriting this?
+
+        # await ctx.send("""```js
+        # socket.sendCommand({
+        #    type: "library",
+        #    command: "expandLibrary questions"
+        # })
+        #        ```""")
         LB = "{"
         RB = "}"
         if not auto:
             await ctx.send(f"{ctx.author.mention} **All:**")
-        rr = "{socket.sendCommand(ex[ii]);\nconsole.log(ex[ii]);\nawait _sleep(700);}"
+
         deff = """function _sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }"""
-        rett = (f'{deff}\n\nvar ex=[{ret}]\nasync '
-                f'function doIT(){LB}for(let ii=0;ii<ex.length;ii++){LB}{rr}{RB}{RB}'
-                f'\nawait doIT()')
-        await dutils.print_hastebin_or_file(ctx, rett)
+        rr = "{socket.sendCommand(ex[ii]);\nconsole.log(ex[ii]);\nawait _sleep(700);}"
+        rett = []
+        for r in rets:
+            rett.append(f'{deff}\n\nvar ex=[{r}]\nasync '
+                        f'function doIT(){LB}for(let ii=0;ii<ex.length;ii++){LB}{rr}{RB}await _sleep(7000); return ex.length{RB}'
+                        f'\nawait doIT()')
+        if rett:
+            await dutils.print_hastebin_or_file(ctx, '\n'.join(rett))
         return rett
 
 
