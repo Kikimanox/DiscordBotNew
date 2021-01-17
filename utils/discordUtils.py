@@ -111,33 +111,39 @@ def cleanUpBannedWords(bannerWordsArr, text):
     return text
 
 
-async def print_hastebin_or_file(ctx, result):
+async def print_hastebin_or_file(ctx, result, just_file=True):
+    haste_failed = False
     if len(result) > 1950:
-        # m = await ctx.send('Trying to upload to hastebin, this might take a bit')
-        # async with aiohttp.ClientSession() as session:
-        #    async with session.post("https://hastebin.com/documents", data=str(result).encode('utf-8')) as resp:
-        #        if resp.status == 200:
-        #            haste_out = await resp.json()
-        #            url = "https://hastebin.com/" + haste_out["key"]
-        #            result = 'Large output. Posted to Hastebin: %s' % url
-        #            await m.delete()
-        #            return await ctx.send(result)
-        #        else:
-        file = str(int(datetime.datetime.utcnow().timestamp()) - random.randint(100, 100000))
-        with open(f"tmp/{file}.txt", "w", encoding='utf-8') as f:
-            f.write(str(result))
-        with open(f"tmp/{file}.txt", "rb") as f:
-            py_output = File(f, f"{file}.txt")
-            await ctx.send(
-                # content="Error posting to hastebin. Uploaded output to file instead.",
-                content="Uploaded output to file since the content is too long.",
-                file=py_output)
+        if not just_file:
+            try:
+                m = await ctx.send('Trying to upload to hastebin, this might take a bit')
+                async with aiohttp.ClientSession() as session:
+                    async with session.post("https://hastebin.com/documents", data=str(result).encode('utf-8')) as resp:
+                        if resp.status == 200:
+                            haste_out = await resp.json()
+                            url = "https://hastebin.com/" + haste_out["key"]
+                            result = 'Large output. Posted to Hastebin: %s' % url
+                            await m.delete()
+                            return await ctx.send(result)
+                        else:
+                            await m.delete()
+                            raise
+            except:
+                haste_failed = True
+        if haste_failed or just_file:
+            file = str(int(datetime.datetime.utcnow().timestamp()) - random.randint(100, 100000))
+            with open(f"tmp/{file}.txt", "w", encoding='utf-8') as f:
+                f.write(str(result))
+            with open(f"tmp/{file}.txt", "rb") as f:
+                py_output = File(f, f"{file}.txt")
+                await ctx.send(
+                    # content="Error posting to hastebin. Uploaded output to file instead.",
+                    content="Uploaded output to file since the content is too long.",
+                    file=py_output)
             try:
                 os.remove(f"tmp/{file}.txt")
             except:
-                ctx.bot.logger.error("Failed to remove tmp/quote_output.txt")
-            # await m.delete()
-            return
+                ctx.bot.logger.error(f"tmp/{file}.txt")
     else:
         return await ctx.send(result)
 
@@ -1180,6 +1186,7 @@ async def can_execute_based_on_top_role_height(ctx, cmd, user1, user2, bot_test=
             return False
     return True
 
+
 async def try_to_react(msg, reactionArr):
     for e in reactionArr:
         try:
@@ -1187,6 +1194,7 @@ async def try_to_react(msg, reactionArr):
         except:
             return False, e
     return True, ""
+
 
 async def try_if_role_exists(guild, roleIdOrName):
     role = None
