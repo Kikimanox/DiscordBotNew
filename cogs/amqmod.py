@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import glob
 import json
 import re
 import aiohttp
@@ -94,6 +95,19 @@ return ret_7
 """
 
     @commands.check(checks.owner_check)
+    @commands.command(aliases=['amqcleanup', 'amqc'])
+    async def amqclean(self, ctx):
+        """Empty uploaded_links and uploaded_name json files"""
+        with open('data/_amq/uploaded_links.json', 'w') as f:
+            f.write("[]")
+        with open('data/_amq/uploaded_name.json', 'w') as f:
+            f.write("[]")
+        for f in glob.glob('tmp/amq/*.mp3'):
+            os.remove(f)
+
+        await ctx.send("Done. Jsons now empty. Removed all mp3 files from `tmp/amq/` too.")
+
+    @commands.check(checks.owner_check)
     @commands.command()
     async def amqmp3(self, ctx, start_from_page: int, up_to_id: int):
         """Crawl (start_from_page), parse (up_to_id) from #komugi & upload
@@ -108,6 +122,7 @@ return ret_7
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
             driver = webdriver.Chrome(c, chrome_options=options)
+
             if not options.headless:
                 driver.minimize_window()
             if start_from_page < 0:
@@ -492,8 +507,8 @@ return ret_7
                 await ctx.send("All parsed shows added to mal.\nIt's time for")
                 if not _driver:
                     await ctx.send(self.gib_code)
-                    await ctx.send(f"copy the content to `toProcessNoMp3.json`\n"
-                                   f"then run `{dutils.bot_pfx_by_ctx(ctx)}catboxpls`")
+                    # await ctx.send(f"copy the content to `toProcessNoMp3.json`\n"
+                    #               f"then run `{dutils.bot_pfx_by_ctx(ctx)}catboxpls`")
             return True
         except:
             traceback.print_exc()
@@ -604,9 +619,11 @@ return ret_7
         if just_last_invoke:
             await ctx.send("Invoking sockets.")
 
+            i = 1
             for scr in d_scripts:
-                val = driver.execute_async_script(scr)
-                await ctx.send(f"Done. ({val})")
+                val = driver.execute_script(scr)
+                await ctx.send(f"[{i}/{len(d_scripts)}] Done. ({val} added)")
+                i += 1
 
             try:
                 await asyncio.sleep(2)
@@ -652,10 +669,11 @@ return ret_7
                 """
         data = dataIOa.load_json('data/_amq/toProcessNoMp3.json')
         dataIOa.save_json('data/_amq/BACKUP_toProcessNoMp3.json', data)
-        print("Saving temporary data, you'll need this later (in case of a crash)"
-              " in order to make the final output btw.")
+        # print("Saving temporary data, you'll need this later (in case of a crash)"
+        #      " in order to make the final output btw.")
         uploaded = dataIOa.load_json('data/_amq/uploaded_name.json')
         uploaded_l = dataIOa.load_json('data/_amq/uploaded_links.json')
+        cnt = 0
         while len(data) > 0:
             upl = data.pop()
             if int(upl["annID"]) in self.ignored_ann_ids:
@@ -690,12 +708,11 @@ return ret_7
                     await loop.run_in_executor(None, process.communicate)
                     await asyncio.sleep(0.1)
 
-            if not await self.is_catbox_alive():
-                await ctx.send("❗❗Catbox ded rn. Continue later..(don't forget to copy `BACKUP_toProcessNoMp3.json`\n"
-                               " over to `toProcessNoMp3.json`")
-                raise
             feedback = True
             if out not in uploaded:
+                if not await self.is_catbox_alive():
+                    await ctx.send("❗❗Catbox ded rn. Continue later..")
+                    raise
                 await ctx.send(f"Uploading **{out}**")
                 ok, link = await self.upload_file_to_catbox(out, ctx)
             else:
@@ -705,8 +722,6 @@ return ret_7
             if not ok:
                 await ctx.send("Something went wrong... Details:")
                 await dutils.print_hastebin_or_file(ctx, f'```\n{link}```')
-                await ctx.send("Don't forget to copy over the conent from "
-                               "`BACKUP_toProcessNoMp3.json` to `toProcessNoMp3.json` if needed!")
                 return
             uploaded.append(out)
             uploaded_l.append(link)
@@ -718,16 +733,17 @@ return ret_7
             if feedback:
                 await ctx.send(to_ret.replace('[ANNID]', str(upl["annID"])).
                                replace('[ANNSONGID]', str(upl["annSongId"])).replace('[URL]', str(link)))
-            if len(data) != 0 or (len(rets) < 21 and len(data) != 0):
+            if cnt < 20:
                 ret += ','
-            if len(rets) < 21 and len(data) != 0:
+                cnt += 1
+            else:
                 rets.append(ret)
                 ret = ""
-            if len(data) == 0:
-                if ret:
-                    rets.append(ret)
+                cnt = 0
+            if len(data) == 0 and ret:
+                rets.append(ret)
 
-            dataIOa.save_json('data/_amq/toProcessNoMp3.json', data)  # TODO: wait why do you keep overwriting this?
+            # dataIOa.save_json('data/_amq/toProcessNoMp3.json', data)  # NVM: wait why do you keep overwriting this?
 
         # await ctx.send("""```js
         # socket.sendCommand({
@@ -745,10 +761,10 @@ return ret_7
         rett = []
         for r in rets:
             rett.append(f'{deff}\n\nvar ex=[{r}]\nasync '
-                        f'function doIT(){LB}for(let ii=0;ii<ex.length;ii++){LB}{rr}{RB}await _sleep(7000); return ex.length{RB}'
-                        f'\nawait doIT()')
+                        f'function doIT(){LB}for(let ii=0;ii<ex.length;ii++){LB}{rr}{RB}return ex.length;{RB}'
+                        f'\nreturn await doIT();')
         if rett:
-            await dutils.print_hastebin_or_file(ctx, '\n'.join(rett))
+            await dutils.print_hastebin_or_file(ctx, '\n'.join(rett), just_file=False)
         return rett
 
 
