@@ -299,7 +299,7 @@ class Reminders(commands.Cog):
         `[p]remind me Something on 2020/10/14 16:25` (no, this example isn't incorrect)
         `[p]remind me stuff on July 10th` (triggers at midnight July 10th)
         `[p]remind me stuff on 10. 12. at 14:55` (triggers on oct 12nd, at 14:55)
-        `[p]remind me stuff at 3:25 on 3.3` (3rd march 3:25(AM))
+        `[p]remind me stuff at 3:25 on 3.3` (march 3rd 3:25(AM))
         `[p]remind me stuff tomorrow at 3:25`
         `[p]remind me stuff at 3:25 tomorrow`
         `[p]rm stuff in 3 days 2hour 1sec`
@@ -316,7 +316,9 @@ class Reminders(commands.Cog):
 
         This is just a shorter version of doing [p]remind me something in Xh
 
-        So you do `[p]rm take out the trash in 2h` instead of `[p]remind me take out the trash in 2h`"""
+        So you do `[p]rm take out the trash in 2h` instead of `[p]remind me take out the trash in 2h`
+
+        **If you want more info do `[p] remind`"""
         await self.remindFunction(ctx, f'me {text}')
 
     @commands.cooldown(3, 4, commands.BucketType.user)
