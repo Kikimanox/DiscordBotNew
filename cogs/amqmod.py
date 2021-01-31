@@ -11,6 +11,9 @@ from discord import Member, Embed, File, utils
 import os
 import traceback
 
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
 from utils import dataIO
 from utils.dataIOa import dataIOa
 import utils.checks as checks
@@ -109,28 +112,32 @@ return ret_7
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def amqmp3(self, ctx, start_from_page: int, up_to_id: int):
+    async def amqmp3(self, ctx, start_from_page: int = -999, up_to_id: int = -999):
         """Crawl (start_from_page), parse (up_to_id) from #komugi & upload
-        Do -1 -1 for both if you want to skip any
-        do -2 X to skip MAL update
+        -1 -1 = Catbox process only
+        -2 X = Skip table parse ; Parse messages up to including X, Skip MAL update
+        X <-1 = Parse tables from page X ; Skip #Komugi parse and skip MAL update
+        [] [] = Parse tables from page 1 ; Parse messages automatically, add to MAL
+        X [] = Parse tables from page X ; Parse messages automatically, add to MAL
+        -1 [] = Skip tables parse ; Parse messages automatically, add to MAL
         """
         try:
             options = Options()
             options.headless = False
-            options.headless = True  # mainheadless
+            options.headless = True  # mainheadmainheadless
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
             driver = webdriver.Chrome(c, chrome_options=options)
 
-            if not options.headless:
-                driver.minimize_window()
-            if start_from_page < 0:
+            if start_from_page < 0 and start_from_page != -999:
                 await ctx.send("🔸 Skipping crawl")
             else:
                 await ctx.send("🔹 Starting crawl process")
+                if start_from_page == -999:
+                    start_from_page = 1
                 await self.el_crawl(ctx, start_from_page, driver)
-            if up_to_id < 0:
+            if up_to_id < 0 and up_to_id != -999:
                 await ctx.send("🔸 Skipping parse")
             else:
                 doListUpdate = True
@@ -197,14 +204,22 @@ return ret_7
 
     async def add_anime_to_list(self, animeID: int, driver):
         try:
-            driver.get(f"https://myanimelist.net/anime/{animeID}")
+            try:
+                driver.set_page_load_timeout(4)
+                driver.get(f"https://myanimelist.net/anime/{animeID}")
+            except:
+                pass
+            __ = WebDriverWait(driver, 5).until(
+                expected_conditions.presence_of_element_located((By.ID, "myinfo_status")))
             ad = driver.find_element_by_xpath(
                 """//*[@id="content"]/table/tbody/tr/td[2]/div[1]
-                /table/tbody/tr[1]/td/div[1]/div[1]/div[1]/div[2]/a[1]""")
+                 /table/tbody/tr[1]/td/div[1]/div[1]/div[1]/div[2]/a[1]""")
             ad.click()
             return True
         except:
             return False
+        finally:
+            driver.set_page_load_timeout(60)
 
     @staticmethod
     async def get_anime_list_ids(username="kikimanox"):
@@ -382,7 +397,19 @@ return ret_7
             ch = ctx.guild.get_channel(chid)
             if not ch:
                 return await ctx.send("Not in the right guild")
-            up_to = await ch.fetch_message(up_to_id)
+            if up_to_id != -999:
+                up_to = await ch.fetch_message(up_to_id)
+            else:
+                up_to = None
+                async for ms in ch.history(limit=None).filter(lambda mm: mm.author.id == 593889007750873138):
+                    up_to = ms
+                    if '⬆' in [str(r.emoji) for r in ms.reactions]:
+                        await ctx.send(f"Id of last message: `{ms.id}` (next time you need to do `;amqmp3 -1 {ms.id}`")
+                        break
+
+            if not up_to:
+                raise Exception("No messages found?")
+
             messages = await ch.history(limit=None,
                                         after=up_to.created_at - datetime.timedelta(microseconds=1)).flatten()
 
@@ -420,7 +447,7 @@ return ret_7
             if not to_add_to_mall:
                 await ctx.send("No new shows needed to be added ot MAL.")
                 return False
-            await ctx.send("starting to add shows to mal")
+            await ctx.send("There are shows to add. Starting adding process now.")
             options = Options()
             options.headless = True
             options.add_argument('window-size=1920x1080')
@@ -433,7 +460,12 @@ return ret_7
             print('strating...')
             didnt_work = []
             if to_add_to_mall:
-                driver.get("https://myanimelist.net/login.php")
+                driver.set_page_load_timeout(8)
+                try:
+                    driver.get("https://myanimelist.net/login.php")
+                except:
+                    pass
+                driver.set_page_load_timeout(60)
                 driver.implicitly_wait(10)
                 # https://selenium-python.readthedocs.io/waits.html
 
@@ -441,6 +473,8 @@ return ret_7
                     driver.find_element_by_xpath("""//*[@id="loginUserName"]""")
                 except:
                     pass
+
+                print("Got login page MAL")
 
                 async def check_for_dmca_shiz():
                     driver.implicitly_wait(2)
@@ -478,10 +512,11 @@ return ret_7
                         await check_for_dmca_shiz()
                         signIn = driver.find_element_by_xpath("""//*[@id="dialog"]/tbody/tr/td/form/div/p[6]/input""")
                         signIn.click()
+                        print("Clicked sign in on MAL")
                         await asyncio.sleep(3)
                         break
                     except:
-                        driver.save_screenshot('tmp/NANDEKOREWA.png')
+                        driver.save_screenshot('tmp/NANDEKOREWA_ExceptionAtLogin.png')
                         ded += 1
                         exx = traceback.format_exc()
                         print("Trying again zzzzzzzzzzzzzzzzzz")
@@ -495,14 +530,16 @@ return ret_7
                     ok = await self.add_anime_to_list(mid, driver)
                     if not ok:
                         didnt_work.append(f'<https://myanimelist.net/anime/{mid}>')
+                        print(f'Failed to add {mid}')
                     else:
                         print(f'Added {mid}')
                     await asyncio.sleep(0.5)
                 if not _driver:
                     driver.close()
             if didnt_work:
+                driver.save_screenshot('tmp/NANDEKOREWA_DidntWork.png')
                 jo = '\n'.join(didnt_work)
-                await ctx.send(f"These shows weren't added to mal for some reason:\n{jo}")
+                await dutils.print_hastebin_or_file(ctx, f"These shows weren't added to mal for some reason:\n{jo}")
             else:
                 await ctx.send("All parsed shows added to mal.\nIt's time for")
                 if not _driver:
@@ -692,18 +729,19 @@ return ret_7
                     os.remove(out)  # we go agane
                 fil = upl[ll].replace('files.', 'nl.')
                 fil = upl[ll]  # better safe than sorry zzzzzzzzzzzzzz
-                # panic for no log basically
+                # panic for no log basically | info
+                LOGLEVEL = "panic"
                 process = subprocess.Popen(
-                    ["ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", fil,
+                    ["ffmpeg", "-hide_banner", "-loglevel", LOGLEVEL, "-i", fil,
                      "-b:a", "320k",
-                     "-ac", "2", "-map", "a", out, "-y"],
+                     "-ac", "2", "-map", "a:0", out, "-y"],
                     stdout=subprocess.PIPE)
                 await loop.run_in_executor(None, process.communicate)
                 await asyncio.sleep(0.1)
                 if not os.path.exists(out):
                     process = subprocess.Popen(
-                        ["ffmpeg", "-hide_banner", "-loglevel", "panic", "-i", fil, "-b:a", "320k",
-                         "-ac", "2", "-map", "a", out, "-y"],
+                        ["ffmpeg", "-hide_banner", "-loglevel", LOGLEVEL, "-i", fil, "-b:a", "320k",
+                         "-ac", "2", "-map", "a:0", out, "-y"],
                         stdout=subprocess.PIPE)
                     await loop.run_in_executor(None, process.communicate)
                     await asyncio.sleep(0.1)
@@ -721,8 +759,10 @@ return ret_7
                 link = uploaded_l[uploaded.index(out)]
             if not ok:
                 await ctx.send("Something went wrong... Details:")
+                print(link)
                 await dutils.print_hastebin_or_file(ctx, f'```\n{link}```')
-                return
+                raise
+
             uploaded.append(out)
             uploaded_l.append(link)
             dataIOa.save_json('data/_amq/uploaded_name.json', uploaded)
@@ -764,7 +804,7 @@ return ret_7
                         f'function doIT(){LB}for(let ii=0;ii<ex.length;ii++){LB}{rr}{RB}return ex.length;{RB}'
                         f'\nreturn await doIT();')
         if rett:
-            await dutils.print_hastebin_or_file(ctx, '\n'.join(rett), just_file=False)
+            await dutils.print_hastebin_or_file(ctx, '\n'.join(rett), just_file=True)  # for some reason hastebin sux
         return rett
 
 
