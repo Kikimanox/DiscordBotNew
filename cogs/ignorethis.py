@@ -406,7 +406,11 @@ class Ignorethis(commands.Cog):
     @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
     async def get_groups(self, ctx, max_gaps: int, *, clubs_and_rest_text):
-        """Get groups so there is no gaps use | to ignore people"""
+        """Get groups so there is no gaps use | to ignore people (more than 100 (-100) for just clubs)"""
+        just_club = False
+        if max_gaps > 99:
+            just_club = True
+            max_gaps -= 100
         ignore_mems = []
         if ' | ' in clubs_and_rest_text:
             spl = clubs_and_rest_text.split(' | ')
@@ -454,8 +458,10 @@ class Ignorethis(commands.Cog):
             for cbs in ok_permutations:
                 rs = []
                 for c in cbs:
-                    m = ", ".join([f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}' for u in c['membs'] if ctx.guild.get_member(u)])
-                    rs.append(f'**__{c["clb"]}__**: {m}')
+                    m = ""
+                    if not just_club:
+                        m = ", ".join([f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}' for u in c['membs'] if ctx.guild.get_member(u)])
+                    rs.append(f'**__{c["clb"]}__** {m}')
                 res.append('\n'.join(rs))
 
             if not res:
