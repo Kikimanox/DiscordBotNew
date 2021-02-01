@@ -403,7 +403,7 @@ class Ignorethis(commands.Cog):
         else:
             await ctx.send("Cancelling.")
 
-    @commands.check(checks.owner_check)
+    @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
     async def get_groups(self, ctx, max_gaps: int, *, clubs_and_rest_text):
         """Get groups so there is no gaps use | to ignore people"""
@@ -425,6 +425,8 @@ class Ignorethis(commands.Cog):
         clubs = list(set(clubs))
         if len(clubs) < 2:
             return await ctx.send("Need at least 2 clubs for this command")
+        if len(clubs) > 8:
+            return await ctx.send("No more than 8 clubs!")
 
         all_ok = await self.check_if_clubs_exist(ctx, clubs)
 
@@ -459,6 +461,8 @@ class Ignorethis(commands.Cog):
             if not res:
                 return await ctx.send(f"No order for **{max_gaps}** max gaps")
             res = res[:len(res) // 2]
+            if len(res) > 100:
+                return await ctx.send("There's more than 100 different permutations. Too much!")
             await dutils.print_hastebin_or_file(ctx, '\n\n'.join(res), just_file=True)
 
 
