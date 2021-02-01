@@ -1,4 +1,6 @@
 import asyncio
+import itertools
+
 import discord
 from discord.ext import commands
 from discord import Member, Embed, File, utils
@@ -400,6 +402,65 @@ class Ignorethis(commands.Cog):
             dataIOa.save_json(path, clubs_data)
         else:
             await ctx.send("Cancelling.")
+
+    @commands.check(checks.owner_check)
+    @commands.command(aliases=["gg"])
+    async def get_groups(self, ctx, max_gaps: int, *, clubs_and_rest_text):
+        """Get groups so there is no gaps"""
+        clubs = clubs_and_rest_text.rsplit(';', 1)[:1][0].split(' ')
+        clubs = [c.lower() for c in clubs]
+        clubs = list(set(clubs))
+        if len(clubs) < 2:
+            return await ctx.send("Need at least 2 clubs for this command")
+
+        all_ok = await self.check_if_clubs_exist(ctx, clubs)
+
+        if all_ok:
+            path = 'data/clubs.json'
+            dataIOa.create_file_if_doesnt_exist(path, '{}')
+            clubs_data = dataIOa.load_json(path)
+            mems_all = []
+            all_ids = []
+            for club_name in clubs:
+                club = clubs_data[club_name]
+                #mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
+                mems = [u for u in club['members'] if ctx.guild.get_member(u)]
+                mems_all.append({"clb": club_name, "membs": sorted(mems)})
+                all_ids = list({*all_ids, *mems})
+            permutations = [t for t in itertools.permutations(mems_all)]
+            permutations = permutations[:len(permutations)//2]
+
+            ok_permutations = []
+            for p in permutations:
+                if self.check_if_is_ok_for_all(p, all_ids, max_gaps):
+                    ok_permutations.append(p)
+
+            res = []
+            for cbs in ok_permutations:
+                rs = []
+                for c in cbs:
+                    m = ", ".join([str(ctx.guild.get_member(u)) for u in c['membs'] if ctx.guild.get_member(u)])
+                    rs.append(f'**{c["clb"]}**: {m}')
+                res.append('\n'.join(rs))
+
+            await ctx.send('\n\n'.join(res))
+
+
+    @staticmethod
+    def check_if_is_ok_for_all(permutation, uids, max_gaps):
+        for u in uids:
+            _fin = []
+            fin = []
+            for club in permutation:
+                _fin.append(u in club['membs'])
+            fin.append(_fin[0])
+            for f in _fin[1:]:
+                if f != fin[-1]:
+                    fin.append(f)
+            # num_blocks = fin.count(True)
+            if fin.count(True) - 1 > max_gaps:
+                return False
+        return True
 
     @staticmethod
     def get_emote_if_exists_else(guild, emoteName, elseEmote):
