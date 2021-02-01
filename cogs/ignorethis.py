@@ -323,7 +323,7 @@ class Ignorethis(commands.Cog):
                 return False
             club = clubs_data[c]
             mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
-            if ctx.author not in mems:
+            if ctx.author not in mems and not ctx.author.administrator:
                 await ctx.send(f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
                                f"You can't ping a club you're not a part of (`{c}`)")
                 return False
@@ -406,8 +406,21 @@ class Ignorethis(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command(aliases=["gg"])
     async def get_groups(self, ctx, max_gaps: int, *, clubs_and_rest_text):
-        """Get groups so there is no gaps"""
-        clubs = clubs_and_rest_text.rsplit(';', 1)[:1][0].split(' ')
+        """Get groups so there is no gaps use | to ignore people"""
+        ignore_mems = []
+        if ' | ' in clubs_and_rest_text:
+            spl = clubs_and_rest_text.split(' | ')
+            c1 = spl[0]
+            c2 = spl[1]
+            for cc in c2.split(' '):
+                im = await commands.MemberConverter().convert(ctx, cc)
+                if im:
+                    ignore_mems.append(im.id)
+        else:
+            c1 = clubs_and_rest_text
+            c2 = ""
+
+        clubs = c1.rsplit(';', 1)[:1][0].split(' ')
         clubs = [c.lower() for c in clubs]
         clubs = list(set(clubs))
         if len(clubs) < 2:
@@ -432,7 +445,7 @@ class Ignorethis(commands.Cog):
 
             ok_permutations = []
             for p in permutations:
-                if self.check_if_is_ok_for_all(p, all_ids, max_gaps):
+                if self.check_if_is_ok_for_all(p, all_ids, max_gaps, ignore_mems):
                     ok_permutations.append(p)
 
             res = []
@@ -449,8 +462,10 @@ class Ignorethis(commands.Cog):
 
 
     @staticmethod
-    def check_if_is_ok_for_all(permutation, uids, max_gaps):
+    def check_if_is_ok_for_all(permutation, uids, max_gaps, ignore):
         for u in uids:
+            if u in ignore:
+                continue
             _fin = []
             fin = []
             for club in permutation:
