@@ -441,7 +441,7 @@ class Ignorethis(commands.Cog):
                 mems_all.append({"clb": club_name, "membs": sorted(mems)})
                 all_ids = list({*all_ids, *mems})
             permutations = [t for t in itertools.permutations(mems_all)]
-            permutations = permutations[:len(permutations)//2]
+            # permutations = permutations[:len(permutations)//2]
 
             ok_permutations = []
             for p in permutations:
