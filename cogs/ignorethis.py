@@ -454,8 +454,8 @@ class Ignorethis(commands.Cog):
             for cbs in ok_permutations:
                 rs = []
                 for c in cbs:
-                    m = ", ".join([f'{"~~" if u in ignore_mems else ""}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else ""}' for u in c['membs'] if ctx.guild.get_member(u)])
-                    rs.append(f'**{c["clb"]}**: {m}')
+                    m = ", ".join([f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}' for u in c['membs'] if ctx.guild.get_member(u)])
+                    rs.append(f'**__{c["clb"]}__**: {m}')
                 res.append('\n'.join(rs))
 
             if not res:
