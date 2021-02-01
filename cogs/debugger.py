@@ -13,6 +13,7 @@ from contextlib import redirect_stdout
 
 # Common imports that can be used by the debugger.
 import json
+import itertools
 import datetime
 import time
 import re
