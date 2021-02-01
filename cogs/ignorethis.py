@@ -443,6 +443,8 @@ class Ignorethis(commands.Cog):
                     rs.append(f'**{c["clb"]}**: {m}')
                 res.append('\n'.join(rs))
 
+            if not res:
+                return await ctx.send(f"No order for **{max_gaps}** max gaps")
             await ctx.send('\n\n'.join(res))
 
 
