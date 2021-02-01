@@ -458,6 +458,7 @@ class Ignorethis(commands.Cog):
 
             if not res:
                 return await ctx.send(f"No order for **{max_gaps}** max gaps")
+            res = res[:len(res) // 2]
             await dutils.print_hastebin_or_file(ctx, '\n\n'.join(res), just_file=True)
 
 
