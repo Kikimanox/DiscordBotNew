@@ -330,7 +330,7 @@ class Ignorethis(commands.Cog):
         return True
 
     @commands.check(checks.light_server_check)
-    @commands.command()
+    @commands.command(aliases=["join"])
     async def joinclub(self, ctx, club_name):
         """Join a club"""
         club_name = club_name.lower()
@@ -354,7 +354,7 @@ class Ignorethis(commands.Cog):
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
     @commands.check(checks.light_server_check)
-    @commands.command()
+    @commands.command(aliases=["leave"])
     async def leaveclub(self, ctx, club_name):
         """Leave a club"""
         club_name = club_name.lower()
