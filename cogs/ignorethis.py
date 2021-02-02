@@ -239,7 +239,7 @@ class Ignorethis(commands.Cog):
             club = clubs_data[club_name]
             # creator = ctx.guild.get_member(int(club['creator']))
             mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
-            if ctx.author not in mems:
+            if ctx.author not in mems and not ctx.author.guild_permissions.administrator:
                 return await ctx.send(f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
                                       f"You can't ping a club you're not a part of")
             pings = ['']
