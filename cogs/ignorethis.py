@@ -228,7 +228,7 @@ class Ignorethis(commands.Cog):
 
     @commands.check(checks.light_server_check)
     @commands.command(aliases=["ping"])
-    async def pingclub(self, ctx, club_name, *, rest):
+    async def pingclub(self, ctx, club_name, *, rest="Anything else that you'd like to add"):
         """Ping a club"""
         club_name = club_name.lower()
 
