@@ -19,6 +19,7 @@ class Misc(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.dont_check_this_for_afk = []
+        self.was_just_pinged = {}
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
@@ -235,6 +236,9 @@ class Misc(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if (message.author.id in self.bot.banlist) or (message.author.id in self.bot.blacklist):
+            return
+
         if message.id in self.bot.dont_check_this_for_afk:
             try:
                 self.bot.dont_check_this_for_afk.remove(message.id)
@@ -272,7 +276,17 @@ class Misc(commands.Cog):
                     elapsed = (datetime.datetime.utcnow() - data[1]).total_seconds()
                     tt = tutils.convert_sec_to_smhd(elapsed)
                     if data[0]:
-                        await message.channel.send(f'{ment.display_name} is currently away due to{data[0]} '
+                        now = int(datetime.datetime.now().timestamp())
+                        rsn = data[0]
+                        if ment.id in self.was_just_pinged:
+                            last_ping = now - self.was_just_pinged[ment.id]
+                            if last_ping < 30:
+                                rsn = f'(Can not display reason again for another **{last_ping}** seconds)'
+                            else:
+                                del self.was_just_pinged[ment.id]
+                        else:
+                            self.was_just_pinged[ment.id] = now
+                        await message.channel.send(f'{ment.display_name} is currently away due to{rsn} '
                                                    f'(since {tt} ago)')
                     else:
                         await message.channel.send(f'{ment.display_name} is currently away '
