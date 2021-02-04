@@ -573,11 +573,13 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
 
 
 async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, batch=False,
-                    guild=None, bot=None, author=None, fdbch=None):
+                    guild=None, bot=None, author=None, fdbch=None, selfmute=False):
     """
     When ctx is missing, be sure to input the guild and bot and make.
     If ctx == None and you don't want the feedback, just turn on batch
     """
+    if selfmute:
+        reason = "[selfmute] " + reason
     if ctx:
         guild = ctx.guild
         bot = ctx.bot
@@ -632,6 +634,13 @@ async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, ba
                 return await fdbch.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
             else:
                 return 9001
+        if seconds < 300:
+            await fdbch.send("Selfmute time can not be less than 5 minutes!")
+            return 0
+        if seconds > 60 * 60 * 24:
+            await fdbch.send("Selfmute time can not be more than 24 hours!")
+            return 0
+
         unmute_time = timestamp + delta
 
     try:
@@ -676,9 +685,14 @@ async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, ba
         should_update=updating_mute
     )
     if not batch:
-        await fdbch.send(embed=Embed(
-            description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
-            color=0x6785da))
+        if not selfmute:
+            await fdbch.send(embed=Embed(
+                description=f"{member.mention} is now muted from text channels{' for ' + length if length else ''}.",
+                color=0x6785da))
+        if selfmute:
+            await fdbch.send(embed=Embed(
+                description=f"{member.mention} muted themselves {' for ' + length if length else ''}.",
+                color=0x7fc0d4))
         if ctx:
             act_id = await moderation_action(ctx, new_reason, "mute", member, no_dm=no_dm, actually_resp=author)
             await post_mod_log_based_on_type(ctx, "mute", act_id,

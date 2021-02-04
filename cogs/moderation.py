@@ -656,6 +656,16 @@ class Moderation(commands.Cog):
                 return
         await self.el_mute(ctx, users, length, reason, False)
 
+    @commands.command()
+    async def selfmute(self, ctx, length, *, reason=""):
+        """Mute yourself [5min - 24h]
+
+        Supply a #d#h#m#s for a timed mute (requiered). Examples:
+        `[p]selfmute 2h30m Optional reason goes here`
+        `[p]selfmute 24h`
+        `[p]selfmute 50m`"""
+        await self.el_mute(ctx, [ctx.author], length, reason, False, selfmute=True)
+
     @commands.check(checks.manage_messages_check)
     @commands.command(hidden=True)
     async def smute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
@@ -674,7 +684,7 @@ class Moderation(commands.Cog):
         if len(users) > 10: return await ctx.send("Max 10 users")
         await self.el_mute(ctx, users, length, reason, True)
 
-    async def el_mute(self, ctx, users, length, reason, no_dm):
+    async def el_mute(self, ctx, users, length, reason, no_dm, selfmute=False):
         if not self.bot.from_serversetup:
             if not self.tried_setup:
                 await self.set_server_stuff()
@@ -692,7 +702,7 @@ class Moderation(commands.Cog):
             #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, users[0]): return
             #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.guild.get_member(ctx.bot.user.id),
             #                                                         users[0], True): return
-            await dutils.mute_user(ctx, users[0], length, reason, no_dm=no_dm)
+            await dutils.mute_user(ctx, users[0], length, reason, no_dm=no_dm, selfmute=selfmute)
         else:
             p = dutils.bot_pfx(ctx.bot, ctx.message)
             for u in users:
