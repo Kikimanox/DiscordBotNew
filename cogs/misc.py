@@ -281,7 +281,7 @@ class Misc(commands.Cog):
                         if ment.id in self.was_just_pinged:
                             last_ping = now - self.was_just_pinged[ment.id]
                             if last_ping < 30:
-                                rsn = f'(Can not display reason again for another {30 - last_ping} seconds)'
+                                rsn = f' (Can not display reason again for another {30 - last_ping} seconds)'
                             else:
                                 del self.was_just_pinged[ment.id]
                         else:
