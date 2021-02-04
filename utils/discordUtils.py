@@ -961,7 +961,7 @@ async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=
         bb.save()
     except:
         BotBlacklist.insert(user=offender.id, guild=gid, meta=meta).execute()
-    if arl < 2:
+    if arl < 2 and ch_to_reply_at:
         await ch_to_reply_at.send(
             f'💢 {offender.mention} you have been blacklisted from the bot '
             f'for spamming. You may remove yourself from the blacklist '

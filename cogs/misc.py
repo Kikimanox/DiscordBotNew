@@ -20,6 +20,7 @@ class Misc(commands.Cog):
         self.bot = bot
         self.bot.dont_check_this_for_afk = []
         self.was_just_pinged = {}
+        self.did_ping_afk_person = {}
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
@@ -272,16 +273,36 @@ class Misc(commands.Cog):
                 return
             for ment in message.mentions:
                 if ment.id in self.bot.currently_afk[message.guild.id]:
+                    now = int(datetime.datetime.now().timestamp())
+
+                    if message.author.id in self.did_ping_afk_person:
+                        last_pinged = now - self.did_ping_afk_person[message.author.id]['t']
+                        if last_pinged < 30:
+                            ppl = self.did_ping_afk_person[message.author.id]['ppl']
+                            if ment.id in ppl and ppl[ment.id] >= 3:  # can only ping someone afk 3 times max
+                                out = f'[spamming afkers | {message.content}]({message.jump_url})'
+                                await dutils.blacklist_from_bot(self.bot, message.author, out, message.guild.id,
+                                                                message.channel)
+                            else:
+                                if ment.id in ppl:
+                                    ppl[ment.id] += 1
+                                else:
+                                    ppl[ment.id] = 0
+                        else:
+                            del self.did_ping_afk_person[message.author.id]
+                    else:
+                        self.did_ping_afk_person[message.author.id] = {'t': now, 'ppl': {}}
+                        self.did_ping_afk_person[message.author.id]['ppl'][ment.id] = 0
+
                     data = self.bot.currently_afk[message.guild.id][ment.id]
                     elapsed = (datetime.datetime.utcnow() - data[1]).total_seconds()
                     tt = tutils.convert_sec_to_smhd(elapsed)
                     if data[0]:
-                        now = int(datetime.datetime.now().timestamp())
                         rsn = data[0]
                         if ment.id in self.was_just_pinged:
                             last_ping = now - self.was_just_pinged[ment.id]
-                            if last_ping < 30:
-                                rsn = f' (Can not display reason again for another {30 - last_ping} seconds)'
+                            if last_ping < 60:
+                                rsn = f' (Can not display reason again for another {60 - last_ping} seconds)'
                             else:
                                 del self.was_just_pinged[ment.id]
                         else:
