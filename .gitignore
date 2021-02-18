@@ -15,3 +15,4 @@ scripts/start.sh.bak
 scripts/stop.sh.bak
 scripts/_start.sh
 scripts/_stop.sh
+claims_settings.json

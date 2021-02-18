@@ -227,7 +227,8 @@ class Fun(commands.Cog):
         d_key = f"{ctx.author.id}_{c_type}"
         anti_spam_cd = 15
         # [invoked_times, invoked_at]
-        if d_key in self.just_claimed:
+
+        if d_key in self.just_claimed and ctx.guild.id != 202845295158099980:
             if now - self.just_claimed[d_key][1] < anti_spam_cd:
                 self.just_claimed[d_key][0] += 1
                 if self.just_claimed[d_key][0] > 2:  # the 3rd spam is nuke
@@ -242,6 +243,9 @@ class Fun(commands.Cog):
                 del self.just_claimed[d_key]
         else:
             self.just_claimed[d_key] = [0, now]
+
+        if ctx.guild.id == 202845295158099980:
+            self.just_claimed[d_key][0] = 0
 
         if d_key in self.just_claimed and self.just_claimed[d_key][0] == 0:
             d = self.data[c_type]
@@ -278,7 +282,8 @@ class Fun(commands.Cog):
                 claim.color_string = orig_key_split[1]
                 claim.is_nsfw = is_nsfw
                 claim.img_url = attachement.url
-                claim.save()
+                if ctx.guild.id != 202845295158099980:
+                    claim.save()
                 file = None
                 em = Embed(title=f'**{orig_key_split[0]}**', color=color)
                 if is_nsfw:
@@ -291,15 +296,16 @@ class Fun(commands.Cog):
                                                  f'`{dutils.bot_pfx_by_gid(self.bot, ctx.guild.id)}'
                                                  f'{c_type} history`\n'
                                                  f'{ctx.author.mention} your {c_type} for the day is:', file=file)
-                h, _ = History.get_or_create(user=ctx.author.id, type=c_type)
-                his = json.loads(h.meta)
-                if not his:
-                    his = self.prepare_for_history(d)
-                his[orig_key_split[0]] += 1
-                his['last_3_claims'] = his['last_3_claims'][:2]
-                his['last_3_claims'].insert(0, orig_key_split[0])
-                h.meta = json.dumps(his)
-                h.save()
+                if ctx.guild.id != 202845295158099980:
+                    h, _ = History.get_or_create(user=ctx.author.id, type=c_type)
+                    his = json.loads(h.meta)
+                    if not his:
+                        his = self.prepare_for_history(d)
+                    his[orig_key_split[0]] += 1
+                    his['last_3_claims'] = his['last_3_claims'][:2]
+                    his['last_3_claims'].insert(0, orig_key_split[0])
+                    h.meta = json.dumps(his)
+                    h.save()
 
             # when done remove them if they aren't spamming anymore
             await asyncio.sleep(anti_spam_cd + 1)
