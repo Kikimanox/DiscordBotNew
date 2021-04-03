@@ -634,10 +634,10 @@ async def mute_user(ctx, member, length, reason, no_dm=False, new_mute=False, ba
                 return await fdbch.send("**Overflow!** Mute time too long. Please input a shorter mute time.")
             else:
                 return 9001
-        if seconds < 300:
+        if (seconds < 300) and selfmute:
             await fdbch.send("Selfmute time can not be less than 5 minutes!")
             return 0
-        if seconds > 60 * 60 * 24:
+        if (seconds > 60 * 60 * 24) and selfmute:
             await fdbch.send("Selfmute time can not be more than 24 hours!")
             return 0
 
