@@ -6,6 +6,7 @@ venv/
 .idea
 __pycache__
 data/
+!data/_amq/annMal.json
 tmp/
 _scripts/
 logs/
