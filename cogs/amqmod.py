@@ -105,6 +105,10 @@ return ret_7
             f.write("[]")
         with open('data/_amq/uploaded_name.json', 'w') as f:
             f.write("[]")
+        with open('data/_amq/toProcessNoMp3.json', 'w') as f:
+            f.write("[]")
+        with open('data/_amq/BACKUP_toProcessNoMp3.json', 'w') as f:
+            f.write("[]")
         for f in glob.glob('tmp/amq/*.mp3'):
             os.remove(f)
 
