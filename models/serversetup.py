@@ -166,7 +166,7 @@ class SSManager:
         if raw_hook.channel.id != tar_id:
             await ctx.send(f"Setup failed! The webhook {hook_id} actual target channel is {raw_hook.channel.mention}. "
                            f"(it should have been <#{tar_id}>)"
-                           f"Please fix that by hand first or change your argument")
+                           f" Please fix that by hand first or change your argument")
             raise Exception('_fail')
         h_url = raw_hook.url
         log = Logging.select().where((Logging.type == typ) & (Logging.guild == g))
@@ -192,6 +192,7 @@ class SSManager:
             hook = Webhook.select().where((Webhook.type == typ) & (Webhook.guild == g))
             hook = hook[0]
             hook.url = h_url
+            hook.hook_id = hook_id
             hook.target_ch = tar_id
             hook.save()
         except:
