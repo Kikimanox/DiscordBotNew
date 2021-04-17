@@ -248,21 +248,21 @@ class Serversetup(commands.Cog):
         await self.do_setup(ctx=ctx, logging_reg=channel)
 
     @commands.check(checks.admin_check)
-    @logging.command()
-    async def leavejoin(self, ctx, channel: discord.TextChannel):
+    @logging.command(name="leavejoin")
+    async def _leavejoin(self, ctx, channel: discord.TextChannel):
         """Logging for leave/join messages"""
         await self.do_setup(ctx=ctx, logging_leavejoin=channel)
 
     @commands.check(checks.admin_check)
-    @logging.command()
-    async def modlog(self, ctx, channel: discord.TextChannel):
+    @logging.command(name="modlog")
+    async def _modlog(self, ctx, channel: discord.TextChannel):
         """Logging for moderation related actions"""
         await self.do_setup(ctx=ctx, logging_modlog=channel)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
-    @setup.command()
-    async def muterolenew(self, ctx, *, role: discord.Role):
+    @setup.command(name="muterolenew")
+    async def _muterolenew(self, ctx, *, role: discord.Role):
         """Setup muterole
         Note, this command may be used with any role, but it's main
         purpose/use is to setup the mute role perms on the channels."""
