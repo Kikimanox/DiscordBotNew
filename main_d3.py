@@ -61,6 +61,8 @@ bot = commands.Bot(command_prefix=get_pre_or_mention, intents=intents)
 bot.all_cmds = {}
 bot.running_tasks = []
 bot.from_serversetup = {}
+bot.running_chapters = {}
+bot.chapters_json = {}
 bot.anti_raid = ArManager.get_ar_data()
 bot.currently_afk = AfkManager.return_whole_afk_list()
 bot.moderation_blacklist = {-1: 'dummy'}
@@ -94,6 +96,8 @@ async def on_ready():
     if hasattr(bot, 'all_cmds') and not bot.all_cmds: bot.all_cmds = {}
     if hasattr(bot, 'running_tasks') and not bot.running_tasks: bot.running_tasks = []
     if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
+    if hasattr(bot, 'running_chapters') and not bot.from_serversetup: bot.running_chapters = {}
+    if hasattr(bot, 'chapters_json') and not bot.from_serversetup: bot.chapters_json = {}
     if hasattr(bot, 'anti_raid') and not bot.anti_raid: bot.anti_raid = ArManager.get_ar_data()
     if hasattr(bot, 'currently_afk') and not bot.currently_afk: bot.currently_afk = AfkManager.return_whole_afk_list()
     if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
@@ -662,11 +666,18 @@ def load_all_cogs_except(cogs_to_exclude):
 if __name__ == '__main__':
     while True:
         try:
-            load_all_cogs_except(['_newCogTemplate'])
+            load_all_cogs_except(['_newCogTemplate', 'manga', 'bets'])
+
             if os.name != 'nt':
                 os.setpgrp()
             loop = asyncio.get_event_loop()
             config = dataIOa.load_json("config.json")
+
+            # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
+            if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
+                bot.load_extension("cogs.manga")
+                bot.load_extension("cogs.bets")
+
             loop.run_until_complete(bot.login(config['BOT_TOKEN']))
             print(f'Connected: ---{datetime.datetime.utcnow().strftime("%c")}---')
             loop.run_until_complete(bot.connect())
