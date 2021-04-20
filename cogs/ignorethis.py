@@ -18,6 +18,7 @@ class Ignorethis(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.verification_channel_id = 632318167364009985
+        self.gallery_wh = None
 
     @commands.check(checks.light_server_check)
     @commands.command()
@@ -495,6 +496,25 @@ class Ignorethis(commands.Cog):
         emote_test = utils.get(guild.emojis, name=emoteName)
         emote = elseEmote if not emote_test else str(emote_test)
         return emote
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        # 833850894101250059
+        if self.bot.user.id == 750518704760029190:
+            if message.channel.id in [424792581176557579, 424792705529544725, 424792877546340372,
+                                      424792986136608770, 424793140223016961] and len(message.attachments) > 0:
+
+                if not self.bot.is_ready():
+                    await self.bot.wait_until_ready()
+                if not self.gallery_wh:
+                    try:
+                        self.gallery_wh: discord.Webhook = await self.bot.fetch_webhook(833850894101250059)
+                    except:
+                        return
+
+                atts = [await a.to_file(spoiler=a.is_spoiler()) for a in message.attachments]
+                await self.gallery_wh.send(avatar_url=message.author.avatar_url,
+                                           username=f'{message.author.name} in #{message.channel.name}'[:32], files=atts, wait=False)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event):
