@@ -1122,7 +1122,7 @@ class Moderation(commands.Cog):
             for uid in user_ids:
                 us = ctx.guild.get_member(uid)
                 if not us:
-                    us = self.bot.get_user(uid)
+                    us = await ctx.bot.fetch_user(uid)
                 if us:
                     try:
                         await ctx.guild.ban(us, reason="Blacklist")
