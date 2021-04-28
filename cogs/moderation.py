@@ -1116,7 +1116,20 @@ class Moderation(commands.Cog):
                            f"already blacklisted ids by using `{dutils.bot_pfx(ctx.bot, ctx.message)}blacklistshow`")
         Blacklist.insert_many(data).execute()
         self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
-        await ctx.send("Done.")
+        msg = await ctx.send("Done. (Trying to also ban the listed members if possible...)")
+        with ctx.channel.typing():
+            for uid in user_ids:
+                us = ctx.guild.get_member(uid)
+                if not us:
+                    us = await self.bot.get_user(uid)
+                if us:
+                    try:
+                        await ctx.guild.ban(us, reason="Blacklist")
+                    except:
+                        pass  # oh well, we tried
+
+        await msg.edit(content="**Done.**")
+
         bs = ', '.join([str(u) for u in user_ids])
         act_id = await dutils.moderation_action(ctx, bs, "blacklist", None)
         await dutils.post_mod_log_based_on_type(ctx, 'blacklist', act_id, reason=bs)
