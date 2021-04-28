@@ -146,12 +146,14 @@ class Moderation(commands.Cog):
                     old_rsn = dutils.escape_at(old_rsn) if not was_empty else "No reason provided."
                     cnt = f'**Case {case_id} reason updated by {ctx.author} ({ctx.author.id}).**\n' \
                           f'Old reason: ```\n{old_rsn}```' \
-                          f'Edited case log:'
+                          f'Edited case log copy:'
                     sup = self.bot.from_serversetup[ctx.guild.id]
                     case.logged_after = datetime.datetime.utcnow()
                     case.logged_in_ch = log_in_chan.id
                     case.save()
-                    await msg.edit(embed=em)
+                    await msg.delete()  # delete the old one
+                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_modlog'],
+                                               regular_ch=sup['modlog'], embed=em)
                     await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
                                                regular_ch=sup['reg'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
