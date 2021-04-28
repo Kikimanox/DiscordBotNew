@@ -151,8 +151,9 @@ class Moderation(commands.Cog):
                     case.logged_after = datetime.datetime.utcnow()
                     case.logged_in_ch = log_in_chan.id
                     case.save()
-                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_modlog'],
-                                               regular_ch=sup['modlog'], embed=em, content=cnt)
+                    await msg.edit(Embed=em, Content=cnt)
+                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
+                                               regular_ch=sup['reg'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
             except:
                 print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
