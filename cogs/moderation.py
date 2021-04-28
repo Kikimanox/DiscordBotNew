@@ -1124,8 +1124,8 @@ class Moderation(commands.Cog):
                 try:
                     if not us:
                         us = await ctx.bot.fetch_user(uid)
-                    if us:
                         self.bot.just_banned_by_bot[f'{uid}_{ctx.guild.id}'] = 1
+                    if us:
                         await ctx.guild.ban(us, reason="Blacklist")
                 except:
                     pass  # oh well, we tried
