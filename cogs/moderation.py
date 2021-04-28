@@ -1112,8 +1112,9 @@ class Moderation(commands.Cog):
         data = [{'guild': ctx.guild.id, 'user_id': uid} for uid in user_ids]
         de = Blacklist.delete().where(Blacklist.guild == ctx.guild.id, Blacklist.user_id << user_ids).execute()
         if de > 0:
-            await ctx.send("Why did you try to insert ids that were already blacklisted? You can see "
-                           f"already blacklisted ids by using `{dutils.bot_pfx(ctx.bot, ctx.message)}blacklistshow`")
+            await ctx.send("You tried blacklisting some ids that were already blacklisted "
+                           f"check those ids by using `{dutils.bot_pfx(ctx.bot, ctx.message)}blacklistshow`",
+                           delete_after=15)
         Blacklist.insert_many(data).execute()
         self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
         msg = await ctx.send("Done. (Trying to also ban the listed members if possible...)")
@@ -1121,7 +1122,7 @@ class Moderation(commands.Cog):
             for uid in user_ids:
                 us = ctx.guild.get_member(uid)
                 if not us:
-                    us = await self.bot.get_user(uid)
+                    us = self.bot.get_user(uid)
                 if us:
                     try:
                         await ctx.guild.ban(us, reason="Blacklist")
