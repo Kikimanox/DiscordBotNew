@@ -81,7 +81,7 @@ class Moderation(commands.Cog):
             await ctx.send("Something went wrong! Could not purge.")
 
     @commands.check(checks.moderator_check)
-    @commands.command()
+    @commands.command(aliase=["c"])
     async def case(self, ctx, case_id: int, *, reason):
         """Supply or edit reason for a moderation action"""
         if case_id > sys.maxsize: return await ctx.send("Case id too big, breaking system limits!")
