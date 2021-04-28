@@ -1121,13 +1121,13 @@ class Moderation(commands.Cog):
         with ctx.channel.typing():
             for uid in user_ids:
                 us = ctx.guild.get_member(uid)
-                if not us:
-                    us = await ctx.bot.fetch_user(uid)
-                if us:
-                    try:
+                try:
+                    if not us:
+                        us = await ctx.bot.fetch_user(uid)
+                    if us:
                         await ctx.guild.ban(us, reason="Blacklist")
-                    except:
-                        pass  # oh well, we tried
+                except:
+                    pass  # oh well, we tried
 
         await msg.edit(content="**Done.**")
 
