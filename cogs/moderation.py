@@ -151,7 +151,7 @@ class Moderation(commands.Cog):
                     case.logged_after = datetime.datetime.utcnow()
                     case.logged_in_ch = log_in_chan.id
                     case.save()
-                    await msg.edit(Embed=em, Content=cnt)
+                    await msg.edit(embed=em)
                     await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
                                                regular_ch=sup['reg'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
@@ -1100,7 +1100,7 @@ class Moderation(commands.Cog):
         else:
             await ctx.send("❌ Displaying wrong/bad arguments:\n\n" + wrong)
 
-    @commands.check(checks.moderator_check)
+    @commands.check(checks.ban_members_check)
     @commands.command()
     async def blacklist(self, ctx, *user_ids: int):
         """Blacklist a user or users by id
