@@ -151,9 +151,7 @@ class Moderation(commands.Cog):
                     case.logged_after = datetime.datetime.utcnow()
                     case.logged_in_ch = log_in_chan.id
                     case.save()
-                    await msg.delete()  # delete the old one
-                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_modlog'],
-                                               regular_ch=sup['modlog'], embed=em)
+                    await sup['hook_modlog'].edit_message(msg.id, embed=em)  # edit the old one
                     await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
                                                regular_ch=sup['reg'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
