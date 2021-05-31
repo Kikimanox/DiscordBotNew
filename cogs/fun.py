@@ -342,8 +342,6 @@ class Fun(commands.Cog):
                 file = None
                 em = Embed(title=f'**{orig_key_split[0]}**', color=color)
                 if is_nsfw:
-                    if multi_claim:
-                        return f"|| {attachement.url} || ⚠ potentially nsfw image for **{orig_key_split[0]}**"
                     file = await attachement.to_file(spoiler=True, use_cached=True)
                     em.set_footer(text='⚠ potentially nsfw image')
                     # em.set_image(url=f'attachment://{file.filename}')
@@ -368,6 +366,8 @@ class Fun(commands.Cog):
             if multi_claim:
                 if d_key in self.just_claimed:
                     del self.just_claimed[d_key]
+                if is_nsfw:
+                    return f"|| {attachement.url} || ⚠ potentially nsfw image for **{orig_key_split[0]}**"
                 return em
 
             # when done remove them if they aren't spamming anymore
