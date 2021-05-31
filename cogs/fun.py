@@ -64,7 +64,7 @@ class Fun(commands.Cog):
             if not subcmd:
                 return await self.do_claim(ctx, name)
             first_arg = subcmd.split(' ')[0]
-            if first_arg in ctx.command.all_commands:
+            if first_arg in ctx.command.all_commands or first_arg in ['multi']:  # multi can still execute normally
                 c = ctx.command.all_commands[first_arg]
                 if subcmd:
                     argz = subcmd.split(' ')[1:]
@@ -85,6 +85,50 @@ class Fun(commands.Cog):
             raise commands.errors.BadArgument
 
         await exec_cmd(cmd)
+
+    @commands.cooldown(1, 120, commands.BucketType.user)
+    @claim.command()
+    async def multi(self, ctx, *claim_types):
+        """Claim multiple at once, ex: `[p]claim multi bride spirit vtuber`"""
+        ar = str(claim_types[0]).split(' ')
+        to_claim = list(set(ar) & set(possible_for_bot))
+        if not to_claim:
+            return await ctx.send(f"None of your claim_types were valid.\nYou can do `{dutils.bot_pfx_by_ctx(ctx)}"
+                                  f"claim multi {' '.join(possible_for_bot)}` (leaving out those that you don't want"
+                                  f" to claim")
+
+        ch: discord.TextChannel = ctx.channel
+        hook = None
+
+        try:
+            hooks = await ch.webhooks()
+            for h in hooks:
+                if h.user.id == self.bot.user.id and h.name.startswith('Multi claim'):
+                    hook = h
+                    break
+            if not hook:
+                hook = await ch.create_webhook(name="Multi claim")
+        except:
+            return await ctx.send("Something went wrong, maybe I'm missing manage webhook perms?")
+
+        embeds = []
+        cds = []
+        async with ctx.typing():
+            for claim in to_claim:
+                e = await self.do_claim(ctx, claim, claim_cd=20, multi_claim=True)
+
+                if e and not isinstance(e, str):
+                    embeds.append(e)
+                if e and isinstance(e, str):
+                    cds.append(f"{claim} - {e} (cooldown)")
+
+            if embeds and isinstance(hook, discord.Webhook):
+                await hook.send(avatar_url=ctx.author.avatar_url, username=f'Multi claim for {ctx.author.name}'[:32],
+                                wait=False, embeds=embeds, content=f'{ctx.author.mention} your multi claim:\n' +
+                                                                   '\n'.join(cds))
+            else:
+                await ctx.send("Nothing out of these is available to claim at the moment.\n" + '\n'.join(cds))
+
 
     @commands.cooldown(1, 5, commands.BucketType.user)
     @claim.command()
@@ -217,11 +261,14 @@ class Fun(commands.Cog):
         u.save()
         await ctx.send(f"Your nsfw setting for `{cmd_type}` has ben set to `{setting}`")
 
-    async def do_claim(self, ctx, c_type, claim_cd=20):
+    async def do_claim(self, ctx, c_type, claim_cd=20, multi_claim=False):
         if not self.data:
+            if multi_claim: return "Hold up a little bit, I'm still loading the data."
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
         if '-1-1-1' in self.data and self.data['-1-1-1'] == '-1-1-1':
+            if multi_claim: return ""
             return await ctx.send("Something went wrong when loading data, please contact the bot owner.")
+
         utcnow = datetime.datetime.utcnow()
         now = utcnow.timestamp()
         d_key = f"{ctx.author.id}_{c_type}"
@@ -231,7 +278,7 @@ class Fun(commands.Cog):
         if d_key in self.just_claimed and ctx.guild.id != 202845295158099980:
             if now - self.just_claimed[d_key][1] < anti_spam_cd:
                 self.just_claimed[d_key][0] += 1
-                if self.just_claimed[d_key][0] > 2:  # the 3rd spam is nuke
+                if self.just_claimed[d_key][0] > 2 and not multi_claim:  # the 3rd spam is nuke
                     out = f'[spamming {c_type} | {ctx.message.content}]({ctx.message.jump_url})'
                     await dutils.blacklist_from_bot(self.bot, ctx.message.author, out,
                                                     ctx.message.guild.id,
@@ -266,15 +313,21 @@ class Fun(commands.Cog):
                 if u.nsfw == 'off' and is_nsfw:
                     continue
 
+            em = None
+
             usr = Claimed.select().where(Claimed.user == ctx.author.id,
                                          Claimed.type == c_type,
                                          Claimed.expires_on > utcnow)
             if usr:
                 usr = usr.get()
-                await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
-                               f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**")
+                if not multi_claim:
+                    await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
+                                   f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**")
                 if d_key in self.just_claimed:
                     del self.just_claimed[d_key]
+
+                if multi_claim:
+                    em = f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**"
             else:
                 claim, created = Claimed.get_or_create(user=ctx.author.id, type=c_type)
                 claim.expires_on = utcnow + datetime.timedelta(hours=claim_cd)
@@ -292,10 +345,11 @@ class Fun(commands.Cog):
                     # em.set_image(url=f'attachment://{file.filename}')
                 else:
                     em.set_image(url=attachement.url)
-                await ctx.send(embed=em, content=f'\nYou can check claim history by using '
-                                                 f'`{dutils.bot_pfx_by_gid(self.bot, ctx.guild.id)}'
-                                                 f'{c_type} history`\n'
-                                                 f'{ctx.author.mention} your {c_type} for the day is:', file=file)
+                if not multi_claim:
+                    await ctx.send(embed=em, content=f'\nYou can check claim history by using '
+                                                     f'`{dutils.bot_pfx_by_gid(self.bot, ctx.guild.id)}'
+                                                     f'{c_type} history`\n'
+                                                     f'{ctx.author.mention} your {c_type} for the day is:', file=file)
                 if ctx.guild.id != 202845295158099980:
                     h, _ = History.get_or_create(user=ctx.author.id, type=c_type)
                     his = json.loads(h.meta)
@@ -307,10 +361,17 @@ class Fun(commands.Cog):
                     h.meta = json.dumps(his)
                     h.save()
 
+            if multi_claim:
+                if d_key in self.just_claimed:
+                    del self.just_claimed[d_key]
+                return em
+
             # when done remove them if they aren't spamming anymore
             await asyncio.sleep(anti_spam_cd + 1)
             if d_key in self.just_claimed:
                 del self.just_claimed[d_key]
+
+
 
     @commands.command(hidden=True, aliases=['m'])
     async def mood(self, ctx):
