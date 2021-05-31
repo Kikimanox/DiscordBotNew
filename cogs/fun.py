@@ -90,7 +90,10 @@ class Fun(commands.Cog):
     @claim.command()
     async def multi(self, ctx, *claim_types):
         """Claim multiple at once, ex: `[p]claim multi bride spirit vtuber`"""
-        ar = str(claim_types[0]).split(' ')
+        if str(claim_types[0]) == 'all':
+            ar = possible_for_bot
+        else:
+            ar = str(claim_types[0]).split(' ')
         to_claim = list(set(ar) & set(possible_for_bot))
         if not to_claim:
             return await ctx.send(f"None of your claim_types were valid.\nYou can do `{dutils.bot_pfx_by_ctx(ctx)}"
@@ -113,21 +116,20 @@ class Fun(commands.Cog):
 
         embeds = []
         cds = []
-        async with ctx.typing():
-            for claim in to_claim:
-                e = await self.do_claim(ctx, claim, claim_cd=20, multi_claim=True)
+        for claim in to_claim:
+            e = await self.do_claim(ctx, claim, claim_cd=20, multi_claim=True)
 
-                if e and not isinstance(e, str):
-                    embeds.append(e)
-                if e and isinstance(e, str):
-                    cds.append(f"{claim} - {e} (cooldown)")
+            if e and not isinstance(e, str):
+                embeds.append(e)
+            if e and isinstance(e, str):
+                cds.append(f"{claim} - {e}")
 
-            if embeds and isinstance(hook, discord.Webhook):
-                await hook.send(avatar_url=ctx.author.avatar_url, username=f'Multi claim for {ctx.author.name}'[:32],
-                                wait=False, embeds=embeds, content=f'{ctx.author.mention} your multi claim:\n' +
-                                                                   '\n'.join(cds))
-            else:
-                await ctx.send("Nothing out of these is available to claim at the moment.\n" + '\n'.join(cds))
+        if embeds and isinstance(hook, discord.Webhook):
+            await hook.send(avatar_url=ctx.author.avatar_url, username=f'Multi claim for {ctx.author.name}'[:32],
+                            wait=False, embeds=embeds, content=f'{ctx.author.mention} your multi claim:\n' +
+                                                               '\n'.join(cds))
+        else:
+            await ctx.send("Nothing out of these is available to claim at the moment.\n" + '\n'.join(cds))
 
 
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -327,7 +329,7 @@ class Fun(commands.Cog):
                     del self.just_claimed[d_key]
 
                 if multi_claim:
-                    em = f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**"
+                    em = f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}** (cooldown)"
             else:
                 claim, created = Claimed.get_or_create(user=ctx.author.id, type=c_type)
                 claim.expires_on = utcnow + datetime.timedelta(hours=claim_cd)
@@ -340,6 +342,8 @@ class Fun(commands.Cog):
                 file = None
                 em = Embed(title=f'**{orig_key_split[0]}**', color=color)
                 if is_nsfw:
+                    if multi_claim:
+                        return f"|| {attachement.url} || ⚠ potentially nsfw image for **{orig_key_split[0]}**"
                     file = await attachement.to_file(spoiler=True, use_cached=True)
                     em.set_footer(text='⚠ potentially nsfw image')
                     # em.set_image(url=f'attachment://{file.filename}')
