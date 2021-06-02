@@ -99,6 +99,8 @@ class Fun(commands.Cog):
             return await ctx.send(f"None of your claim_types were valid.\nYou can do `{dutils.bot_pfx_by_ctx(ctx)}"
                                   f"claim multi {' '.join(possible_for_bot)}` (leaving out those that you don't want"
                                   f" to claim")
+        if len(to_claim) == 1:
+            return await ctx.send("Why are you using only one type in **multi** claim? 🤔")
 
         ch: discord.TextChannel = ctx.channel
         hook = None
