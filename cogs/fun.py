@@ -161,7 +161,7 @@ class Fun(commands.Cog):
             cnt = ""
             if usr.is_nsfw:
                 em.set_footer(text='⚠ potentially nsfw image')
-                cnt = f'||{usr.img_url} ||'
+                cnt = f'|| {usr.img_url} ||'
             else:
                 em.set_image(url=usr.img_url)
             if idd == ctx.author.id:
