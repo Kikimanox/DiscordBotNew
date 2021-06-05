@@ -191,10 +191,22 @@ class ReactionRoles(commands.Cog):
                 if rrs[i] == emote:
                     role = discord.utils.get(guild.roles, id=int(rrs[i-1]))
                     if addIt:
-                        await user.add_roles(role)
+                        for retry in range(10):
+                            if role not in user.roles:
+                                await user.add_roles(role)
+                            else:
+                                break
+                            await asyncio.sleep(0.5)
+
                         return  # don't add multiple
                     else:
-                        await user.remove_roles(role)
+                        for retry in range(10):
+                            if role in user.roles:
+                                await user.remove_roles(role)
+                            else:
+                                break
+                            await asyncio.sleep(0.5)
+
                         return  # don't remove multiple
         except:
             pass
