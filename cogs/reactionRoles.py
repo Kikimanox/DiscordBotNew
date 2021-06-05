@@ -188,7 +188,7 @@ class ReactionRoles(commands.Cog):
             user = guild.get_member(event.user_id)
             rrs = rrs[::-1]
             for i in range(1, len(rrs), 2):
-                if rrs[i] == emote:
+                if rrs[i].replace('<a:', '<:') == emote.replace('<a:', '<:'):
                     role = discord.utils.get(guild.roles, id=int(rrs[i-1]))
                     if addIt:
                         for retry in range(10):
