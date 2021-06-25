@@ -513,7 +513,7 @@ async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, 
         mute_role = discord.utils.get(guild.roles, id=bot.from_serversetup[guild.id]['muterole'])
         if mute_role not in guild.get_member(member.id).roles:
             return
-        await member.remove_roles(mute_role, reason=f'{reason}|{no_dm}')
+        await member.remove_roles(mute_role, reason=f'{reason}|selfmute|{no_dm}')
         # try: done in listener
         #     muted = Reminderstbl.get(Reminderstbl.guild == guild.id, Reminderstbl.user_id == member.id)
         #     muted.delete_instance()
@@ -850,7 +850,8 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
     em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')} | "
                        f'Case id: {act_id}')
     now = datetime.datetime.utcnow()
-    await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
+    if reason.strip() not in ['[selfmute]']:
+        await log(bot, this_embed=em, this_hook_type='modlog', guild=guild)
     if not bot.from_serversetup:
         bot.from_serversetup = await SSManager.get_setup_formatted(bot)
     if guild.id not in bot.from_serversetup: return

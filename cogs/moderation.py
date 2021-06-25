@@ -559,9 +559,10 @@ class Moderation(commands.Cog):
                     act_id = await dutils.moderation_action(None, reason, "unmute", member, no_dm=no_dm,
                                                             actually_resp=actually_resp,
                                                             guild=before.guild, bot=self.bot)
-                    await dutils.post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
-                                                            reason=reason, actually_resp=actually_resp,
-                                                            guild=before.guild, bot=self.bot)
+                    if 'selfmute' not in en.reason:
+                        await dutils.post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
+                                                                reason=reason, actually_resp=actually_resp,
+                                                                guild=before.guild, bot=self.bot)
             if mute_role in after.roles and mute_role not in before.roles:
                 if self.bot.just_muted_by_bot and f'{before.id}_{before.guild.id}' in self.bot.just_muted_by_bot:
                     del self.bot.just_muted_by_bot[f'{before.id}_{before.guild.id}']
