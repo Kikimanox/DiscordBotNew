@@ -133,7 +133,6 @@ class Fun(commands.Cog):
         else:
             await ctx.send("Nothing out of these is available to claim at the moment.\n" + '\n'.join(cds))
 
-
     @commands.cooldown(1, 5, commands.BucketType.user)
     @claim.command()
     async def current(self, ctx, *user):
@@ -377,8 +376,6 @@ class Fun(commands.Cog):
             if d_key in self.just_claimed:
                 del self.just_claimed[d_key]
 
-
-
     @commands.command(hidden=True, aliases=['m'])
     async def mood(self, ctx):
         """Will be back soonTM"""
@@ -482,6 +479,50 @@ class Fun(commands.Cog):
             await asyncio.sleep(3)
 
         await dr.delete()
+
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.command(hidden=True)
+    async def cclaims(self, ctx, claim_type: str, limit: int):
+        CT = claim_type
+        idd = ctx.author.id
+        from discord import Embed
+        from models.claims import ClaimsManager, Claimed, UserSettings, History
+        h, _ = History.get_or_create(user=idd, type=CT)
+        his = json.loads(h.meta)
+        if not his: return await ctx.send("no history")
+        hiss = {'last_3_claims': his['last_3_claims']}
+        del his['last_3_claims']
+        his = ({k: v for k, v in sorted(his.items(), key=lambda item: item[1], reverse=True)[:limit]})
+        his['last_3_claims'] = hiss['last_3_claims']
+        if not his['last_3_claims']: return await ctx.send(f"{ctx.author.mention} you have no claim history for the "
+                                                           f"**{CT}** command")
+        his['last_3_claims'][0] += ' (last claim)'
+        color = None
+        url = None
+        usr = Claimed.select().where(Claimed.user == idd,
+                                     Claimed.type == CT,
+                                     Claimed.expires_on > datetime.datetime.utcnow())
+        if usr:
+            usr = usr.get()
+            color = usr.color_string
+            if not usr.is_nsfw:
+                url = usr.img_url
+
+        if color:
+            color = int(color, 16)
+        aa = '\n'.join(his['last_3_claims'])
+        del his['last_3_claims']
+        bb = '\n'.join([f'{k} - {v}' for k, v in his.items()])
+        desc = f"**Last 3 {CT} claims:**\n{aa}\n\n**Claim statistic:**\n{bb}"
+        em = Embed(title=f"History for {ctx.author.display_name}", description=desc)
+        if color:
+            em.colour = color
+            if url:
+                em.set_thumbnail(url=url)
+            else:
+                em.set_footer(text=':warning: potentially nsfw pic claim thumbnail ignored')
+
+        await ctx.channel.send(content=f'{ctx.author.mention} your {CT} claim history:', embed=em)
 
 
 def setup(bot):
