@@ -761,6 +761,7 @@ return ret_7
                 feedback = False
                 ok = True
                 link = uploaded_l[uploaded.index(out)]
+            link = str(link).replace('\n', '').replace(' ', '')
             if not ok:
                 await ctx.send("Something went wrong... Details:")
                 print(link)
