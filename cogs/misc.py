@@ -141,7 +141,7 @@ class Misc(commands.Cog):
         # return await ctx.send("Command temporarily down, will be back soon.")
         pos = []
         p = re.compile(r'<a?(:.*?:)\d+>')
-        if len([m for m in p.finditer(afk_text)]) > 2: return await ctx.send('Calm down, maximum 2'
+        if len([m for m in p.finditer(afk_text)]) > 3: return await ctx.send('Calm down, maximum 3'
                                                                              ' emotes, okay? Please try again')
         minus = 0
         emotes = [str(e) for e in self.bot.emojis]
