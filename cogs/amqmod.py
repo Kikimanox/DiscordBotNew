@@ -128,7 +128,7 @@ return ret_7
         try:
             options = Options()
             options.headless = False
-            options.headless = True  # mainheadmainheadless
+            #options.headless = True  # mainheadmainheadless
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
@@ -151,7 +151,7 @@ return ret_7
                     await ctx.send("🔹 Starting to add shows to MAL")
                     doListUpdate = await self.el_mal(ctx, up_to_id, driver)
 
-                if start_from_page < -1:
+                if start_from_page < -1 and start_from_page != -444:
                     await ctx.send("🔸 Skipping list update process")
                 else:
                     if doListUpdate:
@@ -630,10 +630,10 @@ return ret_7
             getMal = driver.find_element_by_xpath("""//*[@id="malUpdateButton"]""")
             getMal.click()
             await ctx.send("Trying to update MAL")
-            driver.implicitly_wait(60)
+            driver.implicitly_wait(90)
             succ = driver.find_element_by_xpath("""//*[@id="swal2-title"]""")
             print(succ.text)
-            if succ.text == "Updated Successful":
+            if succ.text == "Update Successful":
                 await ctx.send("MAL Updated.")
             else:
                 await ctx.send("MAL Update failed.")
