@@ -358,6 +358,8 @@ class Fun(commands.Cog):
                     his = json.loads(h.meta)
                     if not his:
                         his = self.prepare_for_history(d)
+                    if orig_key_split[0] not in orig_key_split[0]:
+                        his[orig_key_split[0]] = 0
                     his[orig_key_split[0]] += 1
                     his['last_3_claims'] = his['last_3_claims'][:2]
                     his['last_3_claims'].insert(0, orig_key_split[0])
