@@ -114,6 +114,56 @@ return ret_7
 
         await ctx.send("Done. Jsons now empty. Removed all mp3 files from `tmp/amq/` too.")
 
+    @commands.check(checks.manage_roles_check)
+    @commands.cooldown(3, 5, commands.BucketType.user)
+    @commands.command(aliases=['gr'])
+    async def giveroles(self, ctx, *, role_and_users):
+        """Use this command to give roles to users.
+        Usage:
+        [p]gr @Slot1D4dj @User1 @User2 @User3
+        
+        Go to a public channel, like general or something and **first** ping the slot role
+        then ping all members that are in that PR (__don't send the message tho__)
+        press CTRL+A, CTRL+X to copy (cut) the message, go to #bot-duingeon, do
+        [p]gr *CTRL+V* and you're done
+
+        THIS COMMAND CAN ONLY BE USED IN THE BOT-DUNGEON"""
+
+        # first go to some channel and prepare a ping message of all users
+        # copy that and add them to users
+        # ping the role in role_to_give
+
+        if ctx.guild.id != 920092394945384508 and ctx.channel.id != 920101901339602944:
+            return await ctx.send("You can not use this command here")
+
+        argv = role_and_users.split(" ")
+
+        users = " ".join(argv[1:])
+
+        ids = users.replace("><", "> <").replace("<@", "").replace(">", "").replace("!", "").split(" ")
+
+        role_to_give = argv[1]
+
+        r = discord.utils.get(ctx.guild.roles, id=int(role_to_give.replace("<@&", "").replace(">", "")))
+        m = await ctx.channel.send("Giving roles")
+        for u in ids:
+            if not u or not u.isnumeric(): continue
+            user = ctx.guild.get_member(int(u))
+            if user:
+                try:
+                    await user.add_roles(r)
+                    print(f"Added {r} to {user}")
+                except:
+                    print(f"FAILED to add {r} to {user}")
+        try:
+            await m.delete()
+        except:
+            pass
+
+        print("Done!")
+        
+        
+
     @commands.check(checks.owner_check)
     @commands.command()
     async def amqmp3(self, ctx, start_from_page: int = -999, up_to_id: int = -999):
