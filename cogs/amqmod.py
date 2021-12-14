@@ -138,11 +138,11 @@ return ret_7
 
         argv = role_and_users.split(" ")
 
-        users = " ".join(argv[1:])
+        users = " ".join(argv[0:])
 
         ids = users.replace("><", "> <").replace("<@", "").replace(">", "").replace("!", "").split(" ")
 
-        role_to_give = argv[1]
+        role_to_give = argv[0]
 
         r = discord.utils.get(ctx.guild.roles, id=int(role_to_give.replace("<@&", "").replace(">", "")))
         m = await ctx.channel.send("Giving roles")
