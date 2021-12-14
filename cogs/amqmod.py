@@ -144,6 +144,7 @@ return ret_7
         ids = users.replace("><", "> <").replace("<@", "").replace("<@!", "").replace(">", "").replace("!", "").split(" ")
 
         role_to_give = argv[0]
+        ret = ""
 
         r = discord.utils.get(ctx.guild.roles, id=int(role_to_give.replace("<@&", "").replace(">", "")))
         m = await ctx.channel.send("Giving roles")
@@ -153,15 +154,15 @@ return ret_7
             if user:
                 try:
                     await user.add_roles(r)
-                    print(f"Added {r} to {user}")
+                    ret += f"Added {r} to {user.mention} ✅\n"
                 except:
-                    print(f"FAILED to add {r} to {user}")
+                    ret += f"FAILED to add {r} to {user.mention} ❌\n"
         try:
             await m.delete()
         except:
             pass
 
-        print("Done!")
+        await ctx.send(ret)
         
         
 
