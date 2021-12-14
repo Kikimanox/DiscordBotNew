@@ -140,7 +140,7 @@ return ret_7
 
         users = " ".join(argv[0:])
 
-        ids = users.replace("><", "> <").replace("<@", "").replace(">", "").replace("!", "").split(" ")
+        ids = users.replace("><", "> <").replace("<@", "").replace("<@!", "").replace(">", "").replace("!", "").split(" ")
 
         role_to_give = argv[0]
 
