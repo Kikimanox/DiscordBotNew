@@ -120,12 +120,13 @@ return ret_7
     async def giveroles(self, ctx, *, role_and_users):
         """Use this command to give roles to users.
         Usage:
-        [p]gr @Slot1D4dj @User1 @User2 @User3
+        `[p]gr @Slot1D4dj @User1 @User2 @User3`
         
-        Go to a public channel, like general or something and **first** ping the slot role
-        then ping all members that are in that PR (__don't send the message tho__)
-        press CTRL+A, CTRL+X to copy (cut) the message, go to #bot-duingeon, do
-        [p]gr *CTRL+V* and you're done
+        - Go to a public channel, like general or something and **first** ping the slot role
+        - Then ping all members that are in that PR (__don't send the message tho__)
+        - Press CTRL+A, CTRL+X to copy (cut) the message
+        - Go to #bot-duingeon, do `[p]gr` *CTRL+V* and you're done
+
 
         THIS COMMAND CAN ONLY BE USED IN THE BOT-DUNGEON"""
 
