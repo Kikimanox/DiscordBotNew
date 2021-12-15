@@ -270,7 +270,7 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
             lastPart = lastPart.replace(replace_with, 'min')
             midPart = midPart.replace(replace_with, 'min')
 
-        max_mid = 650
+        max_mid = 1500
         if len(midPart) > max_mid:
             return None, None, f"Reminder content is not allowed to be more than {max_mid} characters long. " \
                                f"(Yours was {len(midPart)} characters long)"
