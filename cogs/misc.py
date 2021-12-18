@@ -100,7 +100,7 @@ class Misc(commands.Cog):
             await ch.send(text)
             return await ctx.send(f'Posted in {ch.mention}')
 
-    @commands.check(checks.owner_check)
+    @commands.check(checks.admin_check)
     @commands.command(aliases=["qs"])
     async def quicksay(self, ctx, channel: discord.TextChannel, *, text: str = ""):
         """Say something in a specified channel quickly"""

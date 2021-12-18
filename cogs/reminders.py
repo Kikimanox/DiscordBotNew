@@ -332,7 +332,7 @@ class Reminders(commands.Cog):
         (after the ping the role will be unpinable again or left pingable if it was b4)
 
         Example: `[p]rro 1231432432 #movie-night Hey peeps with the role id 12314.... Movie time in 15h`
-        `[p]rro #general Muted lol you guys are muted at 15:30`
+        `[p]rro Muted #general lol you guys are muted at 15:30`
         """
         # r = discord.utils.get(ctx.guild.roles, id=int(roleID))
         if role.is_default():
