@@ -164,7 +164,7 @@ class Fun(commands.Cog):
                 em.set_footer(text='⚠ potentially nsfw image')
                 cnt = f'|| {usr.img_url} ||'
             else:
-                em.set_image(url=usr.img_url)
+                em.set_image(url="https://c.tenor.com/_4YgA77ExHEAAAAC/rick-roll.gif")
             if idd == ctx.author.id:
                 await ctx.send(embed=em, content=f'{ctx.author.mention} your {claim_type} for the day is:')
             else:
