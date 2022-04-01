@@ -347,7 +347,7 @@ class Fun(commands.Cog):
                     em.set_footer(text='⚠ potentially nsfw image')
                     # em.set_image(url=f'attachment://{file.filename}')
                 else:
-                    em.set_image(url=attachement.url)
+                    em.set_image(url="https://c.tenor.com/_4YgA77ExHEAAAAC/rick-roll.gif")
                 if not multi_claim:
                     await ctx.send(embed=em, content=f'\nYou can check claim history by using '
                                                      f'`{dutils.bot_pfx_by_gid(self.bot, ctx.guild.id)}'
