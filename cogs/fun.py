@@ -299,6 +299,29 @@ class Fun(commands.Cog):
 
         if d_key in self.just_claimed and self.just_claimed[d_key][0] == 0:
             d = self.data[c_type]
+            ######################## extra for raiha only
+            if ctx.guild.id in [599963725352534027, 202845295158099980]:  # raiha, pastebin
+                dabs = ["Hibiki Higoromo",
+                        "Tsuan",
+                        "Rinemu Kirari",
+                        "Mizuha Banouin",
+                        "Carte Á Jouer",
+                        "White Queen",
+                        "Kareha Banoui",
+                        "Retsumi Jugasak",
+                        "Ariadne Foxro",
+                        "Yuri Sagakure",
+                        "Yui Sagaku",
+                        "Oka Miyafuj",
+                        "Maya Yukish",
+                        "Cistus",
+                        "Panie Ibusu",
+                        "Isami Hijika",
+                        "Haraka Kagar"
+                        ]
+                for dab in dabs:
+                    d = {k: v for k, v in d.items() if not k.startswith(dab)}
+            ######################## / extra for raiha only
             u = UserSettings.get_or_none(user=ctx.author.id, type=c_type)
             while True:
                 orig_key = random.choice(list(d))

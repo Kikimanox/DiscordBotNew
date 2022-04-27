@@ -790,11 +790,11 @@ return ret_7
             out = f'tmp/amq/{upl["annID"]}_{upl["annSongId"]}_{ee}.mp3'
 
             if not os.path.exists(out) or (os.path.exists(out) and (out not in uploaded)):
-                await ctx.send(f"Creating **{out}** from <{upl[ll]}>")
+                fil = upl[ll].replace('files.', 'nl.') # actually just use NL now that it's active
+                await ctx.send(f"Creating **{out}** from <{fil}>")
                 if os.path.exists(out):
                     os.remove(out)  # we go agane
-                fil = upl[ll].replace('files.', 'nl.')
-                fil = upl[ll]  # better safe than sorry zzzzzzzzzzzzzz
+                # fil = upl[ll]  # better safe than sorry zzzzzzzzzzzzzz
                 # panic for no log basically | info
                 LOGLEVEL = "panic"
                 process = subprocess.Popen(
