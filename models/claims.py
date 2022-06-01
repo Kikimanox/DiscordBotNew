@@ -72,8 +72,10 @@ class ClaimsManager:
                         char_color = char['colorCode'][-6:]
                         char_key = f"{char_name}_{char_color}"
                         if char_key not in pics: pics[char_key] = [[], []]
-                        if v['rarity'] in [1, 2]:
-                            card_type = ['card_normal']
+                        #if v['rarity'] in [1, 2]:
+                        #    card_type = ['card_normal']
+                        if v['rarity'] <= 2:
+                            continue
                         if v['rarity'] > 2:
                             card_type = ['card_normal', 'card_after_training']
                         if v['type'] == 'kirafes':
