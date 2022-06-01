@@ -1,5 +1,7 @@
+import discord
 from peewee import *
 from datetime import datetime
+from utils.dataIOa import dataIOa
 
 DB = "data/claims.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
@@ -9,10 +11,12 @@ class BaseModel(Model):
     class Meta:
         database = db
 
+
 class UserSettings(BaseModel):
     user = IntegerField()
     type = CharField()
     nsfw = CharField(default='default')  # off | default
+
 
 class History(BaseModel):
     user = IntegerField()
@@ -47,6 +51,44 @@ class ClaimsManager:
                 raise Exception(f"Can't find the guild {G}")
             for k, v in config['saves_guild'][G]['categories'].items():
                 if k not in possible_for_bot: continue
+
+                # for i in {1..35}; do curl -v -X GET https://bestdori.com/api/characters/$i.json > $i.json; end; done
+                # curl -v -X GET https://bestdori.com/api/characters/main.3.json > characters.main.3.json (not needed)
+                # curl -v -X GET https://bestdori.com/api/cards/all.5.json > cards.all.5.json
+                if k == 'bandori':
+                    chars = {k: v for e in [{i: dataIOa.load_json(f'data/bandori/{i}.json')} for i in range(1, 36)] for
+                             k, v in e.items()}
+                    cards = dataIOa.load_json(f'data/bandori/cards.all.5.json')
+                    d = 0
+                    pics = {}
+                    for _, v in cards.items():
+                        url = ""
+                        country_codes = {0: 'jp', 1: 'en', 2: 'tw', 3: 'cn', 4: 'kr'}
+                        country = country_codes[[i for i, el in enumerate(v['releasedAt']) if el is not None][0]]
+                        card_type = []
+                        asset = v['resourceSetName']
+                        char = chars[v['characterId']]
+                        char_name = char['characterName'][1]
+                        char_color = char['colorCode'][-6:]
+                        char_key = f"{char_name}_{char_color}"
+                        if char_key not in pics: pics[char_key] = [[], []]
+                        if v['rarity'] in [1, 2]:
+                            card_type = ['card_normal']
+                        if v['rarity'] > 2:
+                            card_type = ['card_normal', 'card_after_training']
+                        if v['type'] == 'kirafes':
+                            card_type.remove('card_normal')
+
+                        for ct in card_type:
+                            url = f'https://bestdori.com/assets/{country}/characters/resourceset/{asset}_rip/{ct}.png'
+
+                            pics[char_key][0].append([type('obj', (object,), {'url': url}), False])
+                            # todo: add to pics
+                            d = 0
+
+                    ret[k] = pics
+                    continue
+
                 cat = g.get_channel(v)
                 pics = {}
                 for c in cat.channels:
