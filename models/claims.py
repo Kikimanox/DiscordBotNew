@@ -78,7 +78,7 @@ class ClaimsManager:
                             continue
                         if v['rarity'] > 2:
                             card_type = ['card_normal', 'card_after_training']
-                        if v['type'] == 'kirafes':
+                        if v['type'] in ['kirafes', 'birthday']:
                             card_type.remove('card_normal')
 
                         for ct in card_type:
