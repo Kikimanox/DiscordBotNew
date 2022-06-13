@@ -353,6 +353,8 @@ class Ignorethis(commands.Cog):
             dataIOa.save_json(path, clubs_data)
 
             message = f"{ctx.author.mention} has joined the club {club_name}"
+
+            successful_join = True
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
@@ -360,16 +362,24 @@ class Ignorethis(commands.Cog):
 
             message = f'{emote} No such club found, did you perhaps mean `{suggestion}`'
 
+            successful_join = False
+
         current_guild = ctx.guild.id
         current_message = ctx.message
+
+        if successful_join:
+            current_reaction = '\U0001f44d'
+        else:
+            current_reaction = '\U0000274c'
+
         if current_guild == 695200821910044783:
             bot_channel = self.bot.get_guild(695200821910044783).get_channel(695297906529271888)
             await bot_channel.send(message)
-            await current_message.add_reaction('\U0001f44d')
+            await current_message.add_reaction(current_reaction)
         else:
             await ctx.send(message)
 
-            await current_message.add_reaction('\U0000274c')
+            await current_message.add_reaction(current_reaction)
 
     @commands.check(checks.light_server_check)
     @commands.command(aliases=["leave"])
