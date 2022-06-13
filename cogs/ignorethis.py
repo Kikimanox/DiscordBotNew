@@ -332,7 +332,11 @@ class Ignorethis(commands.Cog):
 
     @commands.check(checks.light_server_check)
     @commands.command(aliases=["join"])
-    async def joinclub(self, ctx, club_name):
+    async def joinclub(
+            self,
+            ctx: commands.Context,
+            club_name
+    ):
         """Join a club"""
         club_name = club_name.lower()
 
@@ -347,12 +351,21 @@ class Ignorethis(commands.Cog):
                                       f"You are already in this club")
             clubs_data[club_name]['members'].append(ctx.author.id)
             dataIOa.save_json(path, clubs_data)
-            await ctx.send(f"{ctx.author.mention} has joined the club {club_name}")
+
+            message = f"{ctx.author.mention} has joined the club {club_name}"
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
             emote = "💢" if not emote_test else str(emote_test)
-            await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
+
+            message = f'{emote} No such club found, did you perhaps mean `{suggestion}`'
+
+        current_guild = ctx.guild.id
+        if current_guild == 695200821910044783:
+            bot_channel = self.bot.get_guild(695200821910044783).get_channel(695297906529271888)
+            await bot_channel.send(message)
+        else:
+            await ctx.send(message)
 
     @commands.check(checks.light_server_check)
     @commands.command(aliases=["leave"])
@@ -443,7 +456,7 @@ class Ignorethis(commands.Cog):
             all_ids = []
             for club_name in clubs:
                 club = clubs_data[club_name]
-                #mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
+                # mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
                 mems = [u for u in club['members'] if ctx.guild.get_member(u)]
                 mems_all.append({"clb": club_name, "membs": sorted(mems)})
                 all_ids = list({*all_ids, *mems})
@@ -461,7 +474,9 @@ class Ignorethis(commands.Cog):
                 for c in cbs:
                     m = ""
                     if not just_club:
-                        m = ", ".join([f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}' for u in c['membs'] if ctx.guild.get_member(u)])
+                        m = ", ".join([
+                                          f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}'
+                                          for u in c['membs'] if ctx.guild.get_member(u)])
                     rs.append(f'**__{c["clb"]}__** {m}')
                 res.append('\n'.join(rs))
 
@@ -471,7 +486,6 @@ class Ignorethis(commands.Cog):
             if len(res) > 100:
                 return await ctx.send("There's more than 100 different permutations. Too much!")
             await dutils.print_hastebin_or_file(ctx, '\n\n'.join(res), just_file=True)
-
 
     @staticmethod
     def check_if_is_ok_for_all(permutation, uids, max_gaps, ignore):
@@ -514,7 +528,8 @@ class Ignorethis(commands.Cog):
 
                 atts = [await a.to_file(spoiler=a.is_spoiler()) for a in message.attachments]
                 await self.gallery_wh.send(avatar_url=message.author.avatar_url,
-                                           username=f'{message.author.name} in #{message.channel.name}'[:32], files=atts, wait=False)
+                                           username=f'{message.author.name} in #{message.channel.name}'[:32],
+                                           files=atts, wait=False)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event):
