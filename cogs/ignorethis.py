@@ -361,14 +361,15 @@ class Ignorethis(commands.Cog):
             message = f'{emote} No such club found, did you perhaps mean `{suggestion}`'
 
         current_guild = ctx.guild.id
+        current_message = ctx.message
         if current_guild == 695200821910044783:
             bot_channel = self.bot.get_guild(695200821910044783).get_channel(695297906529271888)
             await bot_channel.send(message)
-
-            current_message = ctx.message
             await current_message.add_reaction('\U0001f44d')
         else:
             await ctx.send(message)
+
+            await current_message.add_reaction('\U0000274c')
 
     @commands.check(checks.light_server_check)
     @commands.command(aliases=["leave"])
