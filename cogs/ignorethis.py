@@ -364,6 +364,9 @@ class Ignorethis(commands.Cog):
         if current_guild == 695200821910044783:
             bot_channel = self.bot.get_guild(695200821910044783).get_channel(695297906529271888)
             await bot_channel.send(message)
+
+            current_message = ctx.message
+            await current_message.add_reaction('\U0001f44d')
         else:
             await ctx.send(message)
 
