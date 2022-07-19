@@ -259,7 +259,7 @@ class Moderation(commands.Cog):
                         return await ctx.send(f"Invalid extra argument `{inv}` "
                                               f"(or you have "
                                               f"a space before `=`"
-                                              f" somewhere)\n{'' if inv is not ' ' else f'See near `{near}`'}")
+                                              f" somewhere)\n{'' if inv != ' ' else f'See near `{near}`'}")
             near = near.replace('@', '@\u200b')
             if was_eq: return await ctx.send(f"You forgot to close a `)` at `{near}`")
             if 'after=' in extra or 'before=' in extra:

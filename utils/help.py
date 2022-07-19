@@ -66,7 +66,7 @@ class Help(DefaultHelpCommand):
     def get_ending_note(self):
         # command_name = self.context.invoked_with
         return "Type {0}help <command> for more info on a command.\n" \
-               "You can also type {0}help <category> for more info on a category.".format(self.clean_prefix)
+               "You can also type {0}help <category> for more info on a category.".format(self.context.clean_prefix)
 
     def get_command_signature(self, command):
         """Retrieves the signature portion of the help page.
@@ -163,10 +163,10 @@ class Help(DefaultHelpCommand):
                 # skip aliases
                 continue
 
-            new_short_doc = command.short_doc.replace('[p]', self.clean_prefix)
+            new_short_doc = command.short_doc.replace('[p]', self.context.clean_prefix)
 
             if self.is_cog() or self.is_bot():
-                name = '{0}{1}'.format(self.clean_prefix, name)
+                name = '{0}{1}'.format(self.context.clean_prefix, name)
 
             if len(entries + '**{0}**  -  {1}\n'.format(name, new_short_doc)) > 1000:
                 list_entries.append(entries)
@@ -198,7 +198,7 @@ class Help(DefaultHelpCommand):
 
     @property
     def avatar(self):
-        return str(self.context.bot.user.avatar_url_as(format='png'))
+        return self.context.bot.user.avatar.with_format("png").url
 
     @property
     def color(self):
@@ -251,10 +251,10 @@ class Help(DefaultHelpCommand):
 
             # <long doc> section
             if command.help:
-                cmd_help = command.help.replace('[p]', self.clean_prefix)
+                cmd_help = command.help.replace('[p]', self.context.clean_prefix)
                 name = '{0}'.format(cmd_help.split('\n\n')[0])
                 name_length = len(name)
-                name = name.replace('[p]', self.clean_prefix)
+                name = name.replace('[p]', self.context.clean_prefix)
                 value = cmd_help[name_length:]
                 if value == '':
                     name = '{0}'.format(cmd_help.split('\n')[0])
