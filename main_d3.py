@@ -12,6 +12,7 @@ import utils.timeStuff as tutils
 import re
 from datetime import timedelta
 import traceback
+from collections import Counter, defaultdict
 import os
 from discord.ext.commands.help import DefaultHelpCommand
 import sys
@@ -75,8 +76,26 @@ bot.just_banned_by_bot = {}
 bot.just_kicked_by_bot = {}
 bot.just_muted_by_bot = {}
 bot.banned_cuz_blacklist = {}
+
+### this should not be here repeated, check later why this is being annoying
 bot.blacklist = {}
 bot.banlist = {}
+bot.command_stats = Counter()
+
+# in case of even further spam, add a cooldown mapping
+# for people who excessively spam commands
+bot.spam_control = {
+    -1: commands.CooldownMapping.from_cooldown(6, 8, commands.BucketType.user),
+    0: commands.CooldownMapping.from_cooldown(7, 12, commands.BucketType.user),
+    1: commands.CooldownMapping.from_cooldown(4, 4, commands.BucketType.user),
+    2: commands.CooldownMapping.from_cooldown(3, 4, commands.BucketType.user),
+    3: commands.CooldownMapping.from_cooldown(3, 4, commands.BucketType.user)
+}
+
+# A counter to auto-ban frequent spammers
+# Triggering the rate limit 5 times in a row will auto-ban the user from the bot.
+bot._auto_spam_count = Counter()
+### ^^^ this should not be here repeated, check later why this is being annoying
 
 bot.emote_servers_tmp = [
     777942981197299732,
