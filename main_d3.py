@@ -75,6 +75,8 @@ bot.just_banned_by_bot = {}
 bot.just_kicked_by_bot = {}
 bot.just_muted_by_bot = {}
 bot.banned_cuz_blacklist = {}
+bot.blacklist = {}
+bot.banlist = {}
 
 bot.emote_servers_tmp = [
     777942981197299732,
