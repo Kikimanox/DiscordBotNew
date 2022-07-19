@@ -89,7 +89,7 @@ class Help(DefaultHelpCommand):
             alias = fmt
         else:
             alias = command.name if not parent else parent + ' ' + command.name
-        return '%s%s %s' % (self.clean_prefix, alias, command.signature)
+        return '%s%s %s' % (self.context.clean_prefix, alias, command.signature)
 
     def has_subcommands(self):
         """:class:`bool`: Specifies if the command has subcommands."""
