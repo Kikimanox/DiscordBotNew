@@ -1056,7 +1056,7 @@ class Serversetup(commands.Cog):
                 sup = self.bot.from_serversetup[member.guild.id]
                 if sup['leavejoin']:
                     icon_url = member.avatar.url if 'gif' in str(member.avatar.url).split('.')[-1] else str(
-                        member.avatar_url_as(format="png"))
+                        member.avatar.replace(format="png").url)
 
                     embed = Embed(color=0x5ace47, title=f'{str(member.name)} has joined.',
                                   description=f'📈 {member.mention} (id: {member.id})')
