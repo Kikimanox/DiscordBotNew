@@ -27,8 +27,8 @@ class Personal(commands.Cog):
         """
         """Get user avatar. Usage:\n.avatar or \n.avatar @user"""
         if not user: user = ctx.author
-        if 'gif' in str(user.avatar_url).split('.')[-1]:
-            desc = f"[Gif link]({user.avatar_url})"
+        if 'gif' in str(user.avatar.url).split('.')[-1]:
+            desc = f"[Gif link]({user.avatar.url})"
         else:
             desc = f"Links: [png]({user.avatar_url_as(format='png')}) | " \
                    f"[jpg]({user.avatar_url_as(format='jpg')}) | " \
@@ -36,7 +36,7 @@ class Personal(commands.Cog):
         em = Embed(color=user.color,
                    description=desc,
                    title=f'Avatar for {str(user)}')
-        em.set_image(url=user.avatar_url)
+        em.set_image(url=user.avatar.url)
         await ctx.send(embed=em)
 
     @commands.command()
@@ -53,9 +53,9 @@ class Personal(commands.Cog):
         embed = Embed(color=member.color, description=member.mention,
                       timestamp=datetime.datetime.utcfromtimestamp(datetime.datetime.utcnow().timestamp()))
 
-        embed.set_thumbnail(url=member.avatar_url)
+        embed.set_thumbnail(url=member.avatar.url)
         embed.set_author(name=member.name,
-                         icon_url=member.avatar_url)
+                         icon_url=member.avatar.url)
         embed.set_footer(text=f'Id: {member.id}')
         embed.add_field(name="Status", value=member.status, inline=True)
         embed.add_field(name="Joined", value=member.joined_at.strftime('%c'), inline=True)

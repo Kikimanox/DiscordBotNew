@@ -127,7 +127,7 @@ class Fun(commands.Cog):
                 cds.append(f"{claim} - {e}")
 
         if embeds and isinstance(hook, discord.Webhook):
-            await hook.send(avatar_url=ctx.author.avatar_url, username=f'Multi claim for {ctx.author.name}'[:32],
+            await hook.send(avatar_url=ctx.author.avatar.url, username=f'Multi claim for {ctx.author.name}'[:32],
                             wait=False, embeds=embeds, content=f'{ctx.author.mention} your multi claim:\n' +
                                                                '\n'.join(cds))
         else:

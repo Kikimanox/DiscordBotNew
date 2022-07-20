@@ -87,7 +87,7 @@ def getEmbedFromMsg(msg):
                                f'displaying only the first one)**')
         em.set_image(url=msg.attachments[0].url)
 
-    em.set_author(name=msg.author.name, icon_url=msg.author.avatar_url)
+    em.set_author(name=msg.author.name, icon_url=msg.author.avatar.url)
     if not hasattr(msg.channel, 'name'):
         em.set_footer(text='Direct message')
     else:
@@ -364,7 +364,7 @@ async def dm_log_try_setup(bot):
                                                    reason="Logging webhook was missing or renamed")
                     bot.config['BOT_DM_LOG']['HOOK'] = hook
                     # set the webhooks pfp
-                    url = str(bot.user.avatar_url).replace('.webp', '.png')
+                    url = str(bot.user.avatar.url).replace('.webp', '.png')
                     tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
                     fnn = await saveFile(url, 'tmp', tf)  # copy from dutils because circular import
                     with open(fnn, 'rb') as fp:
@@ -389,7 +389,7 @@ async def dm_log_try_setup(bot):
 
 
 def icon_url(user):
-    return user.avatar_url if 'gif' in str(user.avatar_url).split('.')[-1] else str(user.avatar_url_as(format="png"))
+    return user.avatar.url if 'gif' in str(user.avatar_url).split('.')[-1] else str(user.avatar_url_as(format="png"))
 
 
 async def dm_log(bot, message: discord.Message):
@@ -411,7 +411,7 @@ async def dm_log(bot, message: discord.Message):
             if len(descs) > 1:
                 a_title += f' {i}/{len(descs)}'
                 i += 1
-            icon_url = message.author.avatar_url if 'gif' in str(message.author.avatar_url).split('.')[-1] else str(
+            icon_url = message.author.avatar.url if 'gif' in str(message.author.avatar.url).split('.')[-1] else str(
                 message.author.avatar_url_as(format="png"))
             em = Embed(description=desc)
             em.set_author(name=a_title, icon_url=icon_url)
@@ -903,7 +903,7 @@ async def log(bot, title=None, txt=None, author=None,
             for txt in desc:
                 em = discord.Embed(description=txt, color=colorr)
                 if author:
-                    iconn_url = author.avatar_url if 'gif' in str(author.avatar_url).split('.')[-1] else str(
+                    iconn_url = author.avatar_url if 'gif' in str(author.avatar.url).split('.')[-1] else str(
                         author.avatar_url_as(format="png"))
                     em.set_author(name=f"{title}", icon_url=iconn_url)
                 em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')}")
@@ -971,7 +971,7 @@ async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=
 
 
 def get_icon_url_for_member(member):
-    return member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else \
+    return member.avatar_url if 'gif' in str(member.avatar.url).split('.')[-1] else \
         str(member.avatar_url_as(format="png"))
 
 

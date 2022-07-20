@@ -623,7 +623,7 @@ class Serversetup(commands.Cog):
                                                                                     "raid")
                 db_wmsg.backup_hook = hook.id
                 db_wmsg.save()
-                url = str(ctx.bot.user.avatar_url).replace('.webp', '.png')
+                url = str(ctx.bot.user.avatar.url).replace('.webp', '.png')
                 tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
                 fnn = await dutils.saveFile(url, 'tmp', tf)  # copy from dutils because circular import
                 with open(fnn, 'rb') as fp:
@@ -1030,7 +1030,7 @@ class Serversetup(commands.Cog):
                                 self.bot.from_serversetup[member.guild.id]['welcomemsg']['backup_hook'] = hook
                                 send_with = hook
                                 self.bot.logger.info(f'Newest hook id {hook.id}')
-                                url = str(self.bot.user.avatar_url).replace('.webp', '.png')
+                                url = str(self.bot.user.avatar.url).replace('.webp', '.png')
                                 tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
                                 fnn = await dutils.saveFile(url, 'tmp', tf)  # copy from dutils because circular import
                                 with open(fnn, 'rb') as fp:
@@ -1055,7 +1055,7 @@ class Serversetup(commands.Cog):
             try:  # log it
                 sup = self.bot.from_serversetup[member.guild.id]
                 if sup['leavejoin']:
-                    icon_url = member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else str(
+                    icon_url = member.avatar.url if 'gif' in str(member.avatar.url).split('.')[-1] else str(
                         member.avatar_url_as(format="png"))
 
                     embed = Embed(color=0x5ace47, title=f'{str(member.name)} has joined.',
