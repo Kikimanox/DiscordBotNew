@@ -389,7 +389,8 @@ async def dm_log_try_setup(bot):
 
 
 def icon_url(user):
-    return user.avatar.url if 'gif' in str(user.avatar_url).split('.')[-1] else str(user.avatar.replace(format="png").url)
+    return user.avatar.url if 'gif' in str(user.avatar_url).split('.')[-1] else str(
+        user.avatar.replace(format="png").url)
 
 
 async def dm_log(bot, message: discord.Message):

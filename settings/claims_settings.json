@@ -6,10 +6,9 @@
                 "bride": 729356625370153092,
                 "spirit": 729356823802675281,
                 "oddity": 729356849404575805,
-                "kanojo": 732391287566630963,
-                "bandori": 1
+                "kanojo": 732391287566630963
             }
         }
     },
-    "use_these": ["bandori", "bride"]
+    "use_these": ["spirit"]
 }
