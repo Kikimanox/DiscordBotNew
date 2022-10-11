@@ -74,12 +74,12 @@ async def custom_role_is_booster_check(ctx):
     return False
 
 
-async def light_server_check(ctx):
-    if ctx.guild.id != 464231424820772866: return False
+async def onk_server_check(ctx):
+    if ctx.guild.id != 695200821910044783: return False
     return True
 
 
-async def light_server_check_admin(ctx):
-    if ctx.guild.id != 464231424820772866: return False
+async def onk_server_check_admin(ctx):
+    if ctx.guild.id != 695200821910044783: return False
     return ctx.author.id == ctx.bot.config['OWNER_ID'] or (
             isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator)

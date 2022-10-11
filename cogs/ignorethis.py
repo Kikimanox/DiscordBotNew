@@ -17,10 +17,10 @@ from utils.SimplePaginator import SimplePaginator
 class Ignorethis(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.verification_channel_id = 632318167364009985
+        self.verification_channel_id = 931192723447349268
         self.gallery_wh = None
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command()
     async def listclubsraw(self, ctx, *includes: discord.Member):
         """Display all clubs TITLES
@@ -56,7 +56,7 @@ class Ignorethis(commands.Cog):
 
         await SimplePaginator(extras=embeds).paginate(ctx)
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command()
     async def createclub(self, ctx, club_name, *, description):
         """Create a new club
@@ -93,7 +93,7 @@ class Ignorethis(commands.Cog):
         await m.add_reaction('✅')
         await m.add_reaction('❌')
 
-    @commands.check(checks.light_server_check_admin)
+    @commands.check(checks.onk_server_check_admin)
     @commands.command()
     async def createclubs(self, ctx, *, clubs):
         """Multiple clubs"""
@@ -122,7 +122,7 @@ class Ignorethis(commands.Cog):
         else:
             await ctx.send("Cancelling.")
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command()
     async def clubinfo(self, ctx, club_name):
         """Display info for a club if it exists"""
@@ -147,7 +147,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command()
     async def listclubs(self, ctx, *includes: discord.Member):
         """Display all clubs
@@ -227,7 +227,7 @@ class Ignorethis(commands.Cog):
             e.title = str(e.title).replace("[MAX]", str(len(embeds)))
         return embeds
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command(aliases=["ping"])
     async def pingclub(self, ctx, club_name, *, rest="Anything else that you'd like to add"):
         """Ping a club"""
@@ -262,7 +262,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command(aliases=["ping2"])
     async def pingclubs(self, ctx, *, clubs_and_rest_text):
         """Ping multiple clubs, please see detailed usage
@@ -330,7 +330,7 @@ class Ignorethis(commands.Cog):
                 return False
         return True
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command(aliases=["join"])
     async def joinclub(self, ctx, club_name):
         """Join a club"""
@@ -354,7 +354,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.light_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.command(aliases=["leave"])
     async def leaveclub(self, ctx, club_name):
         """Leave a club"""
@@ -379,7 +379,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.light_server_check_admin)
+    @commands.check(checks.onk_server_check_admin)
     @commands.command()
     async def deleteclubs(self, ctx, *, clubs_to_delete):
         """Delete clubs, seperate with a space if deleting many"""
