@@ -3,7 +3,7 @@ import time
 import discord
 import pyimgur
 from discord.ext import commands
-from discord import Embed, abc, File, Member
+from discord import Embed, abc, File, Member, Client, Reaction
 import aiohttp
 import datetime
 import asyncio
@@ -150,6 +150,16 @@ async def on_ready():
             print("couldn't send restarted message to channel.")
         finally:
             os.remove("restart.json")
+
+
+@bot.event
+async def on_reaction_add(reaction: Reaction, user: Client):
+    if user != bot.user:
+        x_mark = '\U0000274c'
+        if str(reaction.emoji) == x_mark:
+            if reaction.message.author.id == bot.user.id:
+                message = reaction.message
+                await message.delete()
 
 
 def exit_bot(self):
@@ -302,7 +312,7 @@ async def on_message(message):
     if message.author.bot:
         return
 
-    #TEMPORARY
+    # TEMPORARY
     if message.guild and message.guild.id == 442952794480050177:
         if message.channel.id == 693792405882929173:  # verification
             try:
