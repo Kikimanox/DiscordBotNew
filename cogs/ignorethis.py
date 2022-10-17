@@ -166,16 +166,16 @@ class Ignorethis(commands.Cog):
                    description=f'**Club Name:** {club_name}\n'
                                f'**Creator:** {ctx.author.mention} ({ctx.author.name}) id: {ctx.author.id}\n'
                                f'**Description:** {description}')
-        em.set_footer(text='Press the appropriate emote to verify or deny it')
-        m = await ver_ch.send(embed=em)
+        await ver_ch.send(embed=em)
 
         view = ConfirmCancelView(timeout=None)
         view_message = await ver_ch.send(view=view)
         await view.wait()
+        await view_message.delete()
 
         club_creator = ctx.author
         club_creator_id = club_creator.id
-        await view_message.delete()
+
         if view.value is True:
 
             path = 'data/clubs.json'
