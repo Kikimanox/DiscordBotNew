@@ -4,7 +4,7 @@ from difflib import SequenceMatcher
 from typing import List
 
 from discord import Embed, utils, Member, Webhook, app_commands, Interaction
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -33,9 +33,11 @@ class Ignorethis(commands.Cog):
         self.gallery_wh = None
 
         self.clubs_path = 'data/clubs.json'
-        self.initialize_clubs()
+
+        self.club_update_info.start()
 
     def initialize_clubs(self):
+        logger.info("initialized the clubs")
         self.club_data.clear()
         dataIOa.create_file_if_doesnt_exist(self.clubs_path, '{}')
         clubs_data = dataIOa.load_json(self.clubs_path)
@@ -57,6 +59,11 @@ class Ignorethis(commands.Cog):
         3rd sorted alphabetically
         """
         self.club_data = sorted(temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name))
+
+    @tasks.loop(hours=24)
+    async def club_update_info(self):
+        logger.info("Updating the clubs")
+        self.initialize_clubs()
 
     async def club_autocomplete(
             self,
