@@ -41,12 +41,22 @@ class Ignorethis(commands.Cog):
         clubs_data = dataIOa.load_json(self.clubs_path)
 
         values: dict
+        temp_data: List[ClubData] = []
         for key, values in clubs_data.items():
             value = ClubData(
                 club_name=key,
                 club_data=values
             )
-            self.club_data.append(value)
+            temp_data.append(value)
+
+        """
+        Multiple sort, since the reverse=False we need to reverse the member count and pings too.
+        Now it would sort with:
+        1st highest number of members
+        2nd highest number of pings 
+        3rd sorted alphabetically
+        """
+        self.club_data = sorted(temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name))
 
     async def club_autocomplete(
             self,

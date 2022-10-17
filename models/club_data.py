@@ -10,6 +10,7 @@ class ClubData:
     creator_name: Optional[str] = ""
     description: Optional[str] = ""
     pings: Optional[int] = 0
+    member_count: int = 0
     members: List[int] = field(default_factory=list)
 
     def __post_init__(self):
@@ -19,6 +20,7 @@ class ClubData:
         self.description = data.get("desc")
         self.pings = data.get("pings")
         self.members = data.get("members")
+        self.member_count = len(self.members)
 
     def check_if_author_is_in_the_club(
             self,
