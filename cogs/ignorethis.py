@@ -8,6 +8,7 @@ from discord.ext import commands
 
 import utils.discordUtils as dutils
 from models.club_data import ClubData
+from models.views import ConfirmCancelView
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 
@@ -147,19 +148,50 @@ class Ignorethis(commands.Cog):
         if club_name in clubs_data:
             return await ctx.send('💢 A club with this name already exists')
 
+        await self.create_club_approval(ctx=ctx, club_name=club_name, description=description)
+
+    async def create_club_approval(
+            self,
+            ctx: commands.Context,
+            club_name: str,
+            description: str
+    ):
         ver_ch = ctx.guild.get_channel_or_thread(self.verification_channel_id)
         if not ver_ch:
             return await ctx.send("Can't find verification channel (check the id for that)")
-        await ctx.send("The club has been created, waiting for server staff aproval, you will be notified in dms"
-                       " once the club has been verified or denied.")
+        club_created_message = await ctx.send(
+            "The club has been created, waiting for server staff aproval, you will be notified in dms"
+            " once the club has been verified or denied.")
         em = Embed(title='A new club has been created', color=self.bot.config['BOT_DEFAULT_EMBED_COLOR'],
                    description=f'**Club Name:** {club_name}\n'
                                f'**Creator:** {ctx.author.mention} ({ctx.author.name}) id: {ctx.author.id}\n'
                                f'**Description:** {description}')
         em.set_footer(text='Press the appropriate emote to verify or deny it')
         m = await ver_ch.send(embed=em)
-        await m.add_reaction('✅')
-        await m.add_reaction('❌')
+
+        view = ConfirmCancelView(timeout=None)
+        view_message = await ver_ch.send(view=view)
+        await view.wait()
+
+        club_creator = ctx.author
+        club_creator_id = club_creator.id
+        await view_message.delete()
+        if view.value is True:
+
+            path = 'data/clubs.json'
+            dataIOa.create_file_if_doesnt_exist(path, '{}')
+            clubs_data = dataIOa.load_json(path)
+            clubs_data[club_name] = {'creator': club_creator_id, 'desc': description,
+                                     'members': [club_creator_id], 'pings': 0}
+            dataIOa.save_json(path, clubs_data)
+
+            await club_creator.send(f'The club **{club_name}** has been approved ✅')
+            await club_created_message.edit(content=f'The club **{club_name}** has been '
+                                                    f'approved by {view.member_click} ✅')
+        else:
+            await club_creator.send(f'The club **{club_name}** has been denied ❌')
+            await club_created_message.edit(content=f'The club **{club_name}** has been '
+                                                    f'denied by {view.member_click} ❌')
 
     # @commands.check(checks.onk_server_check_admin)
     @commands.command()
