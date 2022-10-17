@@ -576,12 +576,19 @@ async def shutdown(ctx):
 
 
 @bot.event
-async def on_command_error(ctx, error):
+async def on_command_error(
+        ctx: commands.Context,
+        error
+):
     if not bot.is_ready():
         await bot.wait_until_ready()
     error = getattr(error, "original", error)
     if isinstance(error, commands.errors.CommandNotFound):
         pass
+    elif isinstance(error, commands.MissingRole):
+        await ctx.send(f"You don't have the right role to invoke the command")
+    elif isinstance(error, app_commands.MissingRole):
+        await ctx.send(f"You don't have the right role to invoke the command")
     elif isinstance(error, commands.CommandInvokeError):
         # print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
         logger.info("Command invoke error exception in command '{}', "

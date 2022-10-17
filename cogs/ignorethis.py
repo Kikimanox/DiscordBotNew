@@ -6,6 +6,7 @@ from typing import List
 from discord import Embed, utils, Member, Webhook, app_commands, Interaction
 from discord.ext import commands
 
+import utils.checks as checks
 import utils.discordUtils as dutils
 from models.club_data import ClubData
 from models.views import ConfirmCancelView
@@ -229,7 +230,7 @@ class Ignorethis(commands.Cog):
             await club_created_message.edit(content=f'The club **{club_name}** has been '
                                                     f'denied by {view.member_click} ❌')
 
-    # @commands.check(checks.onk_server_check_admin)
+    @commands.check(checks.onk_server_check_admin)
     @commands.command()
     async def createclubs(self, ctx: commands.Context, *, clubs):
         """Multiple clubs"""
@@ -566,7 +567,13 @@ class Ignorethis(commands.Cog):
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
     # @commands.check(checks.onk_server_check_admin)
-    @commands.command()
+    @commands.hybrid_command()
+    @commands.has_role(
+        695297422724694016
+    )
+    @app_commands.checks.has_role(
+        695297422724694016
+    )
     async def deleteclubs(self, ctx: commands.Context, *, clubs_to_delete):
         """Delete clubs, seperate with a space if deleting many"""
         path = 'data/clubs.json'
