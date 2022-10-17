@@ -11,7 +11,7 @@ import time
 import traceback
 
 import discord
-from discord import Embed, Client, Reaction, VoiceClient, app_commands
+from discord import Embed, Client, Reaction, VoiceClient, app_commands, Activity, ActivityType
 from discord.ext import commands
 
 import utils.discordUtils as dutils
@@ -158,6 +158,9 @@ async def on_ready():
     if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
         await bot.load_extension("cogs.manga")
         await bot.load_extension("cogs.bets")
+
+    activity = Activity(name=f"\"{Prefix}\" for the Prefix", type=ActivityType.listening)
+    await bot.change_presence(activity=activity)
 
 
 @bot.event
