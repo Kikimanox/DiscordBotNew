@@ -5,7 +5,6 @@ from difflib import SequenceMatcher
 from discord import Embed, utils, Member, Webhook
 from discord.ext import commands
 
-import utils.checks as checks
 import utils.discordUtils as dutils
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
@@ -13,6 +12,8 @@ from utils.dataIOa import dataIOa
 logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
 
+
+# TODO return back the command check
 
 class Ignorethis(commands.Cog):
     def __init__(
@@ -23,7 +24,7 @@ class Ignorethis(commands.Cog):
         self.verification_channel_id = 931192723447349268
         self.gallery_wh = None
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command()
     async def listclubsraw(self, ctx, *includes: Member):
         """Display all clubs TITLES
@@ -59,7 +60,7 @@ class Ignorethis(commands.Cog):
 
         await SimplePaginator(extras=embeds).paginate(ctx)
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command()
     async def createclub(self, ctx, club_name, *, description):
         """Create a new club
@@ -95,7 +96,7 @@ class Ignorethis(commands.Cog):
         await m.add_reaction('✅')
         await m.add_reaction('❌')
 
-    @commands.check(checks.onk_server_check_admin)
+    # @commands.check(checks.onk_server_check_admin)
     @commands.command()
     async def createclubs(self, ctx, *, clubs):
         """Multiple clubs"""
@@ -124,7 +125,7 @@ class Ignorethis(commands.Cog):
         else:
             await ctx.send("Cancelling.")
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command()
     async def clubinfo(self, ctx, club_name):
         """Display info for a club if it exists"""
@@ -149,7 +150,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command()
     async def listclubs(self, ctx, *includes: Member):
         """Display all clubs
@@ -229,7 +230,7 @@ class Ignorethis(commands.Cog):
             e.title = str(e.title).replace("[MAX]", str(len(embeds)))
         return embeds
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["ping"])
     async def pingclub(self, ctx, club_name, *, rest="Anything else that you'd like to add"):
         """Ping a club"""
@@ -265,7 +266,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["ping2"])
     async def pingclubs(self, ctx, *, clubs_and_rest_text):
         """Ping multiple clubs, please see detailed usage
@@ -334,7 +335,7 @@ class Ignorethis(commands.Cog):
                 return False
         return True
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["join"])
     async def joinclub(self, ctx, club_name):
         """Join a club"""
@@ -358,7 +359,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.onk_server_check)
+    # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["leave"])
     async def leaveclub(self, ctx, club_name):
         """Leave a club"""
@@ -383,7 +384,7 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    @commands.check(checks.onk_server_check_admin)
+    # @commands.check(checks.onk_server_check_admin)
     @commands.command()
     async def deleteclubs(self, ctx, *, clubs_to_delete):
         """Delete clubs, seperate with a space if deleting many"""
@@ -408,7 +409,7 @@ class Ignorethis(commands.Cog):
         else:
             await ctx.send("Cancelling.")
 
-    @commands.check(checks.admin_check)
+    # @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
     async def get_groups(self, ctx, max_gaps: int, *, clubs_and_rest_text):
         """Get groups so there is no gaps use | to ignore people (more than 100 (-100) for just clubs)"""
