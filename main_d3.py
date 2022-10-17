@@ -11,7 +11,7 @@ import time
 import traceback
 
 import discord
-from discord import Embed, Client, Reaction, VoiceClient
+from discord import Embed, Client, Reaction, VoiceClient, app_commands
 from discord.ext import commands
 
 import utils.discordUtils as dutils
@@ -668,6 +668,23 @@ async def after_any_command(ctx):
     if not bot.is_ready():
         await bot.wait_until_ready()
     bot.before_run_cmd -= 1
+
+
+@bot.hybrid_command(
+    description="Sync the slash commands."
+)
+@app_commands.describe(
+    guild_id="The guild id of the server to be sync. Blank option means all servers sync"
+)
+async def synctree(
+        ctx: commands.Context,
+        guild_id: str = None
+):
+    if not guild_id:
+        await bot.tree.sync()  # sync global commands
+    else:
+        await bot.tree.sync(guild=discord.Object(id=int(guild_id)))
+    await ctx.send("Synced the application commands tree!", delete_after=10)
 
 
 async def load_all_cogs_except(cogs_to_exclude):
