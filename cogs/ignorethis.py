@@ -589,11 +589,14 @@ class Ignorethis(commands.Cog):
 
     @commands.check(checks.onk_server_check_admin)
     @commands.hybrid_command(
-        name="deleteclubs",
+        name="deleteclub",
         description="Only those who hold power can delete clubs. beware"
     )
+    @app_commands.describe(
+        clubs_to_delete="Club to be deleted"
+    )
     @app_commands.autocomplete(clubs_to_delete=club_autocomplete)
-    async def deleteclubs(
+    async def delete_club(
             self,
             ctx: commands.Context, *,
             clubs_to_delete: str
@@ -607,18 +610,24 @@ class Ignorethis(commands.Cog):
         for c in clubs_to_delete.split(' '):
             if c in clubs_data:
                 del clubs_data[c]
-                wasIn += f"{c} "
+                wasIn += f"{c}\n"
             else:
                 notIn += f"{c} "
 
-        # clbs = '\n'.join([f'`{c.lower()}`' for c in clubs_to_delete])
-        confirm = await dutils.prompt(ctx, "https://tenor.com/view/are-you-sure"
-                                           "-john-cena-ru-sure-about-dat-gif-14258954")
-        if confirm:
-            await ctx.send(f"Deleted: {wasIn}\nFailed to delete: {notIn}")
+        view = ConfirmCancelView(timeout=None)
+        warning_message = await ctx.send(content=f"**Are you sure? This action cannot be reversed.**\n"
+                                                 f"__Club to be deleted__\n"
+                                                 f"{wasIn}")
+        message = await ctx.send(view=view)
+        await view.wait()
+        if view.value is True:
+            await message.delete()
+            await warning_message.edit(content=f"The following club was deleted by {ctx.author.name}\n"
+                                               f"{wasIn}")
             dataIOa.save_json(path, clubs_data)
         else:
-            await ctx.send("Cancelling.")
+            await message.delete()
+            await warning_message.edit(content=f"Cancelled deletion of the following:\n{wasIn}")
 
     # @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
