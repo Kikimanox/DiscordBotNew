@@ -399,7 +399,8 @@ class Ignorethis(commands.Cog):
         description="Ping a club"
     )
     @app_commands.describe(
-        club_name="Name of the club. You can only ping a club you are part of",
+        club_name="You can only ping a club you are part of. If you don't see any choices mean you "
+                  "are not part of any club",
     )
     @app_commands.autocomplete(club_name=club_autocomplete_author_part_of)
     async def ping_club(
@@ -553,7 +554,7 @@ class Ignorethis(commands.Cog):
         description="Leave a club"
     )
     @app_commands.describe(
-        club_name="Name of the club. You can leave a club you are part of",
+        club_name="You can leave a club you are part of. If you don't see any choices mean you are not part of any club"
     )
     @app_commands.autocomplete(club_name=club_autocomplete_author_part_of)
     async def leave_club(
