@@ -509,7 +509,7 @@ class Ignorethis(commands.Cog):
         return embeds
 
     # @commands.check(checks.onk_server_check)
-    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
+    @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     @commands.hybrid_command(
         name="pingclub",
         aliases=["ping"],
