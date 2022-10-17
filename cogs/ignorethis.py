@@ -3,7 +3,7 @@ import logging
 from difflib import SequenceMatcher
 from typing import List, Optional
 
-from discord import Embed, utils, Member, Webhook, app_commands, Interaction
+from discord import Embed, utils, Member, Webhook, app_commands, Interaction, colour
 from discord.ext import commands, tasks
 
 import utils.checks as checks
@@ -18,6 +18,7 @@ error_logger = logging.getLogger(f"error")
 
 
 # TODO return back the command check
+# TODO return back the verification channel
 
 class Ignorethis(commands.Cog):
     club_data: List[ClubData] = []
@@ -30,6 +31,7 @@ class Ignorethis(commands.Cog):
         verification_channel = bot.config["verification_channel"]
         # self.verification_channel_id = 931192723447349268
         self.verification_channel_id = verification_channel
+        self.onk_bot_channel = 695297906529271888
         self.gallery_wh = None
 
         self.clubs_path = 'data/clubs.json'
@@ -75,6 +77,40 @@ class Ignorethis(commands.Cog):
 
         try:
             for clubs in self.club_data:
+                if len(current) == 0:
+                    item = app_commands.Choice(
+                        name=clubs.club_name,
+                        value=clubs.club_name
+                    )
+                    club_list.append(item)
+                else:
+                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
+                        item = app_commands.Choice(
+                            name=clubs.club_name,
+                            value=clubs.club_name
+                        )
+                        club_list.append(item)
+
+                if len(club_list) > 24:
+                    break
+        except Exception as ex:
+            error_logger.error(ex)
+
+        return club_list
+
+    async def club_autocomplete_author_not_member_of_club(
+            self,
+            interaction: Interaction,
+            current: str
+    ) -> List[app_commands.Choice[str]]:
+        author_id = interaction.user.id
+        club_list = []
+
+        try:
+            for clubs in self.club_data:
+                check_if_author_in_the_club = clubs.check_if_author_is_in_the_club(author_id=author_id)
+                if check_if_author_in_the_club:
+                    continue
                 if len(current) == 0:
                     item = app_commands.Choice(
                         name=clubs.club_name,
@@ -600,7 +636,7 @@ class Ignorethis(commands.Cog):
     @app_commands.describe(
         club_name="Name of the club",
     )
-    @app_commands.autocomplete(club_name=club_autocomplete)
+    @app_commands.autocomplete(club_name=club_autocomplete_author_not_member_of_club)
     async def join_club(
             self,
             ctx: commands.Context,
@@ -616,16 +652,53 @@ class Ignorethis(commands.Cog):
             club = clubs_data[club_name]
             mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
             if ctx.author in mems:
-                return await ctx.send(f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
-                                      f"You are already in this club")
+                await self.hide_message_or_send_at_bot_channel(
+                    message=f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
+                            f"You are already in this club {club_name}",
+                    ctx=ctx
+                )
+                return
             clubs_data[club_name]['members'].append(ctx.author.id)
             dataIOa.save_json(path, clubs_data)
-            await ctx.send(f"{ctx.author.mention} has joined the club {club_name}")
+            await self.hide_message_or_send_at_bot_channel(
+                message=f"{ctx.author.mention} has joined the club {club_name}",
+                ctx=ctx,
+                notification=True
+            )
+            self.initialize_clubs()
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
             emote = "💢" if not emote_test else str(emote_test)
-            await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
+            await self.hide_message_or_send_at_bot_channel(
+                message=f'{emote} No such club found, did you perhaps mean `{suggestion}`',
+                ctx=ctx
+            )
+
+    async def hide_message_or_send_at_bot_channel(
+            self,
+            message: str,
+            ctx: commands.Context,
+            notification: bool = False
+    ):
+        bot_channel = self.bot.get_guild(ctx.guild.id).get_channel_or_thread(self.onk_bot_channel)
+        if ctx.interaction is not None:
+            await ctx.send(message, ephemeral=True)
+            if notification:
+                embed = Embed(
+                    description=message,
+                    colour=colour.Colour.yellow()
+                )
+                await bot_channel.send(embed=embed)
+        else:
+            if ctx.channel.id == self.onk_bot_channel:
+                await ctx.send(message)
+            else:
+                await ctx.message.delete()
+                if notification:
+                    await bot_channel.send(f"{message}")
+                else:
+                    await bot_channel.send(f"<@{ctx.author.id}> {message}")
 
     # @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
@@ -654,15 +727,27 @@ class Ignorethis(commands.Cog):
             if ctx.author in mems:
                 clubs_data[club_name]['members'].remove(ctx.author.id)
                 dataIOa.save_json(path, clubs_data)
-                await ctx.send(f"{ctx.author.mention} has left the club {club_name}")
+                await self.hide_message_or_send_at_bot_channel(
+                    message=f"{ctx.author.mention} has left the club {club_name}",
+                    ctx=ctx,
+                    notification=True
+                )
+                self.initialize_clubs()
             else:
-                return await ctx.send(f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
-                                      f"You are not even in this club")
+                await self.hide_message_or_send_at_bot_channel(
+                    message=f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
+                            f"You are not even in this club {club_name}",
+                    ctx=ctx,
+                )
+                return
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
             emote = "💢" if not emote_test else str(emote_test)
-            await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
+            await self.hide_message_or_send_at_bot_channel(
+                message=f'{emote} No such club found, did you perhaps mean `{suggestion}`',
+                ctx=ctx,
+            )
 
     @commands.check(checks.onk_server_check_admin)
     @commands.hybrid_command(
