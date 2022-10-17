@@ -35,6 +35,7 @@ class Ignorethis(commands.Cog):
         self.initialize_clubs()
 
     def initialize_clubs(self):
+        self.club_data.clear()
         dataIOa.create_file_if_doesnt_exist(self.clubs_path, '{}')
         clubs_data = dataIOa.load_json(self.clubs_path)
 
@@ -222,6 +223,7 @@ class Ignorethis(commands.Cog):
             await club_creator.send(f'The club **{club_name}** has been approved ✅')
             await club_created_message.edit(content=f'The club **{club_name}** has been '
                                                     f'approved by {view.member_click} ✅')
+            self.initialize_clubs()
         else:
             await club_creator.send(f'The club **{club_name}** has been denied ❌')
             await club_created_message.edit(content=f'The club **{club_name}** has been '
@@ -711,38 +713,6 @@ class Ignorethis(commands.Cog):
         await self.recc(event)
 
     async def recc(self, event):
-        # event.guild_id event.user_id event.message_id event.channel_id
-        if event.channel_id == self.verification_channel_id:
-            g = self.bot.get_guild(int(event.guild_id))
-            ch = g.get_channel_or_thread(int(event.channel_id))
-            msg = await ch.fetch_message(event.message_id)
-            if event.user_id == self.bot.config["CLIENT_ID"]:
-                return  # in case the bot is adding reactions
-            if msg.author.id == self.bot.config["CLIENT_ID"] and str(event.emoji) in ['✅', '❌']:
-                await msg.clear_reactions()
-                try:
-                    split = msg.embeds[0].description.split('\n')
-                    club_title = split[0].split(' ')[-1]
-                    club_creator = g.get_member(int(split[1].split(' ')[-1]))
-                    club_desc = ' '.join(split[2].split(' ')[1:])
-                    if str(event.emoji) == '✅':
-                        path = 'data/clubs.json'
-                        dataIOa.create_file_if_doesnt_exist(path, '{}')
-                        clubs_data = dataIOa.load_json(path)
-                        clubs_data[club_title] = {'creator': club_creator.id, 'desc': club_desc,
-                                                  'members': [club_creator.id], 'pings': 0}
-                        dataIOa.save_json(path, clubs_data)
-
-                        await club_creator.send(f'The club **{club_title}** has been approved ✅')
-                        await ch.send(f'The club **{club_title}** has been '
-                                      f'approved by {g.get_member(event.user_id)} ✅')
-                    if str(event.emoji) == '❌':
-                        await club_creator.send(f'The club **{club_title}** has been denied ❌')
-                        await ch.send(f'The club **{club_title}** has been '
-                                      f'denied by {g.get_member(event.user_id)} ❌')
-                except:
-                    pass
-                await msg.add_reaction('🔖')
         if event.channel_id == 795720249462882354:
             if event.user_id == self.bot.config["CLIENT_ID"]:
                 return  # in case the bot is adding reactions
