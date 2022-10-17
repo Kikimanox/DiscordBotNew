@@ -1,6 +1,6 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 
-from discord import ButtonStyle, Interaction, ui
+from discord import ButtonStyle, Interaction, ui, Member, User
 from discord.ui import View, Button
 
 
@@ -26,12 +26,15 @@ class ConfirmCancelView(View):
 class PaginationView(View):
     def __init__(
             self,
+            author: Union[User, Member],
             clubs: List[str],
             current_page: int,
             timeout: Optional[float] = 60.0,
 
     ):
         super().__init__(timeout=timeout)
+
+        self.author = author
 
         self.num_of_pages = len(clubs)
         self.current_page = current_page
@@ -58,6 +61,12 @@ class PaginationView(View):
             self.last.disabled = False
 
         self.value = None
+
+    async def interaction_check(self, interaction: Interaction, /) -> bool:
+        if self.author.id != interaction.user.id:
+            return False
+        else:
+            return True
 
     @ui.button(label="First", style=ButtonStyle.green)
     async def first(self, interaction: Interaction, button: Button):

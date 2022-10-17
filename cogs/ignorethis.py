@@ -441,6 +441,7 @@ class Ignorethis(commands.Cog):
 
         while True:
             view = PaginationView(
+                author=ctx.author,
                 clubs=messages,
                 current_page=current_page,
                 timeout=300
