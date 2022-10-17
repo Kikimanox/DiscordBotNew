@@ -307,8 +307,21 @@ class Ignorethis(commands.Cog):
         return embeds
 
     # @commands.check(checks.onk_server_check)
-    @commands.command(aliases=["ping"])
-    async def pingclub(self, ctx: commands.Context, club_name, *, rest="Anything else that you'd like to add"):
+    @commands.hybrid_command(
+        name="pingclub",
+        aliases=["ping"],
+        description="Ping a club"
+    )
+    @app_commands.describe(
+        club_name="Name of the club",
+    )
+    @app_commands.autocomplete(club_name=club_autocomplete)
+    async def ping_club(
+            self,
+            ctx: commands.Context,
+            club_name: str,
+            *, rest="Anything else that you'd like to add"
+    ):
         """Ping a club"""
         club_name = club_name.lower()
 
@@ -412,8 +425,20 @@ class Ignorethis(commands.Cog):
         return True
 
     # @commands.check(checks.onk_server_check)
-    @commands.command(aliases=["join"])
-    async def joinclub(self, ctx: commands.Context, club_name):
+    @commands.hybrid_command(
+        name="joinclub",
+        aliases=["join"],
+        description="Join a club"
+    )
+    @app_commands.describe(
+        club_name="Name of the club",
+    )
+    @app_commands.autocomplete(club_name=club_autocomplete)
+    async def join_club(
+            self,
+            ctx: commands.Context,
+            club_name: str
+    ):
         """Join a club"""
         club_name = club_name.lower()
 
@@ -436,8 +461,20 @@ class Ignorethis(commands.Cog):
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
     # @commands.check(checks.onk_server_check)
-    @commands.command(aliases=["leave"])
-    async def leaveclub(self, ctx: commands.Context, club_name):
+    @commands.hybrid_command(
+        name="leaveclub",
+        aliases=["leave"],
+        description="Leave a club"
+    )
+    @app_commands.describe(
+        club_name="Name of the club",
+    )
+    @app_commands.autocomplete(club_name=club_autocomplete)
+    async def leave_club(
+            self,
+            ctx: commands.Context,
+            club_name
+    ):
         """Leave a club"""
         club_name = club_name.lower()
 
