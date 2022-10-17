@@ -702,6 +702,7 @@ class Ignorethis(commands.Cog):
             await warning_message.edit(content=f"The following club was deleted by {ctx.author.name}\n"
                                                f"{wasIn}")
             dataIOa.save_json(path, clubs_data)
+            self.initialize_clubs()
         else:
             await message.delete()
             await warning_message.edit(content=f"Cancelled deletion of the following:\n{wasIn}")
