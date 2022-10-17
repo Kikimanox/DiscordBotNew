@@ -6,6 +6,7 @@ import utils.timeStuff as tutils
 import utils.discordUtils as dutils
 import traceback
 
+
 class Quoting(commands.Cog):
 
     def __init__(self, bot):
@@ -234,6 +235,8 @@ class Quoting(commands.Cog):
 '''
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Quoting(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

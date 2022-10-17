@@ -257,8 +257,9 @@ class Manga(commands.Cog):
             em = create_embed(len(embeds) + 1)
             this_chapter = f"Ch. {chapter} | Pages: "
             if series == 'main':
-                this_chapter += ", ".join([f"[{p}](https://guya.moe/reader/series/Oshi-no-Ko/{chapter.replace('.', '-')}/{p})" for p in
-                                           sorted(final_results[chapter])])  # Well this was fun to learn to do
+                this_chapter += ", ".join(
+                    [f"[{p}](https://guya.moe/reader/series/Oshi-no-Ko/{chapter.replace('.', '-')}/{p})" for p in
+                     sorted(final_results[chapter])])  # Well this was fun to learn to do
             else:
                 this_chapter += ", ".join(
                     [f"[{p}](https://guya.moe/read/manga/{series_dict[series]}/{chapter.replace('.', '-')}/{p})" for p
@@ -291,7 +292,9 @@ class Manga(commands.Cog):
     #         await asyncio.sleep(10)  # sleep here
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Manga(bot)
     # bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

@@ -1474,6 +1474,8 @@ class Moderation(commands.Cog):
             await ctx.send("Done.")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Moderation(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

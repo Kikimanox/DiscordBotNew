@@ -189,7 +189,7 @@ class ReactionRoles(commands.Cog):
             rrs = rrs[::-1]
             for i in range(1, len(rrs), 2):
                 if rrs[i].replace('<a:', '<:') == emote.replace('<a:', '<:'):
-                    role = discord.utils.get(guild.roles, id=int(rrs[i-1]))
+                    role = discord.utils.get(guild.roles, id=int(rrs[i - 1]))
                     if addIt:
                         for retry in range(10):
                             if role not in user.roles:
@@ -284,6 +284,8 @@ class ReactionRoles(commands.Cog):
                                   f"Extra info: `{str(e)}`")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = ReactionRoles(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

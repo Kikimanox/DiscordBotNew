@@ -589,7 +589,9 @@ class Reminders(commands.Cog):
             self.bot.logger.error(f"Something went wrong when making a reminder\n{traceback.format_exc()}")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Reminders(bot)
     bot.running_tasks.append(bot.loop.create_task(ext.refresh_timers_after_a_while()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

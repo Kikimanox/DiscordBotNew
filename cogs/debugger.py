@@ -306,6 +306,6 @@ class Debugger(commands.Cog):
             return await ctx.send(f"Incorrect folder specified. Options are: `{directories}`")
 
 
-def setup(bot):
+async def setup(bot):
     debug_cog = Debugger(bot)
-    bot.add_cog(debug_cog)
+    await bot.add_cog(debug_cog)

@@ -174,6 +174,8 @@ class Personal(commands.Cog):
                 await ctx.send(embed=Embed(description=desc[i], color=l[2]))
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Personal(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

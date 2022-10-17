@@ -29,7 +29,9 @@ class Bets(commands.Cog):
     #         await asyncio.sleep(10)  # sleep here
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Bets(bot)
     #bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

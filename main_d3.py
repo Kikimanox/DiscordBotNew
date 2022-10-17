@@ -151,6 +151,17 @@ async def on_ready():
         finally:
             os.remove("restart.json")
 
+    await load_all_cogs_except(['_newCogTemplate', 'manga', 'bets'])
+    if os.name != 'nt':
+        os.setpgrp()
+
+    config = dataIOa.load_json("config.json")
+
+    # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
+    if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
+        await bot.load_extension("cogs.manga")
+        await bot.load_extension("cogs.bets")
+
 
 @bot.event
 async def on_reaction_add(reaction: Reaction, user: Client):
@@ -662,35 +673,30 @@ async def after_any_command(ctx):
     bot.before_run_cmd -= 1
 
 
-def load_all_cogs_except(cogs_to_exclude):
+async def load_all_cogs_except(cogs_to_exclude):
     for extension in os.listdir("cogs"):
         if extension.endswith('.py'):
             if extension[:-3] not in cogs_to_exclude:
                 try:
-                    bot.load_extension("cogs." + extension[:-3])
+                    await bot.load_extension("cogs." + extension[:-3])
                 except Exception as e:
                     print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                     traceback.print_exc()
 
 
+async def main() -> None:
+    async with bot:
+        config = dataIOa.load_json("config.json")
+        token = config['BOT_TOKEN']
+
+        await bot.start(token=token)
+
+
 if __name__ == '__main__':
     while True:
         try:
-            load_all_cogs_except(['_newCogTemplate', 'manga', 'bets'])
-
-            if os.name != 'nt':
-                os.setpgrp()
-            loop = asyncio.get_event_loop()
-            config = dataIOa.load_json("config.json")
-
-            # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
-            if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
-                bot.load_extension("cogs.manga")
-                bot.load_extension("cogs.bets")
-
-            loop.run_until_complete(bot.login(config['BOT_TOKEN']))
             print(f'Connected: ---{datetime.datetime.utcnow().strftime("%c")}---')
-            loop.run_until_complete(bot.connect())
+            asyncio.run(main())
             print(f'Disconected: ---{datetime.datetime.utcnow().strftime("%c")}---')
         except Exception as e:
             print(f'---{datetime.datetime.utcnow().strftime("%c")}---')

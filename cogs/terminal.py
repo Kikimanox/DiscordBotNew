@@ -377,6 +377,8 @@ def check_file():
         dataIO.save_json(abspath(dirname(argv[0])) + '/settings/terminal_settings.json', jdict)
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     check_file()
-    bot.add_cog(Terminal(bot))
+    await bot.add_cog(Terminal(bot))

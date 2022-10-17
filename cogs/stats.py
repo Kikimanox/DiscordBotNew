@@ -300,7 +300,9 @@ class Stats(commands.Cog):
         await ctx.send("Done." if not ret else ret + '\nDone.')
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     if not hasattr(bot, 'command_stats'):
         bot.command_stats = Counter()
 
@@ -327,4 +329,4 @@ def setup(bot):
     for b in bs:  bot.banlist[b['user']] = b['meta']
 
     ext = Stats(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

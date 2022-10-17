@@ -875,6 +875,8 @@ return ret_7
         return rett
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = AmqMod(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

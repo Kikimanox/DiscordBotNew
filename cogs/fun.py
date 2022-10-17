@@ -550,7 +550,9 @@ class Fun(commands.Cog):
         await ctx.channel.send(content=f'{ctx.author.mention} your {CT} claim history:', embed=em)
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Fun(bot)
     bot.running_tasks.append(bot.loop.create_task(ext.delete_old_records()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

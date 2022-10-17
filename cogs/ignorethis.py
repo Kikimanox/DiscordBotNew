@@ -443,7 +443,7 @@ class Ignorethis(commands.Cog):
             all_ids = []
             for club_name in clubs:
                 club = clubs_data[club_name]
-                #mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
+                # mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
                 mems = [u for u in club['members'] if ctx.guild.get_member(u)]
                 mems_all.append({"clb": club_name, "membs": sorted(mems)})
                 all_ids = list({*all_ids, *mems})
@@ -461,7 +461,9 @@ class Ignorethis(commands.Cog):
                 for c in cbs:
                     m = ""
                     if not just_club:
-                        m = ", ".join([f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}' for u in c['membs'] if ctx.guild.get_member(u)])
+                        m = ", ".join([
+                            f'{"~~" if u in ignore_mems else "**"}{str(ctx.guild.get_member(u))}{"~~" if u in ignore_mems else "**"}'
+                            for u in c['membs'] if ctx.guild.get_member(u)])
                     rs.append(f'**__{c["clb"]}__** {m}')
                 res.append('\n'.join(rs))
 
@@ -471,7 +473,6 @@ class Ignorethis(commands.Cog):
             if len(res) > 100:
                 return await ctx.send("There's more than 100 different permutations. Too much!")
             await dutils.print_hastebin_or_file(ctx, '\n\n'.join(res), just_file=True)
-
 
     @staticmethod
     def check_if_is_ok_for_all(permutation, uids, max_gaps, ignore):
@@ -514,7 +515,8 @@ class Ignorethis(commands.Cog):
 
                 atts = [await a.to_file(spoiler=a.is_spoiler()) for a in message.attachments]
                 await self.gallery_wh.send(avatar_url=message.author.avatar.url,
-                                           username=f'{message.author.name} in #{message.channel.name}'[:32], files=atts, wait=False)
+                                           username=f'{message.author.name} in #{message.channel.name}'[:32],
+                                           files=atts, wait=False)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event):
@@ -601,6 +603,8 @@ class Ignorethis(commands.Cog):
         return SequenceMatcher(None, a, b).ratio()
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Ignorethis(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

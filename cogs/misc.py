@@ -314,6 +314,8 @@ class Misc(commands.Cog):
                                                    f'(since {tt} ago)')
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Misc(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

@@ -293,6 +293,8 @@ class Cmds(commands.Cog):
         return embeds
 
 
-def setup(bot):
+async def setup(
+    bot: commands.Bot
+):
     ext = Cmds(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

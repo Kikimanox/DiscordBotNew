@@ -1415,6 +1415,8 @@ class Serversetup(commands.Cog):
         await ctx.send(f"To revert thise use the command `{dutils.bot_pfx(ctx.bot, ctx.message)} unlock all silent`")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Serversetup(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)
