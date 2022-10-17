@@ -77,6 +77,40 @@ class Ignorethis(commands.Cog):
 
         return club_list
 
+    async def club_autocomplete_author_part_of(
+            self,
+            interaction: Interaction,
+            current: str
+    ) -> List[app_commands.Choice[str]]:
+        author_id = interaction.user.id
+        club_list = []
+
+        try:
+            for clubs in self.club_data:
+                check_if_author_in_the_club = clubs.check_if_author_is_in_the_club(author_id=author_id)
+                if not check_if_author_in_the_club:
+                    continue
+                if len(current) == 0:
+                    item = app_commands.Choice(
+                        name=clubs.club_name,
+                        value=clubs.club_name
+                    )
+                    club_list.append(item)
+                else:
+                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
+                        item = app_commands.Choice(
+                            name=clubs.club_name,
+                            value=clubs.club_name
+                        )
+                        club_list.append(item)
+
+                if len(club_list) > 24:
+                    break
+        except Exception as ex:
+            error_logger.error(ex)
+
+        return club_list
+
     # @commands.check(checks.onk_server_check)
     @commands.command()
     async def listclubsraw(self, ctx: commands.Context, *includes: Member):
@@ -345,9 +379,9 @@ class Ignorethis(commands.Cog):
         description="Ping a club"
     )
     @app_commands.describe(
-        club_name="Name of the club",
+        club_name="Name of the club. You can only ping a club you are part of",
     )
-    @app_commands.autocomplete(club_name=club_autocomplete)
+    @app_commands.autocomplete(club_name=club_autocomplete_author_part_of)
     async def ping_club(
             self,
             ctx: commands.Context,
@@ -499,9 +533,9 @@ class Ignorethis(commands.Cog):
         description="Leave a club"
     )
     @app_commands.describe(
-        club_name="Name of the club",
+        club_name="Name of the club. You can leave a club you are part of",
     )
-    @app_commands.autocomplete(club_name=club_autocomplete)
+    @app_commands.autocomplete(club_name=club_autocomplete_author_part_of)
     async def leave_club(
             self,
             ctx: commands.Context,

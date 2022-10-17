@@ -19,3 +19,12 @@ class ClubData:
         self.description = data.get("desc")
         self.pings = data.get("pings")
         self.members = data.get("members")
+
+    def check_if_author_is_in_the_club(
+            self,
+            author_id: int
+    ) -> bool:
+        if author_id in self.members:
+            return True
+        else:
+            return False
