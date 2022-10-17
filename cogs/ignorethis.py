@@ -567,14 +567,22 @@ class Ignorethis(commands.Cog):
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
     # @commands.check(checks.onk_server_check_admin)
-    @commands.hybrid_command()
+    @commands.hybrid_command(
+        name="deleteclubs",
+        description="Only those who hold power can delete clubs. beware"
+    )
     @commands.has_role(
         695297422724694016
     )
     @app_commands.checks.has_role(
         695297422724694016
     )
-    async def deleteclubs(self, ctx: commands.Context, *, clubs_to_delete):
+    @app_commands.autocomplete(clubs_to_delete=club_autocomplete)
+    async def deleteclubs(
+            self,
+            ctx: commands.Context, *,
+            clubs_to_delete: str
+    ):
         """Delete clubs, seperate with a space if deleting many"""
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
