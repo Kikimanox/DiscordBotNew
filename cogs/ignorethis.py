@@ -209,7 +209,9 @@ class Ignorethis(commands.Cog):
             club_name: str,
             description: str
     ):
-        ver_ch = ctx.guild.get_channel_or_thread(self.verification_channel_id)
+        channel_id = ctx.channel.id
+        # ver_ch = ctx.guild.get_channel_or_thread(self.verification_channel_id)
+        ver_ch = ctx.guild.get_channel_or_thread(channel_id)
         if not ver_ch:
             return await ctx.send("Can't find verification channel (check the id for that)")
         club_created_message = await ctx.send(
@@ -393,6 +395,7 @@ class Ignorethis(commands.Cog):
         return embeds
 
     # @commands.check(checks.onk_server_check)
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @commands.hybrid_command(
         name="pingclub",
         aliases=["ping"],

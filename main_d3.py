@@ -15,7 +15,6 @@ from discord import Embed, Client, Reaction, VoiceClient, app_commands, Activity
 from discord.ext import commands
 
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
 from models.afking import AfkManager
 from models.antiraid import ArManager
 from models.reactionroles import RRManager
@@ -595,13 +594,9 @@ async def on_command_error(
                     "{}".format(ctx.command.qualified_name, str(error)))
     elif isinstance(error, commands.CommandOnCooldown):
         extra = ""
-        if error.cooldown.type.name != 'default':
-            extra += f" ({error.cooldown.type.name} cooldown)"
-        tim = error.args[0].split(' in ')[-1]
-        sec = int(tim.split('.')[0])
-        tim = tutils.convert_sec_to_smhd(sec)
+        time_until = float("{:.2f}".format(error.retry_after))
         await ctx.send(f"⏲ Command on cooldown, try again"
-                       f" in **{tim}**" + extra, delete_after=5)
+                       f" in **{time_until}s**" + extra, delete_after=5)
     elif isinstance(error, commands.errors.CheckFailure):
         if ctx.command.qualified_name == 'getrole booster':
             return await ctx.send("⚠ Only server boosters may use this command.")
