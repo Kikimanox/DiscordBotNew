@@ -30,3 +30,10 @@ class ClubData:
             return True
         else:
             return False
+
+    def check_if_all_of_list_exist_on_this_club(
+            self,
+            memberList: List[int]
+    ) -> bool:
+        check = all(item in self.members for item in memberList)
+        return check

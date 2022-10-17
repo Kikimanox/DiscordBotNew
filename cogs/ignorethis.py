@@ -1,7 +1,7 @@
 import itertools
 import logging
 from difflib import SequenceMatcher
-from typing import List
+from typing import List, Optional
 
 from discord import Embed, utils, Member, Webhook, app_commands, Interaction
 from discord.ext import commands, tasks
@@ -9,7 +9,7 @@ from discord.ext import commands, tasks
 import utils.checks as checks
 import utils.discordUtils as dutils
 from models.club_data import ClubData
-from models.views import ConfirmCancelView
+from models.views import ConfirmCancelView, PaginationView
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 
@@ -315,8 +315,26 @@ class Ignorethis(commands.Cog):
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
     # @commands.check(checks.onk_server_check)
-    @commands.command()
-    async def listclubs(self, ctx: commands.Context, *includes: Member):
+    @commands.hybrid_command(
+        name="listclubs",
+        description="Optional parameter for checking which clubs members are a part of it"
+    )
+    @app_commands.describe(
+        user_1="Check the club the user is in",
+        user_2="Check the club the user is in",
+        user_3="Check the club the user is in",
+        user_4="Check the club the user is in",
+        user_5="Check the club the user is in",
+    )
+    async def listclubs(
+            self,
+            ctx: commands.Context,
+            user_1: Optional[Member] = None,
+            user_2: Optional[Member] = None,
+            user_3: Optional[Member] = None,
+            user_4: Optional[Member] = None,
+            user_5: Optional[Member] = None,
+    ):
         """Display all clubs
         Optional parameter for checking which clubs members are a part of it, ex:
         `[p]listclubs Kiki`
@@ -329,26 +347,85 @@ class Ignorethis(commands.Cog):
         meaning that in the first example it will
         find clubs where A and B are both in."""
 
+        members: list[int] = []
+        if user_1 is not None:
+            members.append(user_1.id)
+        if user_2 is not None:
+            members.append(user_2.id)
+        if user_3 is not None:
+            members.append(user_3.id)
+        if user_4 is not None:
+            members.append(user_4.id)
+        if user_5 is not None:
+            members.append(user_5.id)
+
+        current_page = 0
+
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
         clubs_data = dataIOa.load_json(path)
-        embeds = []
-        if not includes:
-            embeds = self.createEmbedsFromAllClubs(clubs_data, 'All clubs')
-        else:
-            includes = list(includes)
-            d_clubs = {}
-            for k, v in clubs_data.items():
-                mems = [ctx.guild.get_member(u) for u in v['members'] if ctx.guild.get_member(u)]
-                intersection = list(set(includes) & set(mems))
-                if len(intersection) == len(includes):
-                    d_clubs[k] = v
-            if not d_clubs:
-                return await ctx.send("No clubs found for this querry.")
-            embeds = self.createEmbedsFromAllClubs(d_clubs, f'Clubs with: '
-                                                            f'{" and ".join([m.name for m in includes])}')
 
-        await SimplePaginator(extras=embeds).paginate(ctx)
+        values: dict
+        temp_data: List[ClubData] = []
+        for key, values in clubs_data.items():
+            value = ClubData(
+                club_name=key,
+                club_data=values
+            )
+            if len(members) == 0:
+                temp_data.append(value)
+            else:
+                if_they_are_club_members = value.check_if_all_of_list_exist_on_this_club(members)
+                if if_they_are_club_members:
+                    temp_data.append(value)
+
+        messages: list[str] = []
+        if len(temp_data) == 0:
+            await ctx.send("No clubs found.")
+            return
+        current_message = ""
+        for item in temp_data:
+            current_message += f"__**{item.club_name}**__\n" \
+                               f"Members {item.member_count}\n" \
+                               f"Ping count {item.pings}\n" \
+                               f"{item.description}\n\n"
+            if len(current_message) > 1800:
+                messages.append(current_message)
+                current_message = ""
+        messages.append(current_message)
+
+        embed = Embed(
+            description=messages[current_page]
+        )
+        embed.set_footer(text=f"page {current_page + 1}/{len(messages)}")
+        embed_message = await ctx.send(embed=embed)
+        guild_id = ctx.guild.id
+        channel_id = ctx.channel.id
+        channel = self.bot.get_guild(guild_id).get_channel_or_thread(channel_id)
+
+        while True:
+            view = PaginationView(
+                clubs=messages,
+                current_page=current_page,
+                timeout=300
+            )
+
+            view_message = await channel.send(view=view)
+            await view.wait()
+
+            current_page = view.current_page
+            value = view.value
+            await view_message.delete()
+            if value is None:
+                break
+            else:
+                new_embed = Embed(
+                    description=messages[current_page]
+                )
+                new_embed.set_footer(text=f"page {current_page + 1}/{len(messages)}")
+                await embed_message.edit(
+                    embed=new_embed
+                )
 
     def createEmbedsFromAllClubs(self, clubs, base_title):
         embeds = []
