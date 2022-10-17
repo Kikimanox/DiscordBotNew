@@ -34,7 +34,10 @@ def get_valid_filename(s):
 
 
 class AmqMod(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.ignored_ann_ids = [7429]
         self._gib_code = """```js\n
