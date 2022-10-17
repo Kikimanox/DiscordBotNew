@@ -11,7 +11,7 @@ import time
 import traceback
 
 import discord
-from discord import Embed, Client, Reaction
+from discord import Embed, Client, Reaction, VoiceClient
 from discord.ext import commands
 
 import utils.discordUtils as dutils
@@ -51,8 +51,13 @@ ch.setFormatter(formatter)
 logging.getLogger('').addHandler(ch)
 
 intents = discord.Intents.default()
+intents.emojis = True
+intents.reactions = True
+intents.webhooks = True
+intents.integrations = True
 intents.members = True
 intents.presences = True
+intents.message_content = True
 
 Prefix = dataIOa.load_json('config.json')['BOT_PREFIX']
 Prefix_Per_Guild = dataIOa.load_json('config.json')['B_PREF_GUILD']
@@ -70,6 +75,7 @@ def get_pre_or_mention(_bot, _message):
     return commands.when_mentioned_or(*extras)(_bot, _message)
 
 
+VoiceClient.warn_nacl = False
 bot = commands.Bot(command_prefix=get_pre_or_mention, intents=intents)
 ###
 bot.all_cmds = {}
