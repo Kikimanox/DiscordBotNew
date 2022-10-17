@@ -2,8 +2,7 @@ import itertools
 import logging
 from difflib import SequenceMatcher
 
-import discord
-from discord import Embed, utils
+from discord import Embed, utils, Member, Webhook
 from discord.ext import commands
 
 import utils.checks as checks
@@ -16,14 +15,17 @@ error_logger = logging.getLogger(f"error")
 
 
 class Ignorethis(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.verification_channel_id = 931192723447349268
         self.gallery_wh = None
 
     @commands.check(checks.onk_server_check)
     @commands.command()
-    async def listclubsraw(self, ctx, *includes: discord.Member):
+    async def listclubsraw(self, ctx, *includes: Member):
         """Display all clubs TITLES
         Optional parameter for checking which clubs members are a part of it, ex:
         `[p]listclubsraw Kiki`
@@ -68,7 +70,6 @@ class Ignorethis(commands.Cog):
         After you have created a club it will be active once
         a server staff member will verify the club.
         """
-        return await ctx.send("Currently disabled here. Just use -createclubs. ALSO NO DESC, just club names!")
         club_name = club_name.lower()
         if '*' in club_name or '*' in description:
             return await ctx.send("The club name can not include the character `*`, please try again.")
@@ -150,7 +151,7 @@ class Ignorethis(commands.Cog):
 
     @commands.check(checks.onk_server_check)
     @commands.command()
-    async def listclubs(self, ctx, *includes: discord.Member):
+    async def listclubs(self, ctx, *includes: Member):
         """Display all clubs
         Optional parameter for checking which clubs members are a part of it, ex:
         `[p]listclubs Kiki`
@@ -255,7 +256,8 @@ class Ignorethis(commands.Cog):
                     pings.append('')
 
             for p in pings:
-                if p: await ctx.send(f'Club: {club_name} {p}')
+                if p:
+                    await ctx.send(f'Club: {club_name} {p}')
 
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
@@ -308,7 +310,8 @@ class Ignorethis(commands.Cog):
                     pings.append('')
 
             for p in pings:
-                if p: await ctx.send(f'Clubs: {clubs_all[:-2]} {p}')
+                if p:
+                    await ctx.send(f'Clubs: {clubs_all[:-2]} {p}')
 
     async def check_if_clubs_exist(self, ctx, clubs):
         path = 'data/clubs.json'
@@ -510,7 +513,7 @@ class Ignorethis(commands.Cog):
                     await self.bot.wait_until_ready()
                 if not self.gallery_wh:
                     try:
-                        self.gallery_wh: discord.Webhook = await self.bot.fetch_webhook(833850894101250059)
+                        self.gallery_wh: Webhook = await self.bot.fetch_webhook(833850894101250059)
                     except:
                         return
 

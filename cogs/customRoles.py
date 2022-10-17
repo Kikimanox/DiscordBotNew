@@ -1,17 +1,18 @@
 import asyncio
+
 import discord
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
 
 
 class CustomRoles(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.gettingRoles = {}
 

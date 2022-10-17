@@ -1,13 +1,12 @@
 import asyncio
-import discord
-from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
 import traceback
-from utils.dataIOa import dataIOa
+
+import discord
+from discord import Embed
+from discord.ext import commands
+
 import utils.checks as checks
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
 from models.reactionroles import ReactionRolesModel, RRManager
 
 TEST_EMOTES_MSG_PENDING = "Testing emotes for the reactions. Status: Pending ❔"
@@ -16,7 +15,10 @@ TEST_EMOTES_MSG_FAILED = "Testing emotes for the reactions. Status: Failed ❌"
 
 
 class ReactionRoles(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
 
     @commands.max_concurrency(1, commands.BucketType.guild)

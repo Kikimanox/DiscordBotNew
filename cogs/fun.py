@@ -24,7 +24,10 @@ error_logger = logging.getLogger(f"error")
 
 
 class Fun(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         # _ in channel names is not allowed!!
         # if you want an - instead of a space prefix ch name with _

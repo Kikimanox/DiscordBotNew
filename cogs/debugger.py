@@ -1,27 +1,18 @@
+import glob
+import io
+import math
 import os
-import inspect
+# Common imports that can be used by the debugger.
+import re
+import shutil
 import textwrap
 import traceback
-import io
-import asyncio
-import shutil
-import glob
-import math
-import aiohttp
-from discord.ext import commands
 from contextlib import redirect_stdout
 
-# Common imports that can be used by the debugger.
-import json
-import itertools
-import datetime
-import time
-import re
-import sys
-from pprint import pprint
-import utils.dataIO as dataIO
+import aiohttp
 import discord
-import random
+from discord.ext import commands
+
 import utils.discordUtils as dutils
 
 '''Module for the python interpreter as well as saving, loading, viewing, etc. the cmds/_scripts ran with the 
@@ -34,7 +25,10 @@ def owner_check(ctx):
 
 class Debugger(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.channel = None
         self._last_result = None

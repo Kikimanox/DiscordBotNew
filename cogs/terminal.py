@@ -1,16 +1,14 @@
-from subprocess import Popen, CalledProcessError, PIPE, STDOUT
-from random import randint
-from re import sub
-from sys import argv
-from os.path import exists, abspath, dirname, splitext
-from os import makedirs, devnull, getcwd, chdir, listdir, replace, popen as ospopen
-from asyncio import sleep
 from getpass import getuser
+from os import devnull, getcwd, chdir, popen as ospopen
+from os.path import abspath, dirname
 from platform import uname, python_version
-from json import decoder, dump, load
-from utils.dataIOa import dataIOa as dataIO
-from utils.checks import owner_check
+from re import sub
+from subprocess import Popen, CalledProcessError, PIPE, STDOUT
+from sys import argv
+
 import utils.discordUtils as dutils
+from utils.checks import owner_check
+from utils.dataIOa import dataIOa as dataIO
 
 try:
     from subprocess import DEVNULL  # Python 3
@@ -26,7 +24,10 @@ __authors__ = ['Sentry#4141',
 class Terminal(commands.Cog):
     """Repl like Terminal in discord"""
 
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.settings = dataIO.load_json(abspath(dirname(argv[0])) +
                                          '/settings/terminal_settings.json')

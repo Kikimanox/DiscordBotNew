@@ -23,7 +23,10 @@ error_logger = logging.getLogger(f"error")
 
 
 class Serversetup(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.tryParseOnce = 0
         bot.loop.create_task(self.set_setup())

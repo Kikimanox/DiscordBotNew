@@ -1,19 +1,17 @@
-import asyncio
 import datetime
 
 import discord
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
-import utils.discordUtils as dutils
-import utils.timeStuff as tutils
 
 
 class Personal(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
 
     @commands.command(aliases=["ava", "pfp", "profile"])

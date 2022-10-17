@@ -47,9 +47,12 @@ class Timer:
 
 
 class Reminders(commands.Cog):
-    def __init__(self, bot):
-        # Credit to RoboDanny for timeout code help
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
+        # Credit to RoboDanny for timeout code help
         self._have_data = asyncio.Event(loop=bot.loop)
         self._current_timer = None
         self._task = self.bot.loop.create_task(self.dispatch_timers())

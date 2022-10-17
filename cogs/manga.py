@@ -1,23 +1,21 @@
-import asyncio
+import json
 import json
 import random
 import re
 from datetime import datetime
 
 import aiohttp
-import discord
+from discord import Embed, DMChannel
 from discord.ext import commands
-from discord import Member, Embed, File, utils, DMChannel, TextChannel
-import os
-import traceback
-from utils.dataIOa import dataIOa
-import utils.checks as checks
+
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
 
 
 class Manga(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         # Credit: appu1232
 

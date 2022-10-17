@@ -1,4 +1,3 @@
-from discord.ext import commands
 import logging
 import traceback
 
@@ -15,7 +14,10 @@ error_logger = logging.getLogger(f"error")
 
 class Quoting(commands.Cog):
 
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
 
     @commands.command(aliases=["q"])

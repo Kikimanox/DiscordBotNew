@@ -23,7 +23,10 @@ error_logger = logging.getLogger(f"error")
 
 
 class Moderation(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.tried_setup = False
         # removing multi word cmds, cross out unavail inh cmd
