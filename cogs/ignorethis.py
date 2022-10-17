@@ -1,17 +1,18 @@
-import asyncio
 import itertools
+import logging
+from difflib import SequenceMatcher
 
 import discord
+from discord import Embed, utils
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
-from difflib import SequenceMatcher
 from utils.SimplePaginator import SimplePaginator
+from utils.dataIOa import dataIOa
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class Ignorethis(commands.Cog):

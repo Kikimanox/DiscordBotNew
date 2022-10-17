@@ -1,25 +1,25 @@
 import asyncio
+import datetime
+import logging
 import re
 import sys
-import time
+import traceback
+from operator import itemgetter
 
 import discord
+from columnar import columnar
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
 
-from models.antiraid import ArGuild
-from models.serversetup import SSManager
-from utils.SimplePaginator import SimplePaginator
-from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
-import datetime
-from columnar import columnar
-from operator import itemgetter
 from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
+from models.serversetup import SSManager
+from utils.SimplePaginator import SimplePaginator
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class Moderation(commands.Cog):
@@ -106,9 +106,9 @@ class Moderation(commands.Cog):
                 old_reason = case.reason
                 case.save()
                 await ctx.send("Reason added.")
-            ctx.bot.logger.info(f"{ctx.author} ({ctx.author.id}) changed case {case_id} reason:\n"
-                                f"Old reason: {old_reason}\n"
-                                f"New reason: {reason}")
+            logger.info(f"{ctx.author} ({ctx.author.id}) changed case {case_id} reason:\n"
+                        f"Old reason: {old_reason}\n"
+                        f"New reason: {reason}")
             try:
                 if not ctx.bot.from_serversetup:
                     ctx.bot.from_serversetup = await SSManager.get_setup_formatted(ctx.bot)
@@ -158,7 +158,7 @@ class Moderation(commands.Cog):
             except:
                 print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
-                ctx.bot.logger.error(f"Something went wrong when trying to update case {case_id} message\n")
+                error_logger.error(f"Something went wrong when trying to update case {case_id} message\n")
         except:
             await ctx.send("There is no case with that id.")
 
@@ -277,7 +277,7 @@ class Moderation(commands.Cog):
                             bf_date = datetime.datetime(*bf)
                     except Exception as e:
                         trace = traceback.format_exc()
-                        ctx.bot.logger.error(trace)
+                        error_logger.error(trace)
                         ee = str(e).replace('@', '@\u200b')
                         return await ctx.send(f"Something went wrong when parsing **{parsing_now}** date. "
                                               f"Please check your "
@@ -287,7 +287,7 @@ class Moderation(commands.Cog):
                     trace = traceback.format_exc()
                     print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                     print(trace)
-                    ctx.bot.logger.error(trace)
+                    error_logger.error(trace)
                     return await ctx.send("Something went wrong. Please re-check usage.")
             try:
                 parsing_now = 'resp'
@@ -422,7 +422,7 @@ class Moderation(commands.Cog):
                 print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
                 await ctx.send("Something weird went wrong when executing querry.")
-                ctx.bot.logger.error('listcases execution ERROR:\n' + traceback.format_exc())
+                error_logger.error('listcases execution ERROR:\n' + traceback.format_exc())
         else:
             return await ctx.send("No cases found with the provided arguments.")
 
@@ -701,19 +701,19 @@ class Moderation(commands.Cog):
                                                        f"<role>`")
         rets = []
         if len(users) == 1:
-            #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, users[0]): return
-            #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.guild.get_member(ctx.bot.user.id),
+            # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, users[0]): return
+            # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.guild.get_member(ctx.bot.user.id),
             #                                                         users[0], True): return
             await dutils.mute_user(ctx, users[0], length, reason, no_dm=no_dm, selfmute=selfmute)
         else:
             p = dutils.bot_pfx(ctx.bot, ctx.message)
             for u in users:
                 try_muting = 1
-                #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, u, silent=True,
+                # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, u, silent=True,
                 #                                                         can_be_same=True):
                 #    try_muting = 1234  # author top role lower
                 #    ret = "Has a higher role than you (wasn't muted) ℹ"
-                #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute',
+                # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute',
                 #                                                         ctx.guild.get_member(ctx.bot.user.id),
                 #                                                         u, bot_test=True, silent=True,
                 #                                                         can_be_same=True):
@@ -1135,7 +1135,6 @@ class Moderation(commands.Cog):
                         del self.bot.just_banned_by_bot[f'{uid}_{ctx.guild.id}']
                     except:
                         pass
-
 
         await msg.edit(content="**Done.**")
 
