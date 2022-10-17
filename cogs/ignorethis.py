@@ -1,11 +1,13 @@
 import itertools
 import logging
 from difflib import SequenceMatcher
+from typing import List
 
-from discord import Embed, utils, Member, Webhook
+from discord import Embed, utils, Member, Webhook, app_commands, Interaction
 from discord.ext import commands
 
 import utils.discordUtils as dutils
+from models.club_data import ClubData
 from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 
@@ -16,17 +18,67 @@ error_logger = logging.getLogger(f"error")
 # TODO return back the command check
 
 class Ignorethis(commands.Cog):
+    club_data: List[ClubData] = []
+
     def __init__(
             self,
             bot: commands.Bot
     ):
         self.bot = bot
-        self.verification_channel_id = 931192723447349268
+        verification_channel = bot.config["verification_channel"]
+        # self.verification_channel_id = 931192723447349268
+        self.verification_channel_id = verification_channel
         self.gallery_wh = None
+
+        self.clubs_path = 'data/clubs.json'
+        self.initialize_clubs()
+
+    def initialize_clubs(self):
+        dataIOa.create_file_if_doesnt_exist(self.clubs_path, '{}')
+        clubs_data = dataIOa.load_json(self.clubs_path)
+
+        values: dict
+        for key, values in clubs_data.items():
+            value = ClubData(
+                club_name=key,
+                club_data=values
+            )
+            self.club_data.append(value)
+
+    async def club_autocomplete(
+            self,
+            interaction: Interaction,
+            current: str
+    ) -> List[app_commands.Choice[str]]:
+
+        club_list = []
+
+        try:
+            for clubs in self.club_data:
+                if len(current) == 0:
+                    item = app_commands.Choice(
+                        name=clubs.club_name,
+                        value=clubs.club_name
+                    )
+                    club_list.append(item)
+                else:
+                    if current.lower() in clubs.club_name.lower() or clubs.description.lower():
+                        item = app_commands.Choice(
+                            name=clubs.club_name,
+                            value=clubs.club_name
+                        )
+                        club_list.append(item)
+
+                if len(club_list) > 24:
+                    break
+        except Exception as ex:
+            error_logger.error(ex)
+
+        return club_list
 
     # @commands.check(checks.onk_server_check)
     @commands.command()
-    async def listclubsraw(self, ctx, *includes: Member):
+    async def listclubsraw(self, ctx: commands.Context, *includes: Member):
         """Display all clubs TITLES
         Optional parameter for checking which clubs members are a part of it, ex:
         `[p]listclubsraw Kiki`
@@ -61,8 +113,21 @@ class Ignorethis(commands.Cog):
         await SimplePaginator(extras=embeds).paginate(ctx)
 
     # @commands.check(checks.onk_server_check)
-    @commands.command()
-    async def createclub(self, ctx, club_name, *, description):
+    @commands.hybrid_command(
+        name="createclub",
+        description="Create a new club"
+    )
+    @app_commands.describe(
+        club_name="Name of the club",
+        description="Description of the club"
+    )
+    async def create_club(
+            self,
+            ctx: commands.Context,
+            club_name: str,
+            *,
+            description: str
+    ):
         """Create a new club
         Usage:
         `[p]createclub yuri A club for the greatest form of love`
@@ -82,7 +147,7 @@ class Ignorethis(commands.Cog):
         if club_name in clubs_data:
             return await ctx.send('💢 A club with this name already exists')
 
-        ver_ch = ctx.guild.get_channel(self.verification_channel_id)
+        ver_ch = ctx.guild.get_channel_or_thread(self.verification_channel_id)
         if not ver_ch:
             return await ctx.send("Can't find verification channel (check the id for that)")
         await ctx.send("The club has been created, waiting for server staff aproval, you will be notified in dms"
@@ -98,7 +163,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check_admin)
     @commands.command()
-    async def createclubs(self, ctx, *, clubs):
+    async def createclubs(self, ctx: commands.Context, *, clubs):
         """Multiple clubs"""
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
@@ -126,8 +191,19 @@ class Ignorethis(commands.Cog):
             await ctx.send("Cancelling.")
 
     # @commands.check(checks.onk_server_check)
-    @commands.command()
-    async def clubinfo(self, ctx, club_name):
+    @commands.hybrid_command(
+        name="clubinfo",
+        description="Display info for a club if it exists"
+    )
+    @app_commands.describe(
+        club_name="Name of the club",
+    )
+    @app_commands.autocomplete(club_name=club_autocomplete)
+    async def club_info(
+            self,
+            ctx: commands.Context,
+            club_name: str
+    ):
         """Display info for a club if it exists"""
         club_name = club_name.lower()
 
@@ -152,7 +228,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check)
     @commands.command()
-    async def listclubs(self, ctx, *includes: Member):
+    async def listclubs(self, ctx: commands.Context, *includes: Member):
         """Display all clubs
         Optional parameter for checking which clubs members are a part of it, ex:
         `[p]listclubs Kiki`
@@ -232,7 +308,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["ping"])
-    async def pingclub(self, ctx, club_name, *, rest="Anything else that you'd like to add"):
+    async def pingclub(self, ctx: commands.Context, club_name, *, rest="Anything else that you'd like to add"):
         """Ping a club"""
         club_name = club_name.lower()
 
@@ -268,7 +344,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["ping2"])
-    async def pingclubs(self, ctx, *, clubs_and_rest_text):
+    async def pingclubs(self, ctx: commands.Context, *, clubs_and_rest_text):
         """Ping multiple clubs, please see detailed usage
         Syntax:
         `[p]ping2 club1 club2 club3; any other content you wish`
@@ -314,7 +390,7 @@ class Ignorethis(commands.Cog):
                 if p:
                     await ctx.send(f'Clubs: {clubs_all[:-2]} {p}')
 
-    async def check_if_clubs_exist(self, ctx, clubs):
+    async def check_if_clubs_exist(self, ctx: commands.Context, clubs):
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
         clubs_data = dataIOa.load_json(path)
@@ -337,7 +413,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["join"])
-    async def joinclub(self, ctx, club_name):
+    async def joinclub(self, ctx: commands.Context, club_name):
         """Join a club"""
         club_name = club_name.lower()
 
@@ -361,7 +437,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check)
     @commands.command(aliases=["leave"])
-    async def leaveclub(self, ctx, club_name):
+    async def leaveclub(self, ctx: commands.Context, club_name):
         """Leave a club"""
         club_name = club_name.lower()
 
@@ -386,7 +462,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.onk_server_check_admin)
     @commands.command()
-    async def deleteclubs(self, ctx, *, clubs_to_delete):
+    async def deleteclubs(self, ctx: commands.Context, *, clubs_to_delete):
         """Delete clubs, seperate with a space if deleting many"""
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
@@ -411,7 +487,7 @@ class Ignorethis(commands.Cog):
 
     # @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
-    async def get_groups(self, ctx, max_gaps: int, *, clubs_and_rest_text):
+    async def get_groups(self, ctx: commands.Context, max_gaps: int, *, clubs_and_rest_text):
         """Get groups so there is no gaps use | to ignore people (more than 100 (-100) for just clubs)"""
         just_club = False
         if max_gaps > 99:
@@ -535,7 +611,7 @@ class Ignorethis(commands.Cog):
         # event.guild_id event.user_id event.message_id event.channel_id
         if event.channel_id == self.verification_channel_id:
             g = self.bot.get_guild(int(event.guild_id))
-            ch = g.get_channel(int(event.channel_id))
+            ch = g.get_channel_or_thread(int(event.channel_id))
             msg = await ch.fetch_message(event.message_id)
             if event.user_id == self.bot.config["CLIENT_ID"]:
                 return  # in case the bot is adding reactions
@@ -568,7 +644,7 @@ class Ignorethis(commands.Cog):
             if event.user_id == self.bot.config["CLIENT_ID"]:
                 return  # in case the bot is adding reactions
             g = self.bot.get_guild(int(event.guild_id))
-            ch = g.get_channel(int(event.channel_id))
+            ch = g.get_channel_or_thread(int(event.channel_id))
             msg = await ch.fetch_message(event.message_id)
             dic = {(ll.split(' ')[0]).replace('<a:', '<:'): (' '.join(ll.split(' ')[1:])).strip() for ll in
                    msg.content.split('\n')}
@@ -583,7 +659,7 @@ class Ignorethis(commands.Cog):
                 clubs_data = dataIOa.load_json(path)
                 club = clubs_data[club_name]
                 mems = [(g.get_member(u)).id for u in club['members'] if g.get_member(u)]
-                # rch = g.get_channel(470822975676088350)
+                # rch = g.get_channel_or_thread(470822975676088350)
                 if event.user_id not in mems and add:
                     clubs_data[club_name]['members'].append(event.user_id)
                     dataIOa.save_json(path, clubs_data)
