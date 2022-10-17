@@ -64,6 +64,8 @@ class PaginationView(View):
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
         if self.author.id != interaction.user.id:
+            await interaction.response.send_message(content="You don't have permission to press this button.",
+                                                    ephemeral=True, )
             return False
         else:
             return True
@@ -80,7 +82,7 @@ class PaginationView(View):
         self.value = True
         self.stop()
 
-    @ui.button(label="Cancel", style=ButtonStyle.red, )
+    @ui.button(label="Quit", style=ButtonStyle.red, )
     async def cancel(self, interaction: Interaction, button: Button):
         self.current_page = None
         self.value = None
