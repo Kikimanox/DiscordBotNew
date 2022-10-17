@@ -110,6 +110,12 @@ async def onk_server_check(
 async def onk_server_check_admin(
         ctx: commands.Context
 ):
-    if ctx.guild.id != 695200821910044783: return False
-    return ctx.author.id == ctx.bot.config['OWNER_ID'] or (
-            isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator)
+    # if ctx.guild.id != 695200821910044783: return False
+    if ctx.author.id == ctx.bot.config['OWNER_ID']:
+        return True
+    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator:
+        return True
+    roles = ctx.author.get_role(695297422724694016)
+    if roles is not None:
+        return True
+    return False

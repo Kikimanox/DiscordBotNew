@@ -576,16 +576,10 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
-    # @commands.check(checks.onk_server_check_admin)
+    @commands.check(checks.onk_server_check_admin)
     @commands.hybrid_command(
         name="deleteclubs",
         description="Only those who hold power can delete clubs. beware"
-    )
-    @commands.has_role(
-        695297422724694016
-    )
-    @app_commands.checks.has_role(
-        695297422724694016
     )
     @app_commands.autocomplete(clubs_to_delete=club_autocomplete)
     async def deleteclubs(
