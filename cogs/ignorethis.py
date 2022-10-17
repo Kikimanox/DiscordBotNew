@@ -62,7 +62,7 @@ class Ignorethis(commands.Cog):
                     )
                     club_list.append(item)
                 else:
-                    if current.lower() in clubs.club_name.lower() or clubs.description.lower():
+                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
                         item = app_commands.Choice(
                             name=clubs.club_name,
                             value=clubs.club_name
