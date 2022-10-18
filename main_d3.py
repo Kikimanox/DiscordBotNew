@@ -157,6 +157,9 @@ async def on_reaction_add(reaction: Reaction, user: Client):
     if user != bot.user:
         x_mark = '\U0000274c'
         if str(reaction.emoji) == x_mark:
+            # temporary
+            if not reaction.message.author.guild_permissions.administrator:
+                return
             if reaction.message.author.id == bot.user.id:
                 message = reaction.message
                 await message.delete()
