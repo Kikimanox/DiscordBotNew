@@ -39,63 +39,63 @@ class PaginationView(View):
         self.num_of_pages = len(clubs)
         self.current_page = current_page
 
-        if self.current_page == 0 and self.num_of_pages > 1:
-            self.first.disabled = True
-            self.previous.disabled = True
-            self.next.disabled = False
-            self.last.disabled = False
-        elif self.current_page == (self.num_of_pages - 1) and self.num_of_pages > 1:
-            self.first.disabled = False
-            self.previous.disabled = False
-            self.next.disabled = True
-            self.last.disabled = True
-        elif self.current_page == (self.num_of_pages - 1) and self.num_of_pages == 1:
+        if self.current_page == (self.num_of_pages - 1) and self.num_of_pages == 1:
             self.first.disabled = True
             self.previous.disabled = True
             self.next.disabled = True
             self.last.disabled = True
-        else:
-            self.first.disabled = False
-            self.previous.disabled = False
-            self.next.disabled = False
-            self.last.disabled = False
 
         self.value = None
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
         if self.author.id != interaction.user.id:
-            await interaction.response.send_message(content="You don't have permission to press this button.",
-                                                    ephemeral=True, )
+            await interaction.response.send_message(
+                content="This command was not invoked by you so you cannot interact with it.",
+                ephemeral=True,
+                delete_after=300
+            )
             return False
         else:
             return True
 
-    @ui.button(label="First", style=ButtonStyle.green)
+    @ui.button(label="<<", style=ButtonStyle.grey)
     async def first(self, interaction: Interaction, button: Button):
-        self.current_page = 0
+        if self.current_page == 0:
+            self.current_page = self.num_of_pages - 1
+        else:
+            self.current_page = 0
         self.value = True
         self.stop()
 
-    @ui.button(label="Previous", style=ButtonStyle.green)
+    @ui.button(label="<", style=ButtonStyle.grey)
     async def previous(self, interaction: Interaction, button: Button):
-        self.current_page -= 1
+        if self.current_page == 0:
+            self.current_page = self.num_of_pages - 1
+        else:
+            self.current_page -= 1
         self.value = True
         self.stop()
 
-    @ui.button(label="Quit", style=ButtonStyle.red, )
+    @ui.button(label=">", style=ButtonStyle.grey)
+    async def next(self, interaction: Interaction, button: Button):
+        if self.current_page == (self.num_of_pages - 1):
+            self.current_page = 0
+        else:
+            self.current_page += 1
+        self.value = True
+        self.stop()
+
+    @ui.button(label=">>", style=ButtonStyle.grey)
+    async def last(self, interaction: Interaction, button: Button):
+        if self.current_page == (self.num_of_pages - 1):
+            self.current_page = 0
+        else:
+            self.current_page = self.num_of_pages - 1
+        self.value = True
+        self.stop()
+
+    @ui.button(label="X")
     async def cancel(self, interaction: Interaction, button: Button):
         self.current_page = None
         self.value = None
-        self.stop()
-
-    @ui.button(label="Next", style=ButtonStyle.green)
-    async def next(self, interaction: Interaction, button: Button):
-        self.current_page += 1
-        self.value = True
-        self.stop()
-
-    @ui.button(label="Last", style=ButtonStyle.green)
-    async def last(self, interaction: Interaction, button: Button):
-        self.current_page = self.num_of_pages - 1
-        self.value = True
         self.stop()

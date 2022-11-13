@@ -162,14 +162,14 @@ async def on_ready():
     await bot.change_presence(activity=activity)
 
 
-@bot.event
-async def on_reaction_add(reaction: Reaction, user: Client):
-    if user != bot.user:
-        x_mark = '\U0000274c'
-        if str(reaction.emoji) == x_mark:
-            if reaction.message.author.id == bot.user.id:
-                message = reaction.message
-                await message.delete()
+# @bot.event
+# async def on_reaction_add(reaction: Reaction, user: Client):
+#     if user != bot.user:
+#         x_mark = '\U0000274c'
+#         if str(reaction.emoji) == x_mark:
+#             if reaction.message.author.id == bot.user.id:
+#                 message = reaction.message
+#                 await message.delete()
 
 
 def exit_bot(self):
