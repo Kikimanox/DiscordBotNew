@@ -6,6 +6,7 @@ from typing import List, Optional, Union
 from discord import Embed, utils, Member, Webhook, app_commands, Interaction, colour, Reaction, Message
 from discord.channel import TextChannel, Thread, VoiceChannel, StageChannel, ForumChannel, CategoryChannel
 from discord.ext import commands, tasks
+from discord.ui import View
 
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -61,14 +62,32 @@ class Ignorethis(commands.Cog):
 
     async def message_sending(
             self,
-            content_message: str,
+            content_message: str = None,
+            embed: Embed = None,
+            view: Optional[View] = None,
             ctx: Optional[commands.Context] = None,
+            channel: Optional[
+                Union[TextChannel, Thread, VoiceChannel, StageChannel, ForumChannel, CategoryChannel]] = None,
             delete_after: Optional[float] = None
     ) -> Optional[Message]:
+        if channel is not None:
+            message = await channel.send(
+                content=content_message,
+                embed=embed,
+                view=view,
+                delete_after=delete_after
+            )
+            await self.message_context_save_for_deletion(
+                message,
+                ctx
+            )
+            return message
         try:
             if ctx.interaction is not None:
                 message = await ctx.send(
                     content=content_message,
+                    embed=embed,
+                    view=view,
                     delete_after=delete_after
                 )
                 await self.message_context_save_for_deletion(
@@ -80,6 +99,8 @@ class Ignorethis(commands.Cog):
                 channel = ctx.channel
                 message = await channel.send(
                     content=content_message,
+                    embed=embed,
+                    view=view,
                     delete_after=delete_after
                 )
                 await self.message_context_save_for_deletion(message, ctx)
@@ -160,7 +181,11 @@ class Ignorethis(commands.Cog):
         """
         club_name = club_name.lower()
         if '*' in club_name or '*' in description:
-            return await ctx.send("The club name can not include the character `*`, please try again.")
+            await self.message_sending(
+                content_message="The club name can not include the character `*`, please try again.",
+                ctx=ctx
+            )
+            return
 
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
@@ -188,7 +213,11 @@ class Ignorethis(commands.Cog):
 
         ver_ch = ctx.channel
         if not ver_ch:
-            return await ctx.send("Can't find verification channel (check the id for that)")
+            await self.message_sending(
+                content_message="Can't find verification channel (check the id for that)",
+                ctx=ctx
+            )
+            return
         club_created_message = await ctx.send(
             "The club has been created, waiting for server staff aproval, you will be notified in dms"
             " once the club has been verified or denied.")
@@ -236,7 +265,12 @@ class Ignorethis(commands.Cog):
             c = c.lower()
             if c in clubs_data:
                 c = c.replace('@', '@\u200b')
-                return await ctx.send(f'💢 `{c}` already exists')
+                await self.message_sending(
+                    content_message=f'💢 `{c}` already exists',
+                    ctx=ctx,
+                    delete_after=30
+                )
+                return
 
         ret = ""
         for c in clubs:
@@ -249,9 +283,15 @@ class Ignorethis(commands.Cog):
         confirm = await dutils.prompt(ctx, f"This will create the club(s):\n{clbs}".replace('@', '@\u200b'))
         if confirm:
             dataIOa.save_json(path, clubs_data)
-            await ctx.send(ret)
+            await self.message_sending(
+                content_message=ret,
+                ctx=ctx,
+            )
         else:
-            await ctx.send("Cancelling.")
+            await self.message_sending(
+                content_message="Cancelling.",
+                ctx=ctx,
+            )
 
     # @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
@@ -281,12 +321,18 @@ class Ignorethis(commands.Cog):
                                    f'**Description:** {club["desc"]}\n'
                                    f'**Ping count:** {club["pings"]}\n\n'
                                    f'**Members:** {", ".join(mems)}')
-            await ctx.send(embed=em)
+            await self.message_sending(
+                embed=em,
+                ctx=ctx
+            )
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
             emote = "💢" if not emote_test else str(emote_test)
-            await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
+            await self.message_sending(
+                content_message=f'{emote} No such club found, did you perhaps mean `{suggestion}`',
+                ctx=ctx
+            )
 
     # @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
@@ -300,7 +346,7 @@ class Ignorethis(commands.Cog):
         user_4="Check the club the user is in",
         user_5="Check the club the user is in",
     )
-    async def listclubs(
+    async def list_clubs(
             self,
             ctx: commands.Context,
             user_1: Optional[Member] = None,
@@ -355,7 +401,11 @@ class Ignorethis(commands.Cog):
 
         messages: list[str] = []
         if len(temp_data) == 0:
-            await ctx.send("No clubs found.")
+            await self.message_sending(
+                content_message="No clubs found.",
+                ctx=ctx,
+                delete_after=60
+            )
             return
         current_message = ""
         count = 0
@@ -376,7 +426,10 @@ class Ignorethis(commands.Cog):
             description=messages[current_page]
         )
         embed.set_footer(text=f"page {current_page + 1}/{len(messages)}")
-        embed_message = await ctx.send(embed=embed)
+        embed_message = await self.message_sending(
+            embed=embed,
+            ctx=ctx
+        )
         guild_id = ctx.guild.id
         channel_id = ctx.channel.id
         channel = self.bot.get_guild(guild_id).get_channel_or_thread(channel_id)
@@ -389,7 +442,11 @@ class Ignorethis(commands.Cog):
                 timeout=300
             )
 
-            view_message = await channel.send(view=view)
+            view_message = await self.message_sending(
+                view=view,
+                ctx=ctx,
+                channel=channel
+            )
             await view.wait()
 
             current_page = view.current_page
@@ -434,8 +491,13 @@ class Ignorethis(commands.Cog):
             # creator = ctx.guild.get_member(int(club['creator']))
             mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
             if ctx.author not in mems and not ctx.author.guild_permissions.administrator:
-                return await ctx.send(f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
-                                      f"You can't ping a club you're not a part of")
+                await self.message_sending(
+                    content_message=f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
+                                    f"You can't ping a club you're not a part of",
+                    ctx=ctx,
+                    delete_after=60
+                )
+                return
             pings = ['']
             clubs_data[club_name]['pings'] += 1
             dataIOa.save_json(path, clubs_data)
@@ -448,13 +510,20 @@ class Ignorethis(commands.Cog):
 
             for p in pings:
                 if p:
-                    await ctx.send(f'Club: {club_name} {p}')
+                    await self.message_sending(
+                        content_message=f'Club: {club_name} {p}',
+                        ctx=ctx
+                    )
 
         else:
             suggestion = self.findMostSimilar(club_name, [*clubs_data])
             emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
             emote = "💢" if not emote_test else str(emote_test)
-            await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
+            await self.message_sending(
+                content_message=f'{emote} No such club found, did you perhaps mean `{suggestion}`',
+                ctx=ctx,
+                delete_after=60
+            )
 
     @commands.HybridCommand.autocomplete(ping_club, "club_name")
     async def club_autocomplete_author_part_of(
@@ -641,7 +710,8 @@ class Ignorethis(commands.Cog):
                 await self.message_sending(
                     content_message=f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
                                     f"You are already in this club {club_name}",
-                    ctx=ctx
+                    ctx=ctx,
+                    delete_after=60
                 )
                 return
             clubs_data[club_name]['members'].append(ctx.author.id)
@@ -649,6 +719,7 @@ class Ignorethis(commands.Cog):
             await self.message_sending(
                 content_message=f"{ctx.author.mention} has joined the club {club_name}",
                 ctx=ctx,
+                delete_after=60
             )
             self.initialize_clubs()
         else:
@@ -657,7 +728,8 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await self.message_sending(
                 content_message=f'{emote} No such club found, did you perhaps mean `{suggestion}`',
-                ctx=ctx
+                ctx=ctx,
+                delete_after=60
             )
 
     @commands.HybridCommand.autocomplete(join_club, "club_name")
@@ -813,7 +885,11 @@ class Ignorethis(commands.Cog):
             ctx=ctx
         )
         channel = ctx.channel
-        message = await channel.send(view=view)
+        message = await self.message_sending(
+            view=view,
+            ctx=ctx,
+            channel=channel
+        )
         await view.wait()
         if view.value is True:
             await message.delete()
