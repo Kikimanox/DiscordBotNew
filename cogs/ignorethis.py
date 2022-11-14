@@ -19,7 +19,6 @@ logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
 
 
-# TODO return back the command check
 # TODO return back the verification channel
 
 class Ignorethis(commands.Cog):
@@ -65,26 +64,29 @@ class Ignorethis(commands.Cog):
             content_message: str,
             ctx: Optional[commands.Context] = None,
             delete_after: Optional[float] = None
-
-    ):
-        if ctx.interaction is not None:
-            message = await ctx.send(
-                content=content_message,
-                delete_after=delete_after
-            )
-            await self.message_context_save_for_deletion(
-                message,
-                ctx
-            )
-            return
-        else:
-            channel = ctx.channel
-            message = await channel.send(
-                content=content_message,
-                delete_after=delete_after
-            )
-            await self.message_context_save_for_deletion(message, ctx)
-            return
+    ) -> Optional[Message]:
+        try:
+            if ctx.interaction is not None:
+                message = await ctx.send(
+                    content=content_message,
+                    delete_after=delete_after
+                )
+                await self.message_context_save_for_deletion(
+                    message,
+                    ctx
+                )
+                return message
+            else:
+                channel = ctx.channel
+                message = await channel.send(
+                    content=content_message,
+                    delete_after=delete_after
+                )
+                await self.message_context_save_for_deletion(message, ctx)
+                return message
+        except Exception as ex:
+            error_logger.error(f"{ex}")
+            return None
 
     async def message_context_save_for_deletion(
             self,
@@ -126,10 +128,11 @@ class Ignorethis(commands.Cog):
 
     @tasks.loop(hours=24)
     async def club_update_info(self):
+        """
+        updates all of the club info every 1 day
+        """
         logger.info("Updating the clubs")
         self.initialize_clubs()
-
-
 
     # @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
@@ -178,9 +181,12 @@ class Ignorethis(commands.Cog):
             club_name: str,
             description: str
     ):
-        channel_id = ctx.channel.id
+        # channel_id = ctx.channel.id
         # ver_ch = ctx.guild.get_channel_or_thread(self.verification_channel_id)
-        ver_ch = ctx.guild.get_channel_or_thread(channel_id)
+        # onk_guild = self.bot.get_guild(695200821910044783)
+        # ver_ch = onk_guild.get_channel_or_thread(self.verification_channel_id)
+
+        ver_ch = ctx.channel
         if not ver_ch:
             return await ctx.send("Can't find verification channel (check the id for that)")
         club_created_message = await ctx.send(
@@ -400,50 +406,6 @@ class Ignorethis(commands.Cog):
                     embed=new_embed
                 )
 
-    def createEmbedsFromAllClubs(self, clubs, base_title):
-        embeds = []
-        allClubs = [f"**{k}**\nMembers: {len(c['members'])} | Ping count: {c['pings']}\n"
-                    f"{c['desc']}\n\n" for k, c in clubs.items()]
-
-        one_page = ''
-        cnt = 0
-        for c in allClubs:
-            if len(one_page + c) > 1500 or cnt > 7:
-                embeds.append(Embed(title=f'{base_title}, page {len(embeds) + 1}/[MAX]', description=one_page,
-                                    color=self.bot.config['BOT_DEFAULT_EMBED_COLOR']))
-                one_page = ''
-                cnt = 0
-            cnt += 1
-            one_page += c
-
-        embeds.append(Embed(title=f'{base_title}, page {len(embeds) + 1}/[MAX]', description=one_page,
-                            color=self.bot.config['BOT_DEFAULT_EMBED_COLOR']))
-        for e in embeds:
-            e.title = str(e.title).replace("[MAX]", str(len(embeds)))
-        return embeds
-
-    def createEmbedsFromAllClubs2(self, clubs, base_title):
-        embeds = []
-        allClubs = [f"- **{k}** ({c['desc'][:50] if len(c['desc']) <= 50 else (c['desc'][:50] + '...')})\n"
-                    for k, c in clubs.items()]
-
-        one_page = ''
-        cnt = 0
-        for c in allClubs:
-            if len(one_page + c) > 1900:
-                embeds.append(Embed(title=f'{base_title}, page {len(embeds) + 1}/[MAX]', description=one_page,
-                                    color=self.bot.config['BOT_DEFAULT_EMBED_COLOR']))
-                one_page = ''
-                cnt = 0
-            cnt += 1
-            one_page += c
-
-        embeds.append(Embed(title=f'{base_title}, page {len(embeds) + 1}/[MAX]', description=one_page,
-                            color=self.bot.config['BOT_DEFAULT_EMBED_COLOR']))
-        for e in embeds:
-            e.title = str(e.title).replace("[MAX]", str(len(embeds)))
-        return embeds
-
     # @commands.check(checks.onk_server_check)
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     @commands.hybrid_command(
@@ -533,7 +495,14 @@ class Ignorethis(commands.Cog):
     @commands.hybrid_command(
         name="pingclubs",
         aliases=["ping2"],
-        description="Ping multiple clubs"
+        description="Ping multiple clubs up to 5 clubs at a time"
+    )
+    @app_commands.describe(
+        club_1="Club 1",
+        club_2="Club 2",
+        club_3="Club 3",
+        club_4="Club 4",
+        club_5="Club 5",
     )
     @app_commands.autocomplete(
         club_1=club_autocomplete_author_part_of,
@@ -607,9 +576,16 @@ class Ignorethis(commands.Cog):
 
             for p in pings:
                 if p:
-                    await ctx.send(f'Clubs: {clubs_all[:-2]} {p}')
+                    await self.message_sending(
+                        content_message=f'Clubs: {clubs_all[:-2]} {p}',
+                        ctx=ctx
+                    )
 
-    async def check_if_clubs_exist(self, ctx: commands.Context, clubs):
+    async def check_if_clubs_exist(
+            self,
+            ctx: commands.Context,
+            clubs
+    ) -> bool:
         path = 'data/clubs.json'
         dataIOa.create_file_if_doesnt_exist(path, '{}')
         clubs_data = dataIOa.load_json(path)
@@ -618,15 +594,23 @@ class Ignorethis(commands.Cog):
                 suggestion = self.findMostSimilar(c, [*clubs_data])
                 emote_test = utils.get(ctx.guild.emojis, name="HestiaNo")
                 emote = "💢" if not emote_test else str(emote_test)
-                await ctx.send(f'{emote} A club in your list is invalid, did you perhaps mean `{suggestion}`'
-                               f' for that one? (invalid club: '
-                               f'`{dutils.cleanUpBannedWords(["@everyone", "@here"], c)}`)')
+                await self.message_sending(
+                    content_message=f'{emote} A club in your list is invalid, did you perhaps mean `{suggestion}`'
+                                    f' for that one? (invalid club: '
+                                    f'`{dutils.cleanUpBannedWords(["@everyone", "@here"], c)}`)',
+                    ctx=ctx,
+                    delete_after=60
+                )
                 return False
             club = clubs_data[c]
             mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
             if ctx.author not in mems and not ctx.author.guild_permissions.administrator:
-                await ctx.send(f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
-                               f"You can't ping a club you're not a part of (`{c}`)")
+                await self.message_sending(
+                    content_message=f"{self.get_emote_if_exists_else(ctx.guild, 'HestiaNo', '💢')} "
+                                    f"You can't ping a club you're not a part of (`{c}`)",
+                    ctx=ctx,
+                    delete_after=15
+                )
                 return False
         return True
 
@@ -822,20 +806,26 @@ class Ignorethis(commands.Cog):
                 notIn += f"{c} "
 
         view = ConfirmCancelView(timeout=None)
-        warning_message = await ctx.send(content=f"**Are you sure? This action cannot be reversed.**\n"
-                                                 f"__Club to be deleted__\n"
-                                                 f"{wasIn}")
-        message = await ctx.send(view=view)
+        warning_message = await self.message_sending(
+            content_message=f"**Are you sure? This action cannot be reversed.**\n"
+                            f"__Club to be deleted__\n"
+                            f"{wasIn}",
+            ctx=ctx
+        )
+        channel = ctx.channel
+        message = await channel.send(view=view)
         await view.wait()
         if view.value is True:
             await message.delete()
-            await warning_message.edit(content=f"The following club was deleted by {ctx.author.name}\n"
-                                               f"{wasIn}")
+            if warning_message is not None:
+                await warning_message.edit(content=f"The following club was deleted by {ctx.author.name}\n"
+                                                   f"{wasIn}")
             dataIOa.save_json(path, clubs_data)
             self.initialize_clubs()
         else:
             await message.delete()
-            await warning_message.edit(content=f"Cancelled deletion of the following:\n{wasIn}")
+            if warning_message is not None:
+                await warning_message.edit(content=f"Cancelled deletion of the following:\n{wasIn}")
 
     # @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
@@ -862,9 +852,19 @@ class Ignorethis(commands.Cog):
         clubs = [c.lower() for c in clubs]
         clubs = list(set(clubs))
         if len(clubs) < 2:
-            return await ctx.send("Need at least 2 clubs for this command")
+            await self.message_sending(
+                content_message="Need at least 2 clubs for this command",
+                ctx=ctx,
+                delete_after=15
+            )
+            return
         if len(clubs) > 8:
-            return await ctx.send("No more than 8 clubs!")
+            await self.message_sending(
+                content_message="No more than 8 clubs!",
+                ctx=ctx,
+                delete_after=15
+            )
+            return
 
         all_ok = await self.check_if_clubs_exist(ctx, clubs)
 
@@ -901,10 +901,18 @@ class Ignorethis(commands.Cog):
                 res.append('\n'.join(rs))
 
             if not res:
-                return await ctx.send(f"No order for **{max_gaps}** max gaps")
+                await self.message_sending(
+                    content_message=f"No order for **{max_gaps}** max gaps",
+                    ctx=ctx,
+                )
+                return
             res = res[:len(res) // 2]
             if len(res) > 100:
-                return await ctx.send("There's more than 100 different permutations. Too much!")
+                await self.message_sending(
+                    content_message="There's more than 100 different permutations. Too much!",
+                    ctx=ctx,
+                )
+                return
             await dutils.print_hastebin_or_file(ctx, '\n\n'.join(res), just_file=True)
 
     @staticmethod
