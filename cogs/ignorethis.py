@@ -20,8 +20,6 @@ logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
 
 
-# TODO return back the verification channel
-
 class Ignorethis(commands.Cog):
     club_data: List[ClubData] = []
     command_owner_dict = {}
@@ -31,9 +29,10 @@ class Ignorethis(commands.Cog):
             bot: commands.Bot
     ):
         self.bot = bot
-        verification_channel = bot.config["verification_channel"]
-        # self.verification_channel_id = 931192723447349268
-        self.verification_channel_id = verification_channel
+        # verification_channel = bot.config["verification_channel"]
+        # self.verification_channel_id = verification_channel
+        self.verification_channel_id = 931192723447349268
+
         self.onk_bot_channel = 695297906529271888
         self.gallery_wh = None
 
@@ -150,12 +149,12 @@ class Ignorethis(commands.Cog):
     @tasks.loop(hours=24)
     async def club_update_info(self):
         """
-        updates all of the club info every 1 day
+        updates all the club info every 1 day
         """
         logger.info("Updating the clubs")
         self.initialize_clubs()
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
         name="createclub",
         description="Create a new club"
@@ -208,10 +207,10 @@ class Ignorethis(commands.Cog):
     ):
         # channel_id = ctx.channel.id
         # ver_ch = ctx.guild.get_channel_or_thread(self.verification_channel_id)
-        # onk_guild = self.bot.get_guild(695200821910044783)
-        # ver_ch = onk_guild.get_channel_or_thread(self.verification_channel_id)
+        onk_guild = self.bot.get_guild(695200821910044783)
+        ver_ch = onk_guild.get_channel_or_thread(self.verification_channel_id)
 
-        ver_ch = ctx.channel
+        # ver_ch = ctx.channel
         if not ver_ch:
             await self.message_sending(
                 content_message="Can't find verification channel (check the id for that)",
@@ -293,7 +292,7 @@ class Ignorethis(commands.Cog):
                 ctx=ctx,
             )
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
         name="clubinfo",
         description="Display info for a club if it exists"
@@ -334,7 +333,7 @@ class Ignorethis(commands.Cog):
                 ctx=ctx
             )
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
         name="listclubs",
         description="Optional parameter for checking which clubs members are a part of it"
@@ -463,7 +462,7 @@ class Ignorethis(commands.Cog):
                     embed=new_embed
                 )
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
     @commands.hybrid_command(
         name="pingclub",
@@ -560,7 +559,7 @@ class Ignorethis(commands.Cog):
 
         return club_list
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
         name="pingclubs",
         aliases=["ping2"],
@@ -683,7 +682,7 @@ class Ignorethis(commands.Cog):
                 return False
         return True
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
         name="joinclub",
         aliases=["join"],
@@ -767,7 +766,7 @@ class Ignorethis(commands.Cog):
 
         return club_list
 
-    # @commands.check(checks.onk_server_check)
+    @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
         name="leaveclub",
         aliases=["leave"],
@@ -903,7 +902,7 @@ class Ignorethis(commands.Cog):
             if warning_message is not None:
                 await warning_message.edit(content=f"Cancelled deletion of the following:\n{wasIn}")
 
-    # @commands.check(checks.admin_check)
+    @commands.check(checks.admin_check)
     @commands.command(aliases=["gg"])
     async def get_groups(self, ctx: commands.Context, max_gaps: int, *, clubs_and_rest_text):
         """Get groups so there is no gaps use | to ignore people (more than 100 (-100) for just clubs)"""
