@@ -129,140 +129,7 @@ class Ignorethis(commands.Cog):
         logger.info("Updating the clubs")
         self.initialize_clubs()
 
-    async def club_autocomplete(
-            self,
-            interaction: Interaction,
-            current: str
-    ) -> List[app_commands.Choice[str]]:
 
-        club_list = []
-
-        try:
-            for clubs in self.club_data:
-                if len(current) == 0:
-                    item = app_commands.Choice(
-                        name=clubs.club_name,
-                        value=clubs.club_name
-                    )
-                    club_list.append(item)
-                else:
-                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
-                        item = app_commands.Choice(
-                            name=clubs.club_name,
-                            value=clubs.club_name
-                        )
-                        club_list.append(item)
-
-                if len(club_list) > 24:
-                    break
-        except Exception as ex:
-            error_logger.error(ex)
-
-        return club_list
-
-    async def club_autocomplete_author_not_member_of_club(
-            self,
-            interaction: Interaction,
-            current: str
-    ) -> List[app_commands.Choice[str]]:
-        author_id = interaction.user.id
-        club_list = []
-
-        try:
-            for clubs in self.club_data:
-                check_if_author_in_the_club = clubs.check_if_author_is_in_the_club(author_id=author_id)
-                if check_if_author_in_the_club:
-                    continue
-                if len(current) == 0:
-                    item = app_commands.Choice(
-                        name=clubs.club_name,
-                        value=clubs.club_name
-                    )
-                    club_list.append(item)
-                else:
-                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
-                        item = app_commands.Choice(
-                            name=clubs.club_name,
-                            value=clubs.club_name
-                        )
-                        club_list.append(item)
-
-                if len(club_list) > 24:
-                    break
-        except Exception as ex:
-            error_logger.error(ex)
-
-        return club_list
-
-    async def club_autocomplete_author_part_of(
-            self,
-            interaction: Interaction,
-            current: str
-    ) -> List[app_commands.Choice[str]]:
-        author_id = interaction.user.id
-        club_list = []
-
-        try:
-            for clubs in self.club_data:
-                check_if_author_in_the_club = clubs.check_if_author_is_in_the_club(author_id=author_id)
-                if not check_if_author_in_the_club:
-                    continue
-                if len(current) == 0:
-                    item = app_commands.Choice(
-                        name=clubs.club_name,
-                        value=clubs.club_name
-                    )
-                    club_list.append(item)
-                else:
-                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
-                        item = app_commands.Choice(
-                            name=clubs.club_name,
-                            value=clubs.club_name
-                        )
-                        club_list.append(item)
-
-                if len(club_list) > 24:
-                    break
-        except Exception as ex:
-            error_logger.error(ex)
-
-        return club_list
-
-    # @commands.check(checks.onk_server_check)
-    @commands.command()
-    async def listclubsraw(self, ctx: commands.Context, *includes: Member):
-        """Display all clubs TITLES
-        Optional parameter for checking which clubs members are a part of it, ex:
-        `[p]listclubsraw Kiki`
-        `[p]listclubsraw @Kiki`
-        `[p]listclubsraw 174406433603846145`
-        `[p]listclubsraw A B`
-        `[p]listclubsraw Kiki Neil Snky`
-        `[p]listclubsraw 174406433603846145 Neil @Rollin_Styles`
-        For multiple members the command works with **and**
-        meaning that in the first example it will
-        find clubs where A and B are both in."""
-
-        path = 'data/clubs.json'
-        dataIOa.create_file_if_doesnt_exist(path, '{}')
-        clubs_data = dataIOa.load_json(path)
-        embeds = []
-        if not includes:
-            embeds = self.createEmbedsFromAllClubs2(clubs_data, 'All clubs')
-        else:
-            includes = list(includes)
-            d_clubs = {}
-            for k, v in clubs_data.items():
-                mems = [ctx.guild.get_member(u) for u in v['members'] if ctx.guild.get_member(u)]
-                intersection = list(set(includes) & set(mems))
-                if len(intersection) == len(includes):
-                    d_clubs[k] = v
-            if not d_clubs:
-                return await ctx.send("No clubs found for this querry.")
-            embeds = self.createEmbedsFromAllClubs2(d_clubs, f'Clubs with: '
-                                                             f'{" and ".join([m.name for m in includes])}')
-
-        await SimplePaginator(extras=embeds).paginate(ctx)
 
     # @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
@@ -388,7 +255,6 @@ class Ignorethis(commands.Cog):
     @app_commands.describe(
         club_name="Name of the club",
     )
-    @app_commands.autocomplete(club_name=club_autocomplete)
     async def club_info(
             self,
             ctx: commands.Context,
@@ -589,7 +455,6 @@ class Ignorethis(commands.Cog):
         club_name="You can only ping a club you are part of. If you don't see any choices mean you "
                   "are not part of any club",
     )
-    @app_commands.autocomplete(club_name=club_autocomplete_author_part_of)
     async def ping_club(
             self,
             ctx: commands.Context,
@@ -629,9 +494,63 @@ class Ignorethis(commands.Cog):
             emote = "💢" if not emote_test else str(emote_test)
             await ctx.send(f'{emote} No such club found, did you perhaps mean `{suggestion}`')
 
+    @commands.HybridCommand.autocomplete(ping_club, "club_name")
+    async def club_autocomplete_author_part_of(
+            self,
+            interaction: Interaction,
+            current: str
+    ) -> List[app_commands.Choice[str]]:
+        author_id = interaction.user.id
+        club_list = []
+
+        try:
+            for clubs in self.club_data:
+                check_if_author_in_the_club = clubs.check_if_author_is_in_the_club(author_id=author_id)
+                if not check_if_author_in_the_club:
+                    continue
+                if len(current) == 0:
+                    item = app_commands.Choice(
+                        name=clubs.club_name,
+                        value=clubs.club_name
+                    )
+                    club_list.append(item)
+                else:
+                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
+                        item = app_commands.Choice(
+                            name=clubs.club_name,
+                            value=clubs.club_name
+                        )
+                        club_list.append(item)
+
+                if len(club_list) > 24:
+                    break
+        except Exception as ex:
+            error_logger.error(ex)
+
+        return club_list
+
     # @commands.check(checks.onk_server_check)
-    @commands.command(aliases=["ping2"])
-    async def pingclubs(self, ctx: commands.Context, *, clubs_and_rest_text):
+    @commands.hybrid_command(
+        name="pingclubs",
+        aliases=["ping2"],
+        description="Ping multiple clubs"
+    )
+    @app_commands.autocomplete(
+        club_1=club_autocomplete_author_part_of,
+        club_2=club_autocomplete_author_part_of,
+        club_3=club_autocomplete_author_part_of,
+        club_4=club_autocomplete_author_part_of,
+        club_5=club_autocomplete_author_part_of,
+    )
+    async def ping_clubs(
+            self,
+            ctx: commands.Context,
+            club_1: Optional[str] = None,
+            club_2: Optional[str] = None,
+            club_3: Optional[str] = None,
+            club_4: Optional[str] = None,
+            club_5: Optional[str] = None,
+    ):
         """Ping multiple clubs, please see detailed usage
         Syntax:
         `[p]ping2 club1 club2 club3; any other content you wish`
@@ -643,11 +562,24 @@ class Ignorethis(commands.Cog):
         When doing `[p]ping2 yuri fate; cool Eresh x Ishtar pics`
         The bot will ping the users: @user1 @user2 @user3
         """
-        clubs = clubs_and_rest_text.rsplit(';', 1)[:1][0].split(' ')
-        clubs = [c.lower() for c in clubs]
-        clubs = list(set(clubs))
+        clubs: list[str] = []
+        if club_1 is not None:
+            clubs.append(club_1)
+        if club_2 is not None:
+            clubs.append(club_2)
+        if club_3 is not None:
+            clubs.append(club_3)
+        if club_4 is not None:
+            clubs.append(club_4)
+        if club_5 is not None:
+            clubs.append(club_5)
         if len(clubs) < 2:
-            return await ctx.send("Need at least 2 clubs for this command")
+            await self.message_sending(
+                content_message="Need at least 2 clubs for this command",
+                ctx=ctx,
+                delete_after=15
+            )
+            return
 
         all_ok = await self.check_if_clubs_exist(ctx, clubs)
 
@@ -661,7 +593,7 @@ class Ignorethis(commands.Cog):
                 club = clubs_data[club_name]
                 mems = [ctx.guild.get_member(u) for u in club['members'] if ctx.guild.get_member(u)]
                 clubs_data[club_name]['pings'] += 1
-                mems_all = list(set([*mems_all, *mems]))
+                mems_all = list({*mems_all, *mems})
                 clubs_all += club_name + ', '
             dataIOa.save_json(path, clubs_data)
 
@@ -707,7 +639,6 @@ class Ignorethis(commands.Cog):
     @app_commands.describe(
         club_name="Name of the club",
     )
-    @app_commands.autocomplete(club_name=club_autocomplete_author_not_member_of_club)
     async def join_club(
             self,
             ctx: commands.Context,
@@ -744,6 +675,41 @@ class Ignorethis(commands.Cog):
                 content_message=f'{emote} No such club found, did you perhaps mean `{suggestion}`',
                 ctx=ctx
             )
+
+    @commands.HybridCommand.autocomplete(join_club, "club_name")
+    async def club_autocomplete_author_not_member_of_club(
+            self,
+            interaction: Interaction,
+            current: str
+    ) -> List[app_commands.Choice[str]]:
+        author_id = interaction.user.id
+        club_list = []
+
+        try:
+            for clubs in self.club_data:
+                check_if_author_in_the_club = clubs.check_if_author_is_in_the_club(author_id=author_id)
+                if check_if_author_in_the_club:
+                    continue
+                if len(current) == 0:
+                    item = app_commands.Choice(
+                        name=clubs.club_name,
+                        value=clubs.club_name
+                    )
+                    club_list.append(item)
+                else:
+                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
+                        item = app_commands.Choice(
+                            name=clubs.club_name,
+                            value=clubs.club_name
+                        )
+                        club_list.append(item)
+
+                if len(club_list) > 24:
+                    break
+        except Exception as ex:
+            error_logger.error(ex)
+
+        return club_list
 
     # @commands.check(checks.onk_server_check)
     @commands.hybrid_command(
@@ -795,6 +761,38 @@ class Ignorethis(commands.Cog):
                 ctx=ctx,
                 delete_after=60
             )
+
+    @commands.HybridCommand.autocomplete(club_info, "club_name")
+    async def club_autocomplete(
+            self,
+            interaction: Interaction,
+            current: str
+    ) -> List[app_commands.Choice[str]]:
+
+        club_list = []
+
+        try:
+            for clubs in self.club_data:
+                if len(current) == 0:
+                    item = app_commands.Choice(
+                        name=clubs.club_name,
+                        value=clubs.club_name
+                    )
+                    club_list.append(item)
+                else:
+                    if current.lower() in clubs.club_name.lower() or current.lower() in clubs.description.lower():
+                        item = app_commands.Choice(
+                            name=clubs.club_name,
+                            value=clubs.club_name
+                        )
+                        club_list.append(item)
+
+                if len(club_list) > 24:
+                    break
+        except Exception as ex:
+            error_logger.error(ex)
+
+        return club_list
 
     @commands.check(checks.onk_server_check_admin)
     @commands.hybrid_command(
