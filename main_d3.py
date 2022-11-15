@@ -151,6 +151,7 @@ async def on_ready():
     if os.name != 'nt':
         os.setpgrp()
 
+
     config = dataIOa.load_json("config.json")
 
     # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
@@ -170,6 +171,7 @@ async def on_ready():
 #             if reaction.message.author.id == bot.user.id:
 #                 message = reaction.message
 #                 await message.delete()
+
 
 
 def exit_bot(self):
