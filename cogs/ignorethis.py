@@ -313,10 +313,27 @@ class Ignorethis(commands.Cog):
         clubs_data = dataIOa.load_json(path)
         if club_name in clubs_data:
             club = clubs_data[club_name]
-            creator = ctx.guild.get_member(int(club['creator']))
-            mems = [(str(ctx.guild.get_member(u))) for u in club['members'] if ctx.guild.get_member(u)]
-            em = Embed(title=f'Club: {club_name}', color=creator.color,
-                       description=f'**Creator:** {creator.mention} ({creator.name})\n'
+            creator_id = int(club['creator'])
+            creator = ctx.guild.get_member(creator_id)
+            if creator is not None:
+                creator_mention = f"{creator.mention}"
+                creator_name = f"{creator.name}"
+                creator_color = creator.color
+            else:
+                creator_mention = f"{creator_id}"
+                creator_name = f"{creator_id}"
+                creator_color = colour.Colour.red()
+
+            mems = []
+            for member in club['members']:
+                member_name = ctx.guild.get_member(member)
+                if member_name is not None:
+                    mems.append(f"{member_name}")
+                else:
+                    mems.append(f"{member}")
+            em = Embed(title=f'Club: {club_name}',
+                       color=creator_color,
+                       description=f'**Creator:** {creator_mention} ({creator_name})\n'
                                    f'**Description:** {club["desc"]}\n'
                                    f'**Ping count:** {club["pings"]}\n\n'
                                    f'**Members:** {", ".join(mems)}')
