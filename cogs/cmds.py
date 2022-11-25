@@ -1,19 +1,19 @@
 import asyncio
-import datetime
 
-import discord
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-from utils.SimplePaginator import SimplePaginator
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
-from models.cmds import (db, Guild, Command, CommandsToGuild, CmdsManager)
+from models.cmds import (Command, CommandsToGuild, CmdsManager)
+from utils.SimplePaginator import SimplePaginator
 
 
 class Cmds(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.set_commands()
 
@@ -293,6 +293,8 @@ class Cmds(commands.Cog):
         return embeds
 
 
-def setup(bot):
+async def setup(
+    bot: commands.Bot
+):
     ext = Cmds(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

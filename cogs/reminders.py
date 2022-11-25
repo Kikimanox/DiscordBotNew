@@ -1,20 +1,21 @@
 import asyncio
 import datetime
-import re
-
-import discord
-from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
+import logging
 import traceback
 
-from models.serversetup import SSManager
-from utils.SimplePaginator import SimplePaginator
-from utils.dataIOa import dataIOa
+import discord
+from discord import Embed
+from discord.ext import commands
+
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 from models.moderation import Reminderstbl, Timezones
+from models.serversetup import SSManager
+from utils.SimplePaginator import SimplePaginator
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class Timer:
@@ -46,9 +47,12 @@ class Timer:
 
 
 class Reminders(commands.Cog):
-    def __init__(self, bot):
-        # Credit to RoboDanny for timeout code help
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
+        # Credit to RoboDanny for timeout code help
         self._have_data = asyncio.Event(loop=bot.loop)
         self._current_timer = None
         self._task = self.bot.loop.create_task(self.dispatch_timers())
@@ -567,7 +571,7 @@ class Reminders(commands.Cog):
                 author_id=by.id
             )
             to_info = f'Reminder created: {ctx.author} {ctx.author.id} triggers on {len_str} ({tim.executed_on})'
-            self.bot.logger.info(to_info)
+            logger.info(to_info)
             mid_part = mid_part.replace('@', '@\u200b')
             cnt = f"⏰  |  **Got it! The reminder has been set up.**"
             desc = f"**Id:** {tim.id}\n" \
@@ -586,10 +590,12 @@ class Reminders(commands.Cog):
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             # traceback.print_exc()
             await ctx.send(f"Something went wrong, please try again.")
-            self.bot.logger.error(f"Something went wrong when making a reminder\n{traceback.format_exc()}")
+            error_logger.error(f"Something went wrong when making a reminder\n{traceback.format_exc()}")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Reminders(bot)
     bot.running_tasks.append(bot.loop.create_task(ext.refresh_timers_after_a_while()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

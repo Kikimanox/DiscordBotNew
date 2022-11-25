@@ -2,30 +2,30 @@ import asyncio
 import datetime
 import glob
 import json
+import logging
+import os
 import re
+import subprocess
+import traceback
+
 import aiohttp
 import discord
 import requests
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
-from utils import dataIO
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
-from selenium import webdriver
-import selenium.webdriver.support.ui as ui
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException
-import os
-import subprocess
+from utils.dataIOa import dataIOa
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 def get_valid_filename(s):
@@ -34,7 +34,10 @@ def get_valid_filename(s):
 
 
 class AmqMod(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.ignored_ann_ids = [7429]
         self._gib_code = """```js\n
@@ -227,7 +230,7 @@ return ret_7
                                                    "limit on the login page?)](https://animemusicquiz.com/)"))
             await dutils.print_hastebin_or_file(ctx, f'```\n{traceback.format_exc()}```')
             traceback.print_exc()
-            ctx.bot.logger.error(traceback.format_exc())
+            ctx.error_logger.error(traceback.format_exc())
         finally:
             try:
                 driver.close()
@@ -875,6 +878,8 @@ return ret_7
         return rett
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = AmqMod(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)
