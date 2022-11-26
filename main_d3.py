@@ -151,7 +151,6 @@ async def on_ready():
     if os.name != 'nt':
         os.setpgrp()
 
-
     config = dataIOa.load_json("config.json")
 
     # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
@@ -159,8 +158,9 @@ async def on_ready():
         await bot.load_extension("cogs.manga")
         await bot.load_extension("cogs.bets")
 
-    activity = Activity(name=f"\"{Prefix}\" for the Prefix", type=ActivityType.listening)
-    await bot.change_presence(activity=activity)
+    # The Prefix comma isn't visible, shows as `.` instead of `,`
+    # activity = Activity(name=f"\"{Prefix}\" for the Prefix", type=ActivityType.listening)
+    # await bot.change_presence(activity=activity)
 
 
 # @bot.event
