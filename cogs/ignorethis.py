@@ -480,7 +480,7 @@ class Ignorethis(commands.Cog):
                 )
 
     @commands.check(checks.onk_server_check)
-    @commands.cooldown(rate=1, per=60, type=commands.BucketType.user)
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @commands.hybrid_command(
         name="pingclub",
         aliases=["ping"],
@@ -577,6 +577,7 @@ class Ignorethis(commands.Cog):
         return club_list
 
     @commands.check(checks.onk_server_check)
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @commands.hybrid_command(
         name="pingclubs",
         aliases=["ping2"],
