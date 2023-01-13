@@ -11,6 +11,7 @@ from discord import Member, Embed, File, utils
 import os
 import traceback
 
+from selenium.webdriver import ActionChains
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -180,7 +181,7 @@ return ret_7
         try:
             options = Options()
             options.headless = False
-            options.headless = True  # mainheadmainheadless
+            # options.headless = True  # mainheadmainheadless
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
@@ -678,9 +679,12 @@ return ret_7
             driver.implicitly_wait(10)
             await asyncio.sleep(5)
             opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
-            opt.click()
-            await asyncio.sleep(2)
-            sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+            ActionChains(driver).move_to_element(opt).perform()
+            await asyncio.sleep(0.3)
+            # opt.click()
+            # await asyncio.sleep(2)
+            sett = driver.find_element_by_xpath("""//*[@id="optionListSettings"]""")
+            ActionChains(driver).move_to_element(sett).perform()
             sett.click()
             mmm = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[2]/div[2]""")
             mmm.click()
@@ -707,6 +711,7 @@ return ret_7
 
         # GO TO EXPAND
         driver.get("https://animemusicquiz.com/?forceLogin=True")
+        await asyncio.sleep(3)
         driver.implicitly_wait(30)
         ex = driver.find_element_by_xpath("""//*[@id="mpExpandButton"]""")
         ex.click()
