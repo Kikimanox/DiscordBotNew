@@ -181,7 +181,7 @@ return ret_7
         try:
             options = Options()
             options.headless = False
-            # options.headless = True  # mainheadmainheadless
+            options.headless = True  # mainheadmainheadless
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
@@ -776,6 +776,7 @@ return ret_7
         })
                 """
         data = dataIOa.load_json('data/_amq/toProcessNoMp3.json')
+        total = len(data)
         dataIOa.save_json('data/_amq/BACKUP_toProcessNoMp3.json', data)
         # print("Saving temporary data, you'll need this later (in case of a crash)"
         #      " in order to make the final output btw.")
@@ -796,7 +797,7 @@ return ret_7
 
             if not os.path.exists(out) or (os.path.exists(out) and (out not in uploaded)):
                 fil = upl[ll].replace('files.', 'nl.') # actually just use NL now that it's active
-                await ctx.send(f"Creating **{out}** from <{fil}>")
+                await ctx.send(f"[{len(list(set(uploaded)))}/{total}] Creating **{out}** from <{fil}>")
                 if os.path.exists(out):
                     os.remove(out)  # we go agane
                 # fil = upl[ll]  # better safe than sorry zzzzzzzzzzzzzz
