@@ -181,7 +181,7 @@ class SSManager:
             raise Exception('_fail')
 
         if f'{ctx.bot.user.display_name} logging hook'[:32] != raw_hook.name:
-            url = str(ctx.bot.user.avatar_url).replace('.webp', '.png')
+            url = str(ctx.bot.user.display_avatar.url).replace('.webp', '.png')
             tf = f'a{str(int(datetime.utcnow().timestamp()))}a'
             # from utils.discordUtils import saveFile
             fnn = await saveFile(url, 'tmp', tf)  # copy from dutils because circular import

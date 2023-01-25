@@ -207,8 +207,8 @@ class Misc(commands.Cog):
         emotes = str(emotes).replace('\n', ' ') + ' '
         await ctx.message.delete()
         member = ctx.author
-        icon_url = member.avatar_url if 'gif' in str(member.avatar_url).split('.')[-1] else str(
-            member.avatar_url_as(format="png"))
+        icon_url = member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[-1] else str(
+            member.avatar.replace(format="png", size=1024).url)
         await ctx.send(embed=Embed(description=ctx.message.content, color=ctx.author.color)
                        .set_author(name=f"{'Add' if not yoink else 'Yoink'} emotes command invoked",
                                    icon_url=icon_url))
