@@ -127,7 +127,8 @@ class Fun(commands.Cog):
                 cds.append(f"{claim} - {e}")
 
         if embeds and isinstance(hook, discord.Webhook):
-            await hook.send(avatar_url=ctx.author.display_avatar.url, username=f'Multi claim for {ctx.author.name}'[:32],
+            await hook.send(avatar_url=ctx.author.display_avatar.url,
+                            username=f'Multi claim for {ctx.author.name}'[:32],
                             wait=False, embeds=embeds, content=f'{ctx.author.mention} your multi claim:\n' +
                                                                '\n'.join(cds))
         else:
@@ -212,8 +213,13 @@ class Fun(commands.Cog):
         del his['last_3_claims']
         his = ({k: v for k, v in sorted(his.items(), key=lambda item: item[1], reverse=True)[:10]})
         his['last_3_claims'] = hiss['last_3_claims']
-        if not his['last_3_claims']: return await ctx.send(f"{ctx.author.mention} you have no claim history for the "
-                                                           f"**{claim_type}** command")
+        if not his['last_3_claims']:
+            if member.id == ctx.author.id:
+                return await ctx.send(f"{member.mention} you have no claim history for the "
+                                      f"**{claim_type}** command")
+            else:
+                return await ctx.send(f"{member.display_name} has no claim history for the "
+                                      f"**{claim_type}** command")
         his['last_3_claims'][0] += ' (last claim)'
 
         color = None
@@ -233,7 +239,7 @@ class Fun(commands.Cog):
         del his['last_3_claims']
         bb = '\n'.join([f'{k} - {v}' for k, v in his.items()])
         desc = f"**Last 3 {claim_type} claims:**\n{aa}\n\n**Claim statistic:**\n{bb}"
-        em = Embed(title=f"History for {ctx.author.display_name}", description=desc)
+        em = Embed(title=f"History for {member.display_name}", description=desc)
         if color:
             em.colour = color
             if url:
