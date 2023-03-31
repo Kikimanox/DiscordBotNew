@@ -415,6 +415,10 @@ class Fun(commands.Cog):
                     "https://media.tenor.com/r47fIhy7dGMAAAAC/anime-meme.gif",
                     "https://media.tenor.com/PabY48tHpbUAAAAC/who-asked-k-on.gif",
                     "https://media.tenor.com/8darUV8MNfUAAAAC/jarvis-iron-man.gif",
+                    "https://media.tenor.com/aUIi6J19OlcAAAAC/ohio-roblox.gif",
+                    "https://media.tenor.com/l1pzwy1cNWAAAAAC/memes.gif",
+                    "https://media.tenor.com/aAyJOCQWUKMAAAAC/cat-meme.gif",
+                    "https://media.tenor.com/fgMEV-0EbzMAAAAC/ohio-average.gif",
                 ]
                 claim.img_url = random.choice(april_fools_gifs)
                 # claim.img_url = attachement.url
