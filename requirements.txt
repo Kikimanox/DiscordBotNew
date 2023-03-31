@@ -1,0 +1,12 @@
+numpy==1.23.0
+discord.py @ git+https://github.com/Rapptz/discord.py@41d22f4312ce70c6d7f7d172680a8d7d0987a8ee
+pyimgur==0.6.0
+gitdb==4.0.9
+pygit2==1.9.2
+python-git==2018.2.1
+arrow==1.2.2
+pyarrow==7.0.0
+peewee==3.15.0
+psutil==5.9.1
+selenium==3.141.0
+Columnar==1.4.1

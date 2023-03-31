@@ -19,7 +19,6 @@ import asyncio
 import random
 import signal
 import subprocess
-import git
 import re
 
 from models.antiraid import ArGuild, ArManager
