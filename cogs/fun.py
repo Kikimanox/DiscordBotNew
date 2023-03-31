@@ -365,8 +365,37 @@ class Fun(commands.Cog):
                 claim.expires_on = utcnow + datetime.timedelta(hours=claim_cd)
                 claim.char_name = orig_key_split[0]
                 claim.color_string = orig_key_split[1]
+
+                is_nsfw = False
                 claim.is_nsfw = is_nsfw
-                claim.img_url = attachement.url
+
+                april_fools_gifs = [
+                    "https://media.tenor.com/0i1iYtef-E8AAAAC/senator-armstrong-mgr.gif",
+                    "https://media.tenor.com/y1n4lM9lR_kAAAAC/take-no.gif",
+                    "https://media.tenor.com/_OjhUydgpewAAAAC/knight-crusade.gif",
+                    "https://media.tenor.com/zH8163kZuGYAAAAC/cat-troll.gif",
+                    "https://media.tenor.com/y4y_imPQW_EAAAAC/hayao-miyazaki.gif",
+                    "https://media.tenor.com/tWDStldeFzoAAAAC/mirage-c-sgo.gif",
+                    "https://media.tenor.com/HEIXykQDLEYAAAAC/interrogate-interrogation.gif",
+                    "https://media.tenor.com/Pk681SQt0doAAAAC/who-tf-asked-nasas-radar-dish.gif",
+                    "https://media.tenor.com/LC6PUN1zDEEAAAAC/master-chef-gordon-ramsey.gif",
+                    "https://media.tenor.com/8r8fQirM2J0AAAAC/cope.gif",
+                    "https://media.tenor.com/dAAYNxTXxNcAAAAC/yu-gi-oh-kaiba.gif",
+                    "https://media.tenor.com/DlXfjL9WEHYAAAAC/ight-imma-head-out-meme.gif",
+                    "https://media.tenor.com/cg1qeOdO7iIAAAAC/skull.gif",
+                    "https://media.tenor.com/baKBrVTtR64AAAAC/zyzz-fistpump.gif",
+                    "https://media.tenor.com/3Kay6k6K8goAAAAC/garnidelia-jpop.gif",
+                    "https://media.tenor.com/AuVGD785SdgAAAAC/tyunsmol-argue.gif",
+                    "https://media.tenor.com/b9x_ATvAhTUAAAAC/ya-boy-kongming-kongming-zhuge.gif",
+                    "https://media.tenor.com/wU0tRu7W-7AAAAAC/close-laptop-throw-laptop.gif",
+                    "https://media.tenor.com/uQH5B9R0dUYAAAAC/john-wick.gif",
+                    "https://media.tenor.com/3vxOt6Xi_AEAAAAC/will-smith-chris-rock.gif",
+                    "https://media.tenor.com/nLqcQPtAKoQAAAAC/thor-avenger.gif",
+                    "https://media.discordapp.net/attachments/927908401818787890/1010264301975642244/ezgif.com-gif-maker_1.gif",
+                    "https://media.tenor.com/58sFGy5a_DwAAAAC/crunk-aint-dead-duke.gif",
+                ]
+                claim.img_url = random.choice(april_fools_gifs)
+                # claim.img_url = attachement.url
                 if ctx.guild.id != 202845295158099980:
                     claim.save()
                 file = None
@@ -376,7 +405,7 @@ class Fun(commands.Cog):
                     em.set_footer(text='⚠ potentially nsfw image')
                     # em.set_image(url=f'attachment://{file.filename}')
                 else:
-                    em.set_image(url=attachement.url)
+                    em.set_image(url=claim.img_url)
                 if not multi_claim:
                     await ctx.send(embed=em, content=f'\nYou can check claim history by using '
                                                      f'`{dutils.bot_pfx_by_gid(self.bot, ctx.guild.id)}'
