@@ -420,8 +420,8 @@ class Fun(commands.Cog):
                     "https://media.tenor.com/aAyJOCQWUKMAAAAC/cat-meme.gif",
                     "https://media.tenor.com/fgMEV-0EbzMAAAAC/ohio-average.gif",
                 ]
-                claim.img_url = random.choice(april_fools_gifs)
-                # claim.img_url = attachement.url
+                # claim.img_url = random.choice(april_fools_gifs)
+                claim.img_url = attachement.url
                 if ctx.guild.id != 202845295158099980:
                     claim.save()
                 file = None
