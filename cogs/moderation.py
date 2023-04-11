@@ -797,6 +797,18 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
+    async def bean(self, ctx, user: discord.User, *, reason=""):
+        """Joke version of ban, this won't actually ban the user"""
+        try:
+            user_ = ctx.guild.get_member(user.id)
+            if user_: user = user_
+            await ctx.send(embed=Embed(description=f'{user.mention} has has been banned', color=0xFF0000))
+        except:
+            pass
+
+
+    @commands.check(checks.moderator_check)
+    @commands.command()
     async def ban(self, ctx, user: discord.User, *, reason=""):
         """Ban a user with an optional reason. Prefix with `s` for "no dm"
 
