@@ -163,7 +163,7 @@ class Moderation(commands.Cog):
                     case.logged_in_ch = log_in_chan.id
                     case.save()
                     try:
-                        await sup['hook_modlog'].edit_message(msg.id, embed=em)  # edit the old one
+                        await sup['hook_modlog'].edit_message(msg.id, embed=em, content=cnt)  # edit the old one
                     except:
                         await ctx.send("Unable to edit the message. Sending new one instead.")
                         await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
