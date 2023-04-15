@@ -17,6 +17,7 @@ import utils.timeStuff as tutils
 from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
+from discord.errors import NotFound
 
 logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
@@ -128,12 +129,14 @@ class Moderation(commands.Cog):
                 d = case.logged_after - datetime.timedelta(minutes=5)
 
                 # Get the channel history
-                history = await log_in_chan.history(limit=2000, after=d).flatten()
+                history = log_in_chan.history(limit=2000, after=d)
 
                 # Filter the messages using list comprehension
-                stuff = [m for m in history if
-                         len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
-                             m.embeds[0].footer.text)]
+                stuff = []
+                async for m in history:
+                    if len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
+                            m.embeds[0].footer.text):
+                        stuff.append(m)
 
                 if not stuff:
                     return
@@ -159,11 +162,15 @@ class Moderation(commands.Cog):
                     case.logged_after = datetime.datetime.utcnow()
                     case.logged_in_ch = log_in_chan.id
                     case.save()
-                    await sup['hook_modlog'].edit_message(msg.id, embed=em)  # edit the old one
-                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
-                                               regular_ch=sup['reg'], embed=em, content=cnt)
+                    try:
+                        await sup['hook_modlog'].edit_message(msg.id, embed=em)  # edit the old one
+                    except:
+                        await ctx.send("Unable to edit the message. Sending new one instead.")
+                        await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
+                                                   regular_ch=sup['reg'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
             except:
+                await ctx.send(f"Something went wrong when updating reason for {case_id}..")
                 print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
                 error_logger.error(f"Something went wrong when trying to update case {case_id} message\n")
