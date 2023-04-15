@@ -31,7 +31,7 @@ class Ignorethis(commands.Cog):
         self.bot = bot
         # verification_channel = bot.config["verification_channel"]
         # self.verification_channel_id = verification_channel
-        self.verification_channel_id = 931192723447349268
+        self.verification_channel_id = 1089396815343931535
 
         self.onk_bot_channel = 695297906529271888
         self.gallery_wh = None
