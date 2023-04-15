@@ -58,7 +58,7 @@ class Moderation(commands.Cog):
 
             def check(m):
                 return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
-                       m.author == ctx.author and m.channel == ctx.channel
+                    m.author == ctx.author and m.channel == ctx.channel
 
             try:
                 reply = await self.bot.wait_for("message", check=check, timeout=10)
@@ -179,6 +179,17 @@ class Moderation(commands.Cog):
                 error_logger.error(f"Something went wrong when trying to update case {case_id} message\n")
         except:
             await ctx.send("There is no case with that id.")
+
+    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.check(checks.moderator_check)
+    @commands.command()
+    async def cases(self, ctx, offender: discord.Member, *extra: str):
+        """
+        Just a shortcut for `[p]lsc 0 9999 offen=(offender_id)`
+        """
+        offender_id = offender.id
+        extra_options = " ".join(extra)
+        await self.listcases(ctx, case_id=0, limit=9999, extra=f"offen=({offender_id}) {extra_options}")
 
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.check(checks.moderator_check)
