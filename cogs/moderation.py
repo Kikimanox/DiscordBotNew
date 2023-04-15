@@ -124,9 +124,14 @@ class Moderation(commands.Cog):
                 msg = None
                 d = case.logged_after - datetime.timedelta(minutes=5)
 
-                stuff = await log_in_chan.history(limit=2000, after=d).filter(
-                    lambda m: len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
-                        m.embeds[0].footer.text)).flatten()
+                # Get the channel history
+                history = await log_in_chan.history(limit=2000, after=d).flatten()
+
+                # Filter the messages using list comprehension
+                stuff = [m for m in history if
+                         len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
+                             m.embeds[0].footer.text)]
+
                 if not stuff:
                     return
                 msg = stuff[-1]
