@@ -52,10 +52,10 @@ class Quoting(commands.Cog):
                 except:
                     pass
             if not msg:
-                async for ms in chan.history(limit=2000, before=ctx.message.created_at).filter(
-                        lambda m: split[0] in m.content):
-                    msg = ms
-                    break
+                async for ms in chan.history(limit=2000, before=ctx.message.created_at):
+                    if split[0] in ms.content:
+                        msg = ms
+                        break
         if not msg:
             await ctx.send('No such message found.')
             return
@@ -219,10 +219,10 @@ class Quoting(commands.Cog):
                 except:
                     pass
             if not msg:
-                async for ms in chan.history(limit=2000, before=ctx.message.created_at).filter(
-                        lambda m: split[0] in m.content):
-                    msg = ms
-                    break
+                async for ms in chan.history(limit=2000, before=ctx.message.created_at):
+                    if split[0] in ms.content:
+                        msg = ms
+                        break
         if not msg:
             await ctx.send('No such message found.')
             return

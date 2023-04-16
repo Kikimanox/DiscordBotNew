@@ -87,7 +87,7 @@ def getEmbedFromMsg(msg):
                                f'displaying only the first one)**')
         em.set_image(url=msg.attachments[0].url)
 
-    em.set_author(name=msg.author.name, icon_url=msg.author.avatar.url)
+    em.set_author(name=msg.author.name, icon_url=msg.author.display_avatar.url)
     if not hasattr(msg.channel, 'name'):
         em.set_footer(text='Direct message')
     else:
@@ -800,6 +800,12 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
     # these above have to be the ones in the bottom array
     if log_type not in ['blacklist', 'whitelist']:
         em.add_field(name='Reason', value=reason, inline=True if offender else False)
+
+    try:
+        cmdi = f"[Cmd invoke happened here]({ctx.message.jump_url}) in {ctx.channel.mention}"
+        em.add_field(name="Extra info", value=cmdi, inline=True if offender else False)
+    except:
+        pass
 
     title = ""
     if log_type == 'mute':
