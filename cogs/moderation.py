@@ -1524,9 +1524,9 @@ class Moderation(commands.Cog):
     async def sticky(self, ctx):
         """
         Create a sticky message. Use subcommands to make one
-        `[p]sticky start 1m #channel sticky content`
-        `[p]sticky start 10s #channel sticky content`
-        `[p]sticky start 5s #channel sticky content`
+        `[p]sticky start #channel 1m sticky content`
+        `[p]sticky start #channel 10s sticky content`
+        `[p]sticky start #channel 5s sticky content`
 
         Frequency is how old the message has to be to trigger sticky behaviour
         So if it's set to 10s it won't trigger until
