@@ -1621,7 +1621,7 @@ class Moderation(commands.Cog):
                 current_time = time.time()
 
                 # Throttle for 2 seconds
-                if channel_id in self.last_sticky_repost and current_time - self.last_sticky_repost[channel_id] < 2:
+                if channel_id in self.last_sticky_repost and current_time - self.last_sticky_repost[channel_id] < 3:
                     return
 
                 self.last_sticky_repost[channel_id] = current_time
