@@ -20,5 +20,5 @@ class StickyMsg(BaseModel):
     sticky_frequency_update = IntegerField()
     create_date = DateTimeField()
 
-db.drop_tables([StickyMsg])
+#db.drop_tables([StickyMsg])
 db.create_tables([StickyMsg])
