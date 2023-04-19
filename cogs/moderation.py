@@ -5,6 +5,7 @@ import re
 import sys
 import traceback
 from operator import itemgetter
+import time
 
 import discord
 from columnar import columnar
@@ -16,6 +17,7 @@ import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
 from models.serversetup import SSManager
+from models.sticky_message import StickyMsg
 from utils.SimplePaginator import SimplePaginator
 from discord.errors import NotFound
 
@@ -31,6 +33,22 @@ class Moderation(commands.Cog):
         self.bot = bot
         self.tried_setup = False
         # removing multi word cmds, cross out unavail inh cmd
+        self.sticky_messages = self.get_current_sticky()
+        self.last_sticky_repost = {}
+
+    def get_current_sticky(self):
+        sticky_messages = {}
+
+        for sticky in StickyMsg.select():
+            guild_id = str(sticky.guild_id)
+            channel_id = str(sticky.channel_id)
+
+            if guild_id not in sticky_messages:
+                sticky_messages[guild_id] = {}
+
+            sticky_messages[guild_id][channel_id] = sticky.message
+
+        return sticky_messages
 
     async def set_server_stuff(self):
         if not self.tried_setup:
@@ -1500,6 +1518,128 @@ class Moderation(commands.Cog):
             await ctx.send(embed=Embed(title="Didn't work on", description=didnt_work))
         else:
             await ctx.send("Done.")
+
+    @commands.check(checks.moderator_check)
+    @commands.group()
+    async def sticky(self, ctx):
+        """
+        Create a sticky message. Use subcommands to make one
+        `[p]sticky start channel sticky content`
+        `[p]sticky stop channel sticky content`
+
+        You may also view a list of current sticky messages by using
+        `[p]sticky list`
+
+        You may also stop all sticky messages
+        `[p]sticky stopall`
+        """
+        if ctx.invoked_subcommand is None:
+            raise commands.errors.BadArgument
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def start(self, ctx, channel: discord.TextChannel, *, sticky_content):
+        """Start a sticky message in the specified channel"""
+        guild_id = str(ctx.guild.id)
+        channel_id = str(channel.id)
+
+        if guild_id in self.sticky_messages and channel_id in self.sticky_messages[guild_id]:
+            return await ctx.send("This channel already has a sticky message. "
+                                  "Please first stop the current one and then start a new sticky message again.")
+
+        # Create the sticky message
+        sticky_content = sticky_content.replace('@', '@\u200b')
+        new_sticky_message = await channel.send(sticky_content)
+
+        # Add the sticky message to the bot's memory
+        if guild_id not in self.sticky_messages:
+            self.sticky_messages[guild_id] = {}
+        self.sticky_messages[guild_id][channel_id] = sticky_content
+
+        # Save the sticky message to the database
+        new_sticky = StickyMsg.create(channel_id=channel.id, guild_id=ctx.guild.id, message=sticky_content,
+                                      current_sticky_message_id=new_sticky_message.id)
+
+        await ctx.send(f"Sticky message created in {channel.mention}.")
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def stop(self, ctx, channel: discord.TextChannel):
+        """Stop sticky msg"""
+        # Prompt user to confirm stopping the sticky message
+        confirmation = await dutils.prompt(ctx, "Are you sure you want to stop the sticky message in this channel?")
+
+        if confirmation:
+            # Remove sticky from the StickyMsg model and save it
+            StickyMsg.delete().where(StickyMsg.channel_id == channel.id).execute()
+            self.sticky_messages[str(ctx.guild.id)].pop(str(channel.id), None)
+
+            await ctx.send(f"Sticky message in {channel.mention} stopped.")
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def list(self, ctx):
+        """List all active sticky messages in the current server"""
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.sticky_messages and self.sticky_messages[guild_id]:
+            embed = discord.Embed(title="Active Sticky Messages", color=discord.Color.blue())
+            for channel_id, message in self.sticky_messages[guild_id].items():
+                channel = ctx.guild.get_channel(int(channel_id))
+                if channel:
+                    embed.add_field(name=f"Channel: {channel.mention}", value=message, inline=False)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("No active sticky messages.")
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def stopall(self, ctx):
+        """Stop all sticky messages"""
+        # Prompt user to confirm stopping all sticky messages
+        confirmation = await dutils.prompt(ctx, "Are you sure you want to stop all sticky messages in this guild?")
+
+        if confirmation:
+            # Remove all stickies in this guild from the StickyMsg model and save it
+            StickyMsg.delete().where(StickyMsg.guild_id == ctx.guild.id).execute()
+            self.sticky_messages[str(ctx.guild.id)] = {}
+
+            await ctx.send("All sticky messages in this guild have been stopped.")
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.guild is None:
+            return
+
+        guild_id = str(message.guild.id)
+        channel_id = str(message.channel.id)
+
+        if guild_id in self.sticky_messages and channel_id in self.sticky_messages[guild_id]:
+            sticky_message = self.sticky_messages[guild_id][channel_id]
+            sticky_obj = StickyMsg.get_or_none(channel_id=channel_id, guild_id=guild_id)
+
+            if sticky_obj and sticky_obj.current_sticky_message_id != message.id:
+                current_time = time.time()
+
+                # Throttle for 2 seconds
+                if channel_id in self.last_sticky_repost and current_time - self.last_sticky_repost[channel_id] < 2:
+                    return
+
+                self.last_sticky_repost[channel_id] = current_time
+
+                # Check if the sticky message has been deleted and reposted during the throttle period
+                try:
+                    await message.channel.fetch_message(sticky_obj.current_sticky_message_id)
+                except discord.NotFound:
+                    pass
+                else:
+                    # Delete the sticky message
+                    await message.channel.delete_messages(
+                        [message.channel.get_partial_message(sticky_obj.current_sticky_message_id)])
+
+                # Repost the sticky message
+                new_sticky_message = await message.channel.send(sticky_message)
+                sticky_obj.current_sticky_message_id = new_sticky_message.id
+                sticky_obj.save()
 
 
 async def setup(

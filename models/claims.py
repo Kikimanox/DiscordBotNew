@@ -97,7 +97,9 @@ class ClaimsManager:
                     if c.name == '_resp_specific': continue  # todo logic
                     color = "4f545c"
                     resps_for_char = []
-                    msgs = await c.history().flatten()
+                    msgs = []
+                    async for m in c.history():
+                        msgs.append(m)
                     attachements = []
                     for m in msgs:
                         #  url, is_nsfw
