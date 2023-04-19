@@ -1,3 +1,5 @@
+import datetime
+
 from peewee import *
 
 DB = "data/sticky_messages.db"
@@ -15,6 +17,8 @@ class StickyMsg(BaseModel):
     channel_id = IntegerField()
     guild_id = IntegerField()
     current_sticky_message_id = IntegerField()
+    sticky_frequency_update = IntegerField()
+    create_date = DateTimeField()
 
-# db.drop_tables([StickyMsg])
+db.drop_tables([StickyMsg])
 db.create_tables([StickyMsg])

@@ -1524,8 +1524,14 @@ class Moderation(commands.Cog):
     async def sticky(self, ctx):
         """
         Create a sticky message. Use subcommands to make one
-        `[p]sticky start channel sticky content`
-        `[p]sticky stop channel sticky content`
+        `[p]sticky start 1m #channel sticky content`
+        `[p]sticky start 10s #channel sticky content`
+        `[p]sticky start 5s #channel sticky content`
+
+        Frequency is how old the message has to be to trigger sticky behaviour
+        So if it's set to 10s it won't trigger until
+
+        `[p]sticky stop #channel`
 
         You may also view a list of current sticky messages by using
         `[p]sticky list`
@@ -1538,10 +1544,29 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @sticky.command()
-    async def start(self, ctx, channel: discord.TextChannel, *, sticky_content):
+    async def start(self, ctx, channel: discord.TextChannel, frequency: str, *, sticky_content):
         """Start a sticky message in the specified channel"""
         guild_id = str(ctx.guild.id)
         channel_id = str(channel.id)
+
+        # Parse frequency with tutils.get_seconds_from_smhdw and get seconds
+        try:
+            seconds, error = tutils.get_seconds_from_smhdw(frequency)
+            if error:
+                raise ValueError(error)
+        except Exception as ex:
+            return await ctx.send(f"{ex} try again")
+
+        # Prompt the user for confirmation
+        prompt_message = (
+            f"A sticky message with the content: `{sticky_content}`\n"
+            f"Will be created in {channel.mention}\n"
+            f"Its update frequency is `{frequency}` aka. {seconds} seconds\n\n"
+            f"Are you sure about creating this sticky?"
+        )
+        confirmation = await dutils.prompt(ctx, prompt_message)
+        if not confirmation:
+            return await ctx.send("Sticky message creation cancelled.")
 
         if guild_id in self.sticky_messages and channel_id in self.sticky_messages[guild_id]:
             return await ctx.send("This channel already has a sticky message. "
@@ -1558,7 +1583,9 @@ class Moderation(commands.Cog):
 
         # Save the sticky message to the database
         new_sticky = StickyMsg.create(channel_id=channel.id, guild_id=ctx.guild.id, message=sticky_content,
-                                      current_sticky_message_id=new_sticky_message.id)
+                                      current_sticky_message_id=new_sticky_message.id,
+                                      sticky_frequency_update=seconds,
+                                      create_date=datetime.datetime.utcnow())
 
         await ctx.send(f"Sticky message created in {channel.mention}.")
 
@@ -1607,7 +1634,7 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.guild is None:
+        if message.author.bot:
             return
 
         guild_id = str(message.guild.id)
@@ -1615,31 +1642,23 @@ class Moderation(commands.Cog):
 
         if guild_id in self.sticky_messages and channel_id in self.sticky_messages[guild_id]:
             sticky_message = self.sticky_messages[guild_id][channel_id]
-            sticky_obj = StickyMsg.get_or_none(channel_id=channel_id, guild_id=guild_id)
+            sticky_data = StickyMsg.get(StickyMsg.guild_id == guild_id, StickyMsg.channel_id == channel_id)
 
-            if sticky_obj and sticky_obj.current_sticky_message_id != message.id:
-                current_time = time.time()
+            update_frequency = sticky_data.sticky_frequency_update
+            current_time = datetime.datetime.utcnow().timestamp()
+            last_update_time = sticky_data.create_date.timestamp()
 
-                # Throttle for 2 seconds
-                if channel_id in self.last_sticky_repost and current_time - self.last_sticky_repost[channel_id] < 10:
-                    return
-
-                self.last_sticky_repost[channel_id] = current_time
-
-                # Check if the sticky message has been deleted and reposted during the throttle period
+            if current_time - last_update_time >= update_frequency:
                 try:
-                    await message.channel.fetch_message(sticky_obj.current_sticky_message_id)
-                except discord.NotFound:
+                    old_sticky_message = await message.channel.fetch_message(sticky_data.current_sticky_message_id)
+                    await old_sticky_message.delete()
+                except discord.errors.NotFound:
                     pass
-                else:
-                    # Delete the sticky message
-                    await message.channel.delete_messages(
-                        [message.channel.get_partial_message(sticky_obj.current_sticky_message_id)])
 
-                # Repost the sticky message
                 new_sticky_message = await message.channel.send(sticky_message)
-                sticky_obj.current_sticky_message_id = new_sticky_message.id
-                sticky_obj.save()
+                StickyMsg.update(current_sticky_message_id=new_sticky_message.id,
+                                 create_date=datetime.datetime.utcnow()).where(
+                    (StickyMsg.guild_id == guild_id) & (StickyMsg.channel_id == channel_id)).execute()
 
 
 async def setup(
