@@ -73,6 +73,22 @@ async def moderator_check(
                     return True
     return False
 
+# Oshi no ko specific ...
+async def moderator_check2(
+        ctx: commands.Context
+):
+    if ctx.author.id == ctx.bot.config['OWNER_ID']:
+        return True
+    if not ctx.guild:
+        return False
+    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator: return True
+    if ctx.bot.from_serversetup:
+        if ctx.guild.id in ctx.bot.from_serversetup:
+            if 'modrole' in ctx.bot.from_serversetup[ctx.guild.id]:
+                mr_id = 1099400199920693248
+                if mr_id in [r.id for r in ctx.author.roles]:
+                    return True
+    return False
 
 async def moderator_check_no_ctx(author, guild, bot):
     if author.id == bot.config['OWNER_ID']:
@@ -94,8 +110,8 @@ async def custom_role_is_booster_check(
 ):
     if str(ctx.guild.id) in ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER']:
         return isinstance(ctx.author, Member) and \
-               ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['BOOSTER_ROLE_ID'] in \
-               [r.id for r in ctx.author.roles]
+            ctx.bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['BOOSTER_ROLE_ID'] in \
+            [r.id for r in ctx.author.roles]
     return False
 
 

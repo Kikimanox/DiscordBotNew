@@ -184,7 +184,7 @@ return ret_7
         try:
             options = Options()
             options.headless = False
-            # options.headless = True  # mainheadmainheadless
+            options.headless = True  # mainheadmainheadless
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
