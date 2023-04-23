@@ -210,7 +210,7 @@ class Moderation(commands.Cog):
         await self.listcases(ctx, case_id=0, limit=9999, extra=f"offen=({offender_id}) {extra_options}")
 
     @commands.cooldown(1, 4, commands.BucketType.user)
-    @commands.check(checks.moderator_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=["listcase", "lsc", 'showcase', 'showcases'])
     async def listcases(self, ctx, case_id: int = 0, limit=10, *, extra: str = ""):
         """List case(s), see help to see command usage
@@ -640,7 +640,7 @@ class Moderation(commands.Cog):
                         tries -= 1
                         await asyncio.sleep(2)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def unmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted.
@@ -662,7 +662,7 @@ class Moderation(commands.Cog):
 
         await dutils.unmute_user(ctx, user, reason)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(hidden=True)
     async def sunmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted. (no dm)
@@ -684,7 +684,7 @@ class Moderation(commands.Cog):
 
         await dutils.unmute_user(ctx, user, reason, no_dm=True)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def mute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
         """Mutes users. Please check usage with .help mute
@@ -715,7 +715,7 @@ class Moderation(commands.Cog):
         `[p]selfmute 50m`"""
         await self.el_mute(ctx, [ctx.author], length, reason, False, selfmute=True)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(hidden=True)
     async def smute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
         """Mutes a user. Check usage with .help smute (no dm)
@@ -792,7 +792,7 @@ class Moderation(commands.Cog):
             await dutils.post_mod_log_based_on_type(ctx, 'massmute', act_id, reason=rsn,
                                                     mute_time_str='indefinitely' if not length else length)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(name='nmute')
     async def newmute(self, ctx, user: discord.Member, length="", *, reason=""):
         """Same as mute, but will also work on already muted users
@@ -817,7 +817,7 @@ class Moderation(commands.Cog):
 
         await dutils.mute_user(ctx, user, length, reason, new_mute=True)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(name='snmute', hidden=True)
     async def snewmute(self, ctx, user: discord.Member, length="", *, reason=""):
         """Same as mute, but will also work on already muted users (nodm)
@@ -1262,7 +1262,7 @@ class Moderation(commands.Cog):
         act_id = await dutils.moderation_action(ctx, reason, 'clearwarn', off)
         await dutils.post_mod_log_based_on_type(ctx, 'clearwarn', act_id, offender=off, reason=reason)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def warn(self, ctx, user: discord.Member, *, reason):
         """Warn a user with a necessary supplied reason.
@@ -1287,7 +1287,7 @@ class Moderation(commands.Cog):
         except:
             print(f"Member {'' if not user else user.id} disabled dms")
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def warnlist(self, ctx, user=None):
         """Show warnings for a user or display all warnings.
@@ -1445,7 +1445,7 @@ class Moderation(commands.Cog):
         """
         await dutils.unlock_channels(ctx, channels)
 
-    @commands.check(checks.moderator_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=['slow'])
     async def slowmode(self, ctx, seconds: int, *, channels=""):
         """Set a slowmode
