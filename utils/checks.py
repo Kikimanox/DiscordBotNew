@@ -58,7 +58,7 @@ async def manage_emojis_check(
 
 
 async def moderator_and_underground_idols_check(ctx):
-    return moderator_check(ctx) or moderator_check_custom(ctx, 1099400199920693248)
+    return await moderator_check(ctx) or await moderator_check_custom(ctx, 1099400199920693248)
 
 
 async def moderator_check(
