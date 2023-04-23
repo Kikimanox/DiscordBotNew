@@ -19,6 +19,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver import ActionChains
 
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -183,7 +184,7 @@ return ret_7
         try:
             options = Options()
             options.headless = False
-            options.headless = True  # mainheadmainheadless
+            # options.headless = True  # mainheadmainheadless
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
@@ -230,7 +231,7 @@ return ret_7
                                                    "limit on the login page?)](https://animemusicquiz.com/)"))
             await dutils.print_hastebin_or_file(ctx, f'```\n{traceback.format_exc()}```')
             traceback.print_exc()
-            ctx.error_logger.error(traceback.format_exc())
+            error_logger.error(traceback.format_exc())
         finally:
             try:
                 driver.close()
@@ -470,7 +471,7 @@ return ret_7
                 up_to = await ch.fetch_message(up_to_id)
             else:
                 up_to = None
-                async for ms in ch.history(limit=None).filter(lambda mm: mm.author.id == 593889007750873138):
+                async for ms in (m async for m in ch.history(limit=None) if m.author.id == 593889007750873138):
                     up_to = ms
                     if '⬆' in [str(r.emoji) for r in ms.reactions]:
                         await ctx.send(f"Id of last message: `{ms.id}` (next time you need to do `;amqmp3 -1 {ms.id}`")
@@ -479,8 +480,12 @@ return ret_7
             if not up_to:
                 raise Exception("No messages found?")
 
-            messages = await ch.history(limit=None,
-                                        after=up_to.created_at - datetime.timedelta(microseconds=1)).flatten()
+            # messages = await ch.history(limit=None,
+            #                             after=up_to.created_at - datetime.timedelta(microseconds=1)).flatten()
+            messages = []
+            after = up_to.created_at - datetime.timedelta(microseconds=1)
+            async for message in ch.history(limit=None, after=after):
+                messages.append(message)
 
             await messages[0].add_reaction('⬇')
             await messages[-1].add_reaction('⬆')
@@ -681,9 +686,15 @@ return ret_7
             driver.implicitly_wait(10)
             await asyncio.sleep(5)
             opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
-            opt.click()
-            await asyncio.sleep(2)
-            sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+            # opt.click()
+            # await asyncio.sleep(2)async def py(self,
+            # sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+            ActionChains(driver).move_to_element(opt).perform()
+            await asyncio.sleep(0.3)
+            # opt.click()
+            # await asyncio.sleep(2)
+            sett = driver.find_element_by_xpath("""//*[@id="optionListSettings"]""")
+            ActionChains(driver).move_to_element(sett).perform()
             sett.click()
             mmm = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[2]/div[2]""")
             mmm.click()
@@ -710,6 +721,7 @@ return ret_7
 
         # GO TO EXPAND
         driver.get("https://animemusicquiz.com/?forceLogin=True")
+        await asyncio.sleep(3)
         driver.implicitly_wait(30)
         ex = driver.find_element_by_xpath("""//*[@id="mpExpandButton"]""")
         ex.click()
@@ -734,9 +746,15 @@ return ret_7
             try:
                 await asyncio.sleep(2)
                 opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
-                opt.click()
-                await asyncio.sleep(2)
-                sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+                # opt.click()
+                # await asyncio.sleep(2)
+                # sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+                ActionChains(driver).move_to_element(opt).perform()
+                await asyncio.sleep(0.3)
+                # opt.click()
+                # await asyncio.sleep(2)
+                sett = driver.find_element_by_xpath("""//*[@id="optionListSettings"]""")
+                ActionChains(driver).move_to_element(sett).perform()
                 sett.click()
                 mmm = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[2]/div[2]""")
                 mmm.click()

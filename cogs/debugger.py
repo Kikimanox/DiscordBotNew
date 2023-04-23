@@ -111,7 +111,7 @@ class Debugger(commands.Cog):
 
     @commands.check(owner_check)
     @commands.group(pass_context=True, invoke_without_command=True)
-    async def py(self, ctx, *, msg):
+    async def py(self, ctx, *, msg=""):
         """Python interpreter. [Bot owner only]"""
 
         env = {
@@ -126,6 +126,9 @@ class Debugger(commands.Cog):
         }
 
         env.update(globals())
+        if msg.strip() == "" and len(ctx.message.attachments) == 1:
+            file = await ctx.message.attachments[0].to_file()
+            msg = file.fp.read().decode('utf-8')
 
         await self.interpreter(env, msg, ctx)
 
