@@ -57,6 +57,10 @@ async def manage_emojis_check(
             isinstance(ctx.author, Member) and ctx.author.guild_permissions.manage_emojis)
 
 
+async def moderator_and_underground_idols_check(ctx):
+    return moderator_check(ctx) or moderator_check_custom(ctx, 1099400199920693248)
+
+
 async def moderator_check(
         ctx: commands.Context
 ):
@@ -73,9 +77,10 @@ async def moderator_check(
                     return True
     return False
 
+
 # Oshi no ko specific ...
-async def moderator_check2(
-        ctx: commands.Context
+async def moderator_check_custom(
+        ctx: commands.Context, role_id: int
 ):
     if ctx.author.id == ctx.bot.config['OWNER_ID']:
         return True
@@ -85,10 +90,11 @@ async def moderator_check2(
     if ctx.bot.from_serversetup:
         if ctx.guild.id in ctx.bot.from_serversetup:
             if 'modrole' in ctx.bot.from_serversetup[ctx.guild.id]:
-                mr_id = 1099400199920693248
+                mr_id = role_id
                 if mr_id in [r.id for r in ctx.author.roles]:
                     return True
     return False
+
 
 async def moderator_check_no_ctx(author, guild, bot):
     if author.id == bot.config['OWNER_ID']:

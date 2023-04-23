@@ -199,7 +199,7 @@ class Moderation(commands.Cog):
             await ctx.send("There is no case with that id.")
 
     @commands.cooldown(1, 4, commands.BucketType.user)
-    @commands.check(lambda ctx: checks.moderator_check(ctx) or checks.moderator_check2(ctx))
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def cases(self, ctx, offender: discord.Member, *extra: str):
         """
