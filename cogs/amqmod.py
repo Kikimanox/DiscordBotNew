@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import glob
+import itertools
 import json
 import logging
 import os
@@ -24,6 +25,7 @@ from selenium.webdriver import ActionChains
 import utils.checks as checks
 import utils.discordUtils as dutils
 from utils.dataIOa import dataIOa
+from models.partyranks import PRMembers, PRManager
 
 logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
@@ -35,12 +37,16 @@ def get_valid_filename(s):
 
 
 class AmqMod(commands.Cog):
-    def __init__(
-            self,
-            bot: commands.Bot
-    ):
+    def __init__(self, bot):
         self.bot = bot
-        self.ignored_ann_ids = [7429]
+        self.guild_pr_channels = {
+            920092394945384508: {
+                "music_channel": 1067434759216709682,
+                "annoucement_channel": 1067511214965530774
+            }
+        }
+
+        self.ignored_ann_ids = []
         self._gib_code = """```js\n
     // DONT FORGET TO UPDATE MAL FIRST BEFORE ENTERING EXPAND!!
     var copyToClipboard = str => {
@@ -167,8 +173,225 @@ return ret_7
             pass
 
         await ctx.send(ret)
-        
-        
+
+    @commands.check(checks.owner_check) # Todo: add PR server only perms later
+    @commands.command()
+    async def gatherpfps(self, ctx):
+        """
+        Get pfps
+        """
+        if ctx.guild.id not in self.guild_pr_channels.keys():
+            return await ctx.send("Can only be used on specific servers")
+        await ctx.send("Not yet implemented")  # TODO
+
+    @commands.check(checks.owner_check)  # Todo: add PR server only perms later
+    @commands.command(aliases=["prreg", "prr"])
+    async def prregister(self, ctx, avatar_url, *, name=""):
+        """
+        Register yourself so you can be allowed to join PRs.
+        You can also use this command to update your avatar if you've already registered.
+
+        You can upload your pic to litterbox if you want, because the pic will be
+        saved **locally** after you invoke the command correctly.
+
+        Command usage examples: (⚠**warning, yourName capitalization will be taken as provided!**)
+        `[p]prregister AVATAR_URL_LINK yourName`
+        `[p]prregister https://some.site/pic.png Kiki`
+        **Special use case:**
+        `[p]prregister pfp Kiki` <--- this will just take your current discord pfp
+        `[p]prregister no_new_pfp Kiki2` <--- this command will just change your name but not pic
+
+        After doing the above once, you can then later **update** your pic if you want to.
+        `[p]prregister AVATAR_URL_LINK`
+
+        ^ no need for name if you are just updating your pic
+
+        Use sites like https://ezgif.com/crop to crop and or edit your pic
+        """
+        if ctx.guild.id not in self.guild_pr_channels.keys():
+            return await ctx.send("Can only be used on specific servers")
+
+        if avatar_url.lower() == 'pfp':
+            avatar_url = ctx.author.avatar.replace(format='png', size=1024).url
+        pl = PRMembers.get_or_none(PRMembers.uid == ctx.author.id)
+        name = name.strip()
+        if pl is None and name == "":
+            return await ctx.send(
+                f"Invoking the command with just an image url and no name while not registering yourself "
+                f"before is now allowed.\nPlase see command help by using "
+                f"`{dutils.bot_pfx_by_ctx(ctx)}help prregister`")
+
+        if avatar_url.lower() == 'no_new_pfp':
+            if pl is None:
+                return await ctx.send("You're gonna have to register yourself first before only changing your name.")
+            if name == "" or name == pl.name:
+                return await ctx.send("If you're only changing your name, then at least provide a new one?")
+            pl.name = name
+            pl.save()
+            return await ctx.send("🔃 Updated.")
+
+        try:
+            await PRManager.add_or_update_member(ctx.author.id, name if name != "" else pl.name,
+                                                 main_avatar_url=avatar_url)
+            if pl is None:
+                await ctx.send("✅ Registered.")
+            else:
+                await ctx.send("🔃 Updated.")
+        except Exception as ex:
+            await ctx.send(f"❌ Something went wrong, please try again or contact the bot owner for help: **{ex}**")
+
+    @commands.check(checks.owner_check)  # Todo: add PR server only perms later
+    @commands.command(aliases=["spp"])
+    async def specificprpic(self, ctx, pr_specific_avatar_url, *, pr_name=""):
+        """
+        Be sure that you registered yourself beforehand by uising the command:
+        `[p]prregister`
+
+        You can upload your pic to litterbox if you want, because the pic will be
+        saved **locally** after you invoke the command correctly.
+
+        Send a specific PR pfp. See examples below
+
+        Command usage examples:
+        `[p]specificprpic AVATAR_URL_LINK Unique PR name`
+        `[p]specificprpic https://some.site/pic.png Macross Delta`
+
+        Use sites like https://ezgif.com/crop to crop and or edit your pic
+        """
+        if ctx.guild.id not in self.guild_pr_channels.keys():
+            return await ctx.send("Can only be used on specific servers")
+
+        pl = PRMembers.get_or_none(PRMembers.uid == ctx.author.id)
+        pr_name = pr_name.strip().lower()
+        if pl is None:
+            return await ctx.send(f"You are not registered, please do that first, use: "
+                                  f"`{dutils.bot_pfx_by_ctx(ctx)}help prregister`")
+        if pr_name == "":
+            return await ctx.send(f"You will need to specify which specific PR this pic is for ... "
+                                  f"`{dutils.bot_pfx_by_ctx(ctx)}help specificprpic`")
+
+        try:
+            await PRManager.add_or_update_member(ctx.author.id, pl.name,
+                                                 pr_specific_avatar=pr_specific_avatar_url,
+                                                 specific_pr=pr_name)
+            await ctx.send("✅ Added.")
+        except Exception as ex:
+            await ctx.send(f"❌ Something went wrong, please try again or contact the bot owner for help: **{ex}**")
+
+    @commands.check(checks.owner_check) # Todo: add PR server only perms later
+    @commands.command(aliases=['initpr', 'ipr'])
+    async def initializepartyrank(self, ctx, *, prs):
+        """
+        Use this command to start a PR or multiple PRs.
+        The way the command works is you input
+        """
+        prs = prs.replace('@', '@\u200b')  # clean any potential pings
+
+        if ctx.guild.id not in self.guild_pr_channels.keys():
+            return await ctx.send("Can only be used on specific servers")
+        g_chs = self.guild_pr_channels[ctx.guild.id]
+        annoucement_ch = ctx.guild.get_channel(g_chs["annoucement_channel"])
+        if not annoucement_ch:
+            return await ctx.send("Recruitement channel went missing?")
+        music_ch = ctx.guild.get_channel(g_chs["music_channel"])
+        if not music_ch:
+            return await ctx.send("Music channel channel went missing?")
+
+        prs = prs.split('|')
+        made_threads = 0
+        for pr in prs:
+            pr = pr.strip()
+            pr_rec = f'{pr} [recruiting]'
+            if pr_rec in list([str(t) for t in music_ch.threads]):
+                await ctx.channel.send(f"Skipping {pr} because the thread with that name already exists")
+                continue
+            t_msg = await ctx.channel.send(f"Creating thread for party rank: **{pr}**")
+            thread = await music_ch.create_thread(name=pr_rec, auto_archive_duration=10080, message=t_msg)
+            a_txt = f"PR Host {ctx.author.mention} is hosting a PR: **__{pr}__**\nIf you wish to join that PR " \
+                    f"then please react to this message with the checkmark reaction (✅) [recruiting]"
+            a_msg = await annoucement_ch.send(a_txt)
+            await a_msg.add_reaction('✅')
+            await a_msg.add_reaction('▶')
+            made_threads += 1
+
+        # if made_threads > 0:
+        #    await annoucement_ch.send("Ping goes here")
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, event):
+        await self.recc(event, add=True)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, event):
+        await self.recc(event, add=False)
+
+    async def recc(self, event, add):
+        g = self.bot.get_guild(int(event.guild_id))
+        if event.guild_id not in self.guild_pr_channels.keys():
+            return
+        g_chs = self.guild_pr_channels[event.guild_id]
+        ch = g.get_channel(int(event.channel_id))
+        msg = await ch.fetch_message(event.message_id)
+        usr = g.get_member(event.user_id)
+        if event.user_id == self.bot.config["CLIENT_ID"]:
+            return  # in case the bot is adding reactions
+        if "If you wish to join that PR" not in msg.content:
+            return
+        if str(event.emoji) not in ['✅', '▶'] or msg.author.id != self.bot.user.id:
+            return
+
+        pr_name = re.findall(r"\*\*__(.*?)__\*\*", msg.content)[0]
+
+        chk_react = [r for r in msg.reactions if r.emoji == "✅"][0]
+        users_chk_reacted = [u for u in await chk_react.users().flatten() if not u.bot]
+
+        if str(event.emoji) == '✅':
+            pl = PRMembers.get_or_none(PRMembers.uid == usr.id)
+            if pl is None:
+                try:
+                    await chk_react.remove(usr)
+                except:
+                    pass
+                if add:
+                    await usr.send("To sign up for a PR please first register yourself by using the "
+                                   f"`{dutils.bot_pfx_by_gid(self.bot, g.id)}prregister` command")
+                return
+            for thread in g.get_channel(g_chs["music_channel"]).threads:
+                if str(thread) == f'{pr_name} [recruiting]':
+                    if add:
+                        await thread.send(f"{usr.mention} has asked to join this pary rank ✅")
+                    else:
+                        await thread.send(f"{usr.mention} has left this pary rank ❌")
+                        try:
+                            await thread.remove_user(usr)
+                        except:
+                            pass
+
+        if str(event.emoji) == '▶' and add:
+            # if '[recruiting]' not in msg.content:
+            #     return  # already ongoing, or finished....
+            try:
+                await msg.edit(content=msg.content.replace('[recruiting]', '[ongoing/scoring]'))
+            except:
+                pass
+            host_id = int(re.findall(r"(\d+)", msg.content)[0])
+            host = g.get_member(host_id)
+            if host_id != event.user_id:
+                return  # only the host can proceed the PR to the 2nd phase
+            for thread in g.get_channel(g_chs["music_channel"]).threads:
+                if str(thread) == f'{pr_name} [recruiting]':
+                    await thread.edit(name=thread.name.replace('[recruiting]', '[ongoing/scoring]'))
+                    break
+            ret = ""
+            for _usr in users_chk_reacted:
+                member = PRMembers.get_or_none(PRMembers.uid == _usr.id)
+                if member:
+                    ret += f"{member.name}\\t{member.uid}\n"
+            await host.send(f"{pr_name} - {len(users_chk_reacted)} ranker(s)")
+            await host.send(f"```\n{ret}```")
+
+    async def user_pr_registered(self, user) -> bool:
+        pass
 
     @commands.check(checks.owner_check)
     @commands.command()
@@ -792,6 +1015,7 @@ return ret_7
         })
                 """
         data = dataIOa.load_json('data/_amq/toProcessNoMp3.json')
+        total = len(data)
         dataIOa.save_json('data/_amq/BACKUP_toProcessNoMp3.json', data)
         # print("Saving temporary data, you'll need this later (in case of a crash)"
         #      " in order to make the final output btw.")
@@ -811,8 +1035,8 @@ return ret_7
             out = f'tmp/amq/{upl["annID"]}_{upl["annSongId"]}_{ee}.mp3'
 
             if not os.path.exists(out) or (os.path.exists(out) and (out not in uploaded)):
-                fil = upl[ll].replace('files.', 'nl.') # actually just use NL now that it's active
-                await ctx.send(f"Creating **{out}** from <{fil}>")
+                fil = upl[ll].replace('files.', 'nl.')  # actually just use NL now that it's active
+                await ctx.send(f"[{len(list(set(uploaded)))}/{total}] Creating **{out}** from <{fil}>")
                 if os.path.exists(out):
                     os.remove(out)  # we go agane
                 # fil = upl[ll]  # better safe than sorry zzzzzzzzzzzzzz

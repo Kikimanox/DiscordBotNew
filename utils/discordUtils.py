@@ -389,7 +389,7 @@ async def dm_log_try_setup(bot):
 
 
 def icon_url(user):
-    return user.avatar.url if 'gif' in str(user.avatar_url).split('.')[-1] else str(
+    return user.avatar.url if 'gif' in str(user.display_avatar.url).split('.')[-1] else str(
         user.avatar.replace(format="png").url)
 
 
@@ -910,7 +910,7 @@ async def log(bot, title=None, txt=None, author=None,
             for txt in desc:
                 em = discord.Embed(description=txt, color=colorr)
                 if author:
-                    iconn_url = author.avatar_url if 'gif' in str(author.avatar.url).split('.')[-1] else str(
+                    iconn_url = author.display_avatar.url if 'gif' in str(author.avatar.url).split('.')[-1] else str(
                         author.avatar.replace(format="png").url)
                     em.set_author(name=f"{title}", icon_url=iconn_url)
                 em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')}")
