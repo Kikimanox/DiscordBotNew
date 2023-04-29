@@ -978,8 +978,13 @@ async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=
 
 
 def get_icon_url_for_member(member):
-    return member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[-1] else \
-        str(member.avatar.with_format("png").url)
+    avatar_url = member.display_avatar.url
+    if avatar_url and 'gif' in avatar_url.split('.')[-1]:
+        return avatar_url
+    elif member.avatar:
+        return member.avatar.with_format("png").url
+    else:
+        return member.default_avatar.url
 
 
 async def saveFiles(links, savePath='tmp', fName=''):
