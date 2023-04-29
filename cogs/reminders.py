@@ -197,6 +197,8 @@ class Reminders(commands.Cog):
         now = datetime.datetime.utcnow()
         if not expires_on:
             expires_on = datetime.datetime.max
+        else:
+            expires_on = datetime.datetime.strptime(expires_on, "%Y-%m-%d %H:%M:%S")  # Convert to datetime object
         delta = (expires_on - now).total_seconds()
         timer = Timer.temporary(
             expires=expires_on,
