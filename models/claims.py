@@ -48,7 +48,7 @@ class ClaimsManager:
         for G in gs:
             g = bot.get_guild(int(G))
             if not g:
-                raise Exception(f"Can't find the guild {G}")
+                raise Exception(f"Can't find the claims guild {G}")
             for k, v in config['saves_guild'][G]['categories'].items():
                 if k not in possible_for_bot: continue
 
