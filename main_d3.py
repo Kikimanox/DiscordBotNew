@@ -173,7 +173,6 @@ async def on_ready():
 #                 await message.delete()
 
 
-
 def exit_bot(self):
     # if os.name != 'nt': In case you need to kill some other tasks
     #     try:
