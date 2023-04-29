@@ -243,8 +243,11 @@ class Reminders(commands.Cog):
         error_logger.error(f"self._current_timer {self._current_timer}")
         error_logger.error(f"expires_on {expires_on}")
         error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
-        expires_hotfix = datetime.datetime.strptime(self._current_timer.expires, "%Y-%m-%d %H:%M:%S.%f%z") \
-            if isinstance(self._current_timer.expires, str) else self._current_timer.expires
+        expires_hotfix = (
+            datetime.datetime.fromisoformat(self._current_timer.expires)
+            if isinstance(self._current_timer.expires, str)
+            else self._current_timer.expires
+        )
         if self._current_timer and expires_on < expires_hotfix:
             # cancel the task and re-run it
             self._task.cancel()
