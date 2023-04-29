@@ -410,6 +410,14 @@ class Moderation(commands.Cog):
                     p = dutils.bot_pfx(ctx.bot, ctx.message)
                     rr = act['reason']
                     cid = act["case_id_on_g"]
+
+                    if rr in ['Auto|selfmute', '[selfmute]']:
+                        continue
+                    if rr and str(rr).startswith('Auto|'):
+                        continue
+                    if act['jump_url'] == '(auto)':
+                        continue
+
                     reason = f"{f'Not provided. (To add: {p}case {cid} reason here)' if not rr else rr}"
                     typ = act['type'] if act['no_dm'] is False else f"s{act['type']}"
                     cr = ""
