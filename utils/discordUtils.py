@@ -845,6 +845,10 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
         title = f"User kicked"
         em.colour = 0xe1717d
 
+    if log_type == 'clearwarn':
+        title = f"Warning cleared for offender"
+        em.colour = 0x398de4
+
     if log_type == 'massmute':
         title = "Users muted indefinitely" if mute_time_str == 'indefinitely' else f'Users muted for {mute_time_str}'
         em.colour = 0x9e4b28
