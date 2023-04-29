@@ -164,8 +164,8 @@ class Stats(commands.Cog):
         except AttributeError:
             # future proofing for 3.9 I guess
             task_retriever = asyncio.all_tasks
-        else:
-            all_tasks = task_retriever(loop=self.bot.loop)
+
+        all_tasks = task_retriever(loop=self.bot.loop)
 
         event_tasks = [
             t for t in all_tasks

@@ -546,10 +546,12 @@ async def restart(ctx, options: str = ""):
             os.rename(bot.config['NEW_BOT_LOOP'], 'bot_loop3.py')
         await ctx.send("Running `git pull`...")
         loop = asyncio.get_event_loop()
-        process = subprocess.Popen(["git", "pull"], stdout=subprocess.PIPE)
-        output = await loop.run_in_executor(None, process.communicate)
+        process = subprocess.Popen("git pull", stdout=subprocess.PIPE, shell=True)
+        stdout, stderr = await loop.run_in_executor(None, process.communicate)
         if "v" in options:
-            a = output[0].decode(encoding='utf8', errors='ignore')
+            a = stdout.decode(encoding='utf8')
+            b = stderr.decode(encoding='utf8')
+            a = f'{a}\n{b}' if b else a
             if len(a) > 1900: a = a[:1900] + "\n\n...Content longer than 1900 chars"
             await ctx.send(f"```{a}```")
         else:

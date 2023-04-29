@@ -36,7 +36,8 @@ def human_join(seq, delim=', ', final='or'):
 
 def convertTimeToReadable1(time):
     dd = arrow.get(time).datetime
-    epoch = (dd.replace(tzinfo=None) - datetime.datetime(1970, 1, 1)).total_seconds()
+    utc_dt = dd.astimezone(datetime.timezone.utc)  # Convert the datetime object to UTC
+    epoch = (utc_dt.replace(tzinfo=None) - datetime.datetime(1970, 1, 1)).total_seconds()
     return str(datetime.datetime.utcfromtimestamp(int(epoch)).strftime('%d/%m/%Y %H:%M:%S'))
 
 

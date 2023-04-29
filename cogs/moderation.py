@@ -606,7 +606,7 @@ class Moderation(commands.Cog):
                     act_id = await dutils.moderation_action(None, reason, "unmute", member, no_dm=no_dm,
                                                             actually_resp=actually_resp,
                                                             guild=before.guild, bot=self.bot)
-                    if 'selfmute' not in en.reason:
+                    if en.reason is None or ('selfmute' not in en.reason):
                         await dutils.post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
                                                                 reason=reason, actually_resp=actually_resp,
                                                                 guild=before.guild, bot=self.bot)
@@ -622,7 +622,7 @@ class Moderation(commands.Cog):
                     async for entry in after.guild.audit_logs(action=discord.AuditLogAction.member_role_update,
                                                               limit=limit):
                         if entry.target.id != after.id: continue
-                        now = datetime.datetime.utcnow()
+                        now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
                         if (now - entry.created_at).total_seconds() >= 20: continue
                         found_entry = entry
                         break

@@ -290,7 +290,10 @@ class Serversetup(commands.Cog):
                     "the mute role.")
                 maxx = 10
                 some_owner = (ctx.author.id == ctx.guild.owner_id or ctx.author.id == ctx.bot.config['OWNER_ID'])
-                if len(old_mute_role.members) > maxx and not some_owner:
+                old_mem = 0
+                if old_mute_role:
+                    old_mem = len(old_mute_role.members)
+                if old_mem > maxx and not some_owner:
                     return await ctx.send(f"More than {maxx} users have this role. Because of that only the server or "
                                           f"bot owner may execute this command. Please contact them.")
                 prompt = await dutils.prompt(ctx, "Mute role already exists, are you sure you want to update it?")
@@ -645,7 +648,7 @@ class Serversetup(commands.Cog):
 
         def checkYN(m):
             return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
-                   m.author == ctx.author and m.channel == ctx.channel
+                m.author == ctx.author and m.channel == ctx.channel
 
         def checkAuthor(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -1061,7 +1064,8 @@ class Serversetup(commands.Cog):
             try:  # log it
                 sup = self.bot.from_serversetup[member.guild.id]
                 if sup['leavejoin']:
-                    icon_url = member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[-1] else str(
+                    icon_url = member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[
+                        -1] else str(
                         member.avatar.replace(format="png").url)
 
                     embed = Embed(color=0x5ace47, title=f'{str(member.name)} has joined.',
