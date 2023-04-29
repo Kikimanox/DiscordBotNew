@@ -1052,7 +1052,7 @@ class Ignorethis(commands.Cog):
                         return
 
                 atts = [await a.to_file(spoiler=a.is_spoiler()) for a in message.attachments]
-                await self.gallery_wh.send(avatar_url=message.author.avatar.url,
+                await self.gallery_wh.send(avatar_url=message.author.display_avatar.url,
                                            username=f'{message.author.name} in #{message.channel.name}'[:32],
                                            files=atts, wait=False)
 

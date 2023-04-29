@@ -70,7 +70,7 @@ class Stats(commands.Cog):
         embed.colour = ctx.bot.config['BOT_DEFAULT_EMBED_COLOR']
 
         owner = self.bot.get_user(ctx.bot.config['OWNER_ID'])
-        embed.set_author(name=str(owner), icon_url=owner.avatar.url)
+        embed.set_author(name=str(owner), icon_url=owner.display_avatar.url)
 
         # statistics
         total_members = 0
