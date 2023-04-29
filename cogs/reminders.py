@@ -19,19 +19,20 @@ error_logger = logging.getLogger(f"error")
 
 
 class Timer:
-    def __init__(self, *, record):
-        self.id = record['id']
-        self.meta = record['meta']
-        self.guild = record['guild']
-        self.reason = record['reason']
-        self.user_id = record['user_id']
-        self.len_str = record['len_str']
-        self.expires = record['expires_on']
-        self.executed_by = record['executed_by']
-        self.executed_on = record['executed_on']
+    def __init__(self, *, record: dict):
+        self.id: int = record['id']
+        self.meta: str = record['meta']
+        self.guild: int = record['guild']
+        self.reason: str = record['reason']
+        self.user_id: int = record['user_id']
+        self.len_str: str = record['len_str']
+        self.expires: datetime.datetime = record['expires_on']
+        self.executed_by: int = record['executed_by']
+        self.executed_on: datetime.datetime = record['executed_on']
 
     @classmethod
-    def temporary(cls, *, expires, meta, guild, reason, user_id, len_str, executed_by, executed_on):
+    def temporary(cls, *, expires: datetime.datetime, meta: str, guild: int, reason: str, user_id: int,
+                  len_str: str, executed_by: int, executed_on: datetime.datetime) -> "Timer":
         pseudo = {
             'id': None,
             'meta': meta,
@@ -158,7 +159,7 @@ class Reminders(commands.Cog):
             await self.bot.wait_until_ready()
         try:
             while not self.bot.is_closed():
-                timer = self._current_timer = await self.wait_for_active_timers(days=30)
+                timer = self._current_timer = await self.wait_for_active_timers(days=40)
                 now = datetime.datetime.utcnow()
 
                 if timer.expires >= now:
@@ -196,7 +197,7 @@ class Reminders(commands.Cog):
     async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
         now = datetime.datetime.utcnow()
         if not expires_on:
-            expires_on = datetime.datetime.max
+            expires_on = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
         delta = (expires_on - now).total_seconds()
         timer = Timer.temporary(
             expires=expires_on,
