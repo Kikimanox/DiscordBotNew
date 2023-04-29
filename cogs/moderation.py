@@ -411,7 +411,7 @@ class Moderation(commands.Cog):
                     rr = act['reason']
                     cid = act["case_id_on_g"]
 
-                    if rr in ['Auto|selfmute', '[selfmute]']:
+                    if rr and rr.strip() in ['Auto|selfmute', '[selfmute]']:
                         continue
                     if rr and str(rr).startswith('Auto|'):
                         continue
