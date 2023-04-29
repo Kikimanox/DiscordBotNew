@@ -240,6 +240,9 @@ class Reminders(commands.Cog):
             self._have_data.set()
 
         # check if this timer is earlier than our currently run timer
+        error_logger.error(f"self._current_timer {self._current_timer}")
+        error_logger.error(f"expires_on {expires_on}")
+        error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
             self._task.cancel()
