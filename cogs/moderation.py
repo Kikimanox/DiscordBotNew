@@ -458,6 +458,9 @@ class Moderation(commands.Cog):
                     em.set_footer(text='Times are in UTC')
                     embeds.append(em)
 
+                if len(embeds) == 0:
+                    return await ctx.send("No cases found with the provided arguments.")
+
                 if not dm_me:
                     if len(embeds) == 1:
                         embeds[0].title = "Moderation action"
