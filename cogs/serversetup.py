@@ -1090,9 +1090,9 @@ class Serversetup(commands.Cog):
 
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed, content=cnt)
-            except:
+            except Exception as ex:
                 error_logger.error(f"Join log error: {str(member)} {member.id} "
-                                   f"in {str(member.guild)} {member.guild.id}")
+                                   f"in {str(member.guild)} {member.guild.id}, exception: {traceback.print_exc()}")
 
     @commands.Cog.listener()
     async def on_webhooks_update(self, channel):
