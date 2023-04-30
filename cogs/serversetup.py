@@ -1127,11 +1127,10 @@ class Serversetup(commands.Cog):
             return
         if str(message.channel.id) in self.bot.from_serversetup[message.guild.id]['ignored_chs_at_log']: return
         txt = f"By: {message.author.mention} (id: {message.author.id}) in " \
-              f"{message.channel.mention}\n\n{message.content}\n"
+              f"{message.jump_url}\n\n{message.content}\n"
         if len(message.attachments) > 0:
             txt += '\n**Attachments:**\n'
             txt += '\n'.join([f"[{a.filename}]({a.proxy_url})" for a in message.attachments])
-            txt += f'\n\n{message.jump_url}'
         await dutils.log(self.bot, f"Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
 
     @commands.Cog.listener()
