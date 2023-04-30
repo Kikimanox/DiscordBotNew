@@ -32,7 +32,7 @@ class Timer:
 
     @classmethod
     def temporary(cls, *, expires: datetime.datetime, meta: str, guild: int, reason: str, user_id: int,
-                  len_str: str, executed_by: int, executed_on: datetime.datetime) -> "Timer":
+                  len_str: str, executed_by: int, executed_on) -> "Timer":
         pseudo = {
             'id': None,
             'meta': meta,
@@ -40,9 +40,9 @@ class Timer:
             'reason': reason,
             'user_id': user_id,
             'len_str': len_str,
-            'expires_on': expires,
+            'expires_on': expires.astimezone(datetime.timezone.utc),
             'executed_by': executed_by,
-            'executed_on': executed_on,
+            'executed_on': executed_on if executed_on == 0 else executed_on.astimezone(datetime.timezone.utc),
         }
         return cls(record=pseudo)
 
@@ -159,7 +159,9 @@ class Reminders(commands.Cog):
             await self.bot.wait_until_ready()
         try:
             while not self.bot.is_closed():
-                timer = self._current_timer = await self.wait_for_active_timers(days=40)
+                timer = await self.wait_for_active_timers(days=40)
+                timer.expires = timer.expires.replace(tzinfo=datetime.timezone.utc)
+                self._current_timer = timer
                 now = datetime.datetime.utcnow()
 
                 if timer.expires >= now:
@@ -181,7 +183,13 @@ class Reminders(commands.Cog):
             +Reminderstbl.expires_on
         ).limit(1)
 
-        return Timer(record=record.dicts()[0]) if record else None
+        if record:
+            record_dict = record.dicts()[0]
+            record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
+            record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
+            return Timer(record=record_dict)
+        else:
+            return None
 
     async def wait_for_active_timers(self, days=7):
         timer = await self.get_active_timer(days=days)
@@ -195,9 +203,11 @@ class Reminders(commands.Cog):
         return await self.get_active_timer(days=days)
 
     async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
+        max_datetime = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=1)
         if not expires_on:
-            expires_on = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+            expires_on = max_datetime
+        expires_on = expires_on.replace(tzinfo=datetime.timezone.utc)  # line 210
         delta = (expires_on - now).total_seconds()
         timer = Timer.temporary(
             expires=expires_on,
@@ -243,7 +253,8 @@ class Reminders(commands.Cog):
         # check if this timer is earlier than our currently run timer
         error_logger.error(f"self._current_timer {self._current_timer}")
         error_logger.error(f"expires_on {expires_on}")
-        error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
+        if self._current_timer:
+            error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
             self._task.cancel()

@@ -198,7 +198,7 @@ class Help(DefaultHelpCommand):
 
     @property
     def avatar(self):
-        return self.context.bot.user.avatar.with_format("png").url
+        return self.context.bot.user.display_avatar.with_format("png").url
 
     @property
     def color(self):

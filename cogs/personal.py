@@ -23,14 +23,14 @@ class Personal(commands.Cog):
         `[p]avatar @user` will display user's avatar
         `[p]avatar 174406433603846145` will display user's avatar by their id
         """
-        """Get user avatar. Usage:\n.avatar or \n.avatar @user"""
+        """Get user avatar. Usage:\n[p]avatar or \n[p]avatar @user"""
         if not user: user = ctx.author
         if 'gif' in str(user.display_avatar.url).split('.')[-1]:
             desc = f"[Gif link]({user.display_avatar.url})"
         else:
-            desc = f"Links: [png]({user.avatar.replace(format='png').url}) | " \
-                   f"[jpg]({user.avatar.replace(format='jpg').url}) | " \
-                   f"[webp]({user.avatar.replace(format='webp').url})"
+            desc = f"Links: [png]({user.display_avatar.with_format(format='png').url}) | " \
+                   f"[jpg]({user.display_avatar.with_format(format='jpg').url}) | " \
+                   f"[webp]({user.display_avatar.with_format(format='webp').url})"
         em = Embed(color=user.color,
                    description=desc,
                    title=f'Avatar for {str(user)}')

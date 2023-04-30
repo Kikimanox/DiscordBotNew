@@ -522,7 +522,7 @@ class Moderation(commands.Cog):
         while tries >= 0:
             async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
                 if entry.target.id != member.id: continue
-                now = datetime.datetime.utcnow()
+                now = datetime.datetime.now(datetime.timezone.utc)
                 if (now - entry.created_at).total_seconds() >= 20: continue
                 found_entry = entry
                 break
@@ -1645,7 +1645,7 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot:
+        if message.author.bot or message.guild is None:
             return
 
         guild_id = str(message.guild.id)

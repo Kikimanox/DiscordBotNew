@@ -390,7 +390,7 @@ async def dm_log_try_setup(bot):
 
 def icon_url(user):
     return user.display_avatar.url if 'gif' in str(user.display_avatar.url).split('.')[-1] else str(
-        user.avatar.replace(format="png").url)
+        user.display_avatar.with_format(format="png").url)
 
 
 async def dm_log(bot, message: discord.Message):
@@ -412,8 +412,9 @@ async def dm_log(bot, message: discord.Message):
             if len(descs) > 1:
                 a_title += f' {i}/{len(descs)}'
                 i += 1
-            icon_url = message.author.display_avatar.url if 'gif' in str(message.author.display_avatar.url).split('.')[-1] else str(
-                message.author.avatar.replace(format="png").url)
+            icon_url = message.author.display_avatar.url if 'gif' in str(message.author.display_avatar.url).split('.')[
+                -1] else str(
+                message.author.display_avatar.with_format(format="png").url)
             em = Embed(description=desc)
             em.set_author(name=a_title, icon_url=icon_url)
             em.set_thumbnail(url=icon_url)
@@ -914,8 +915,8 @@ async def log(bot, title=None, txt=None, author=None,
             for txt in desc:
                 em = discord.Embed(description=txt, color=colorr)
                 if author:
-                    iconn_url = author.display_avatar.url if 'gif' in str(author.display_avatar.url).split('.')[-1] else str(
-                        author.avatar.replace(format="png").url)
+                    iconn_url = author.display_avatar.url if 'gif' in str(author.display_avatar.url).split('.')[-1] \
+                        else str(author.display_avatar.with_format("png").url)
                     em.set_author(name=f"{title}", icon_url=iconn_url)
                 em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')}")
                 if imageUrl:
@@ -985,8 +986,8 @@ def get_icon_url_for_member(member):
     avatar_url = member.display_avatar.url
     if avatar_url and 'gif' in avatar_url.split('.')[-1]:
         return avatar_url
-    elif member.avatar:
-        return member.avatar.with_format("png").url
+    elif member.display_avatar:
+        return member.display_avatar.with_format("png").url
     else:
         return member.default_avatar.url
 
