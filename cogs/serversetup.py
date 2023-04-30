@@ -1130,7 +1130,7 @@ class Serversetup(commands.Cog):
               f"{message.channel.mention}\n\n{message.content}\n"
         if len(message.attachments) > 0:
             txt += '\n**Attachments:**\n'
-            txt += '\n'.join([a.filename for a in message.attachments])
+            txt += '\n'.join([f"[{a.filename}]({a.proxy_url})" for a in message.attachments])
         await dutils.log(self.bot, "Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
 
     @commands.Cog.listener()
