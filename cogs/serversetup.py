@@ -1131,7 +1131,8 @@ class Serversetup(commands.Cog):
         if len(message.attachments) > 0:
             txt += '\n**Attachments:**\n'
             txt += '\n'.join([f"[{a.filename}]({a.proxy_url})" for a in message.attachments])
-        await dutils.log(self.bot, f"[Message deleted]({message.jump_url})", txt, message.author, 0xd6260b, guild=message.guild)
+            txt += f'\n\n{message.jump_url}'
+        await dutils.log(self.bot, f"Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
