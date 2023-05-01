@@ -157,9 +157,9 @@ async def on_ready():
     config = dataIOa.load_json("config.json")
 
     # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
-    if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
-        await bot.load_extension("cogs.manga")
-        await bot.load_extension("cogs.bets")
+    # if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
+    #     await bot.load_extension("cogs.manga")
+    #     await bot.load_extension("cogs.bets")
 
     # The Prefix comma isn't visible, shows as `.` instead of `,`
     # activity = Activity(name=f"\"{Prefix}\" for the Prefix", type=ActivityType.listening)
