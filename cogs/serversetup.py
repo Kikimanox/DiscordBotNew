@@ -1092,7 +1092,7 @@ class Serversetup(commands.Cog):
                                                regular_ch=sup['leavejoin'], embed=embed, content=cnt)
             except Exception as ex:
                 error_logger.error(f"Join log error: {str(member)} {member.id} "
-                                   f"in {str(member.guild)} {member.guild.id}, exception: {traceback.print_exc()}")
+                                   f"in {str(member.guild)} {member.guild.id}, exception: {ex}")
 
     @commands.Cog.listener()
     async def on_webhooks_update(self, channel):
