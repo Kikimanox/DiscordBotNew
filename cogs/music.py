@@ -48,17 +48,30 @@ class Music(commands.Cog):
                 'preferredquality': '192',
             }],
             'quiet': True,
-            'no_warnings': True,
+            'no_warnings': True
+            # 'verbose': True
         }
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                info_entry0 = info['entries'][0]
+                if info.get('entries'):
+                    info_entry0 = info['entries'][0]
+                else:
+                    info_entry0 = info
                 filename = os.path.join(self.get_song_path(guild_id), f"{info_entry0['title']}.opus")
                 return filename, info
         except Exception as ex:
             raise Exception(ex)
+
+    @commands.command(aliases=['pm'])
+    async def playmultiple(self, ctx, *, query):
+        queries = [q.strip() for q in query.split('|')]
+        if len(queries) > 5:
+            return await ctx.send("Max 5 songs can be added at once.")
+        for q in queries:
+            await self.play(ctx, query=q)
+            await asyncio.sleep(2)
 
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query):
@@ -128,7 +141,7 @@ class Music(commands.Cog):
 
                 self.queues[ctx.guild.id].append(song_path)
             except Exception as ex:
-                await m.edit(content=f"❌ Failed to add `{song_title}` to queue. [Ex: {ex}]".replace('@', '@\u200b'))
+                await m.edit(content=f"❌ Failed to add `{query}` to queue. [Ex: {ex}]".replace('@', '@\u200b'))
 
     @tasks.loop(seconds=1)
     async def check_queue(self):
@@ -226,6 +239,16 @@ class Music(commands.Cog):
         filled_length = int(length * progress // total)
         bar = '▰' * filled_length + '▱' * (length - filled_length)
         return bar
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        # Check if the bot got disconnected from a voice channel
+        if member.id == self.bot.user.id and before.channel and not after.channel:
+            guild_id = before.channel.guild.id
+
+            # Clear the queue and song info for the guild
+            self.queues.pop(guild_id, None)
+            self.song_info.pop(guild_id, None)
 
 
 async def setup(bot: commands.Bot):
