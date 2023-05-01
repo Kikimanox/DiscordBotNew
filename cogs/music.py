@@ -15,7 +15,6 @@ class Music(commands.Cog):
         self.bot = bot
         self.tmp_folder = "tmp"
         self.queues = {}
-        self.song_info = {}
         self.voice_clients = {}
         self.check_queue.start()
         self.cleanup_tmp_folder()
@@ -42,6 +41,8 @@ class Music(commands.Cog):
         ydl_opts = {
             'format': '251',  # Opus format
             'outtmpl': f"{self.get_song_path(guild_id)}/%(title)s.%(ext)s",
+            "noplaylist": True,  # Handle playlists later...
+            "source_address": "0.0.0.0",  # For IPv6 issues
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'opus',
@@ -54,6 +55,10 @@ class Music(commands.Cog):
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info.get("duration") and info["duration"] > 10800:  # 3 hours
+                    raise Exception("Song is too long. [Max 3 hours]")
+
                 info = ydl.extract_info(url, download=True)
                 if info.get('entries'):
                     info_entry0 = info['entries'][0]
@@ -123,23 +128,21 @@ class Music(commands.Cog):
                 else:
                     song_title = f'{info.get("title")}'
 
-                if ctx.guild.id not in self.song_info:
-                    self.song_info[ctx.guild.id] = []
+                if ctx.guild.id not in self.queues:
+                    self.queues[ctx.guild.id] = []
 
-                self.song_info[ctx.guild.id].append({
+                self.queues[ctx.guild.id].append({
                     "title": song_title,
                     "thumbnail": info['thumbnail'],
                     "url": info['webpage_url'],
                     "duration": info['duration'],
-                    "requester": ctx.author
+                    "requester": ctx.author,
+                    "song_title": song_title,
+                    "local_path": song_path
                 })
+
                 await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
 
-                # Add the song to the queue
-                if ctx.guild.id not in self.queues:
-                    self.queues[ctx.guild.id] = []
-
-                self.queues[ctx.guild.id].append(song_path)
             except Exception as ex:
                 await m.edit(content=f"❌ Failed to add `{query}` to queue. [Ex: {ex}]".replace('@', '@\u200b'))
 
@@ -148,7 +151,7 @@ class Music(commands.Cog):
         for guild_id in self.queues:
             voice_client = self.voice_clients[guild_id]
             if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
-                song_path = self.queues[guild_id].pop(0)
+                song_path = self.queues[guild_id][0]["local_path"]
                 source = FFmpegPCMAudio(song_path, options='-vn')
                 voice_client.play(source, after=lambda error: self.delete_song_file(guild_id, song_path))
                 voice_client.source.start_time = discord.utils.utcnow()  # Store start time
@@ -160,21 +163,31 @@ class Music(commands.Cog):
             return
 
         queue_embeds = []
-        current_embed = discord.Embed(title="Queue", color=discord.Color.blue())
+        current_embed = discord.Embed(title="Song queue", color=discord.Color.blue())
         current_length = 0
 
-        for idx, song_path in enumerate(self.queues[ctx.guild.id]):
-            song_title = os.path.splitext(os.path.basename(song_path))[0]
-            song_length = len(song_title)
-            if current_length + song_length > 500:
-                queue_embeds.append(current_embed)
-                current_embed = discord.Embed(title="Queue", color=discord.Color.blue())
-                current_length = 0
+        for idx, song_info in enumerate(self.queues[ctx.guild.id]):
+            song_title = song_info["song_title"]
+            song_title_length = len(song_title)
 
-            current_embed.add_field(name=f"{idx + 1}. {song_title}",
-                                    value=f"[requested by: {self.song_info[ctx.guild.id][idx]['requester'].display_name}]",
-                                    inline=False)
-            current_length += song_length
+            if idx == 0:
+                if self.voice_clients[ctx.guild.id].is_paused():
+                    song_title = f"[Now playing (paused)] {song_title}"
+                else:
+                    song_title = f"[Now playing] {song_title}"
+                current_embed.add_field(name=f"{idx + 1}. {song_title}",
+                                        value=f"[requested by: {song_info['requester'].mention}]",
+                                        inline=False)
+            else:
+                if current_length + song_title_length > 500:
+                    queue_embeds.append(current_embed)
+                    current_embed = discord.Embed(title="Queue", color=discord.Color.blue())
+                    current_length = 0
+
+                current_embed.add_field(name=f"{idx + 1}. {song_title}",
+                                        value=f"[requested by: {song_info['requester'].mention}]",
+                                        inline=False)
+            current_length += song_title_length
 
         queue_embeds.append(current_embed)
 
@@ -210,11 +223,11 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
-        if ctx.guild.id not in self.song_info or not self.song_info[ctx.guild.id]:
+        if ctx.guild.id not in self.queues or len(self.queues[ctx.guild.id]) == 0:
             await ctx.send("No song is currently playing.")
             return
 
-        song = self.song_info[ctx.guild.id][0]  # Get the currently playing song
+        song = self.queues[ctx.guild.id][0]  # Get the currently playing song
         embed = discord.Embed(title=song["title"], url=song["url"], color=discord.Color.blue())
         embed.set_author(name=f'Requested by: {song["requester"].display_name}',
                          icon_url=song["requester"].display_avatar.url)
@@ -245,10 +258,8 @@ class Music(commands.Cog):
         # Check if the bot got disconnected from a voice channel
         if member.id == self.bot.user.id and before.channel and not after.channel:
             guild_id = before.channel.guild.id
-
             # Clear the queue and song info for the guild
             self.queues.pop(guild_id, None)
-            self.song_info.pop(guild_id, None)
 
 
 async def setup(bot: commands.Bot):
