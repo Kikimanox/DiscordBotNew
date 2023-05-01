@@ -146,12 +146,12 @@ class Music(commands.Cog):
     @tasks.loop(seconds=1)
     async def check_queue(self):
         for guild_id in self.queues:
-            if len(self.queues[guild_id]) > 0 and not self.voice_clients[guild_id].is_playing():
+            voice_client = self.voice_clients[guild_id]
+            if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
                 song_path = self.queues[guild_id].pop(0)
                 source = FFmpegPCMAudio(song_path, options='-vn')
-                self.voice_clients[guild_id].play(source,
-                                                  after=lambda error: self.delete_song_file(guild_id, song_path))
-                self.voice_clients[guild_id].source.start_time = discord.utils.utcnow()  # Store start time
+                voice_client.play(source, after=lambda error: self.delete_song_file(guild_id, song_path))
+                voice_client.source.start_time = discord.utils.utcnow()  # Store start time
 
     @commands.command(aliases=['que'])
     async def queue(self, ctx):
