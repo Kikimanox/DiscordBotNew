@@ -54,7 +54,8 @@ class Music(commands.Cog):
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                filename = os.path.join(self.get_song_path(guild_id), f"{info['title']}.opus")
+                info_entry0 = info['entries'][0]
+                filename = os.path.join(self.get_song_path(guild_id), f"{info_entry0['title']}.opus")
                 return filename, info
         except Exception as ex:
             raise Exception(ex)
@@ -73,7 +74,7 @@ class Music(commands.Cog):
 
         # Download the song and store its info
         async with ctx.typing():
-            m = await ctx.send(f"🔃 Adding `{query}` to que...".replace('@', '@\u200b'))
+            m = await ctx.send(f"🔃 Adding `{query}` to queue...".replace('@', '@\u200b'))
 
             try:
                 song_path = None
@@ -85,13 +86,13 @@ class Music(commands.Cog):
                         song_path = None
                         pass
                 if song_path is None:
-                    await m.edit(content=f"🔎 Adding `{query}` to que..."
+                    await m.edit(content=f"🔎 Adding `{query}` to queue..."
                                          f"\nProvided query was not a youtube id or link. Trying search..."
                                  .replace('@', '@\u200b'))
                     # Otherwise, search for the song using yt-dlp
                     search_query = f"ytsearch1:{query}"
                     song_path, info = await self.download_song(search_query, ctx.guild.id)
-                    if len(info.get('entries')):
+                    if info.get('entries') and len(info.get('entries')):
                         info = info['entries'][0]  # first one
                     else:
                         raise Exception("Nothing found")
@@ -108,22 +109,26 @@ class Music(commands.Cog):
                     song_title = f'{info.get("title")} by {info.get("artist")}'
                 else:
                     song_title = f'{info.get("title")}'
-                song_path = song_path.replace('.webm', '.opus')
-                self.song_info[ctx.guild.id] = {
+
+                if ctx.guild.id not in self.song_info:
+                    self.song_info[ctx.guild.id] = []
+
+                self.song_info[ctx.guild.id].append({
                     "title": song_title,
                     "thumbnail": info['thumbnail'],
                     "url": info['webpage_url'],
                     "duration": info['duration'],
                     "requester": ctx.author
-                }
-                await m.edit(content=f"✅ Added `{song_title}` to que.".replace('@', '@\u200b'))
+                })
+                await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
+
                 # Add the song to the queue
                 if ctx.guild.id not in self.queues:
                     self.queues[ctx.guild.id] = []
 
                 self.queues[ctx.guild.id].append(song_path)
             except Exception as ex:
-                await m.edit(content=f"❌ Failed to add `{song_title}` to que. [Ex: {ex}]".replace('@', '@\u200b'))
+                await m.edit(content=f"❌ Failed to add `{song_title}` to queue. [Ex: {ex}]".replace('@', '@\u200b'))
 
     @tasks.loop(seconds=1)
     async def check_queue(self):
@@ -135,7 +140,7 @@ class Music(commands.Cog):
                                                   after=lambda error: self.delete_song_file(guild_id, song_path))
                 self.voice_clients[guild_id].source.start_time = discord.utils.utcnow()  # Store start time
 
-    @commands.command()
+    @commands.command(aliases=['que'])
     async def queue(self, ctx):
         if ctx.guild.id not in self.queues or len(self.queues[ctx.guild.id]) == 0:
             await ctx.send("The queue is empty.")
@@ -153,8 +158,8 @@ class Music(commands.Cog):
                 current_embed = discord.Embed(title="Queue", color=discord.Color.blue())
                 current_length = 0
 
-            current_embed.add_field(name=f"{idx + 1}.",
-                                    value=f"{song_title} [requested by: {self.song_info[ctx.guild.id]['requester'].display_name}]",
+            current_embed.add_field(name=f"{idx + 1}. {song_title}",
+                                    value=f"[requested by: {self.song_info[ctx.guild.id][idx]['requester'].display_name}]",
                                     inline=False)
             current_length += song_length
 
@@ -192,11 +197,11 @@ class Music(commands.Cog):
 
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
-        if ctx.guild.id not in self.song_info:
+        if ctx.guild.id not in self.song_info or not self.song_info[ctx.guild.id]:
             await ctx.send("No song is currently playing.")
             return
 
-        song = self.song_info[ctx.guild.id]
+        song = self.song_info[ctx.guild.id][0]  # Get the currently playing song
         embed = discord.Embed(title=song["title"], url=song["url"], color=discord.Color.blue())
         embed.set_author(name=f'Requested by: {song["requester"].display_name}',
                          icon_url=song["requester"].display_avatar.url)
