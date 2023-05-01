@@ -28,9 +28,9 @@ class Personal(commands.Cog):
         if 'gif' in str(user.display_avatar.url).split('.')[-1]:
             desc = f"[Gif link]({user.display_avatar.url})"
         else:
-            desc = f"Links: [png]({user.display_avatar.with_format(format='png').url}) | " \
-                   f"[jpg]({user.display_avatar.with_format(format='jpg').url}) | " \
-                   f"[webp]({user.display_avatar.with_format(format='webp').url})"
+            desc = f"Links: [png]({user.display_avatar.with_format('png').url}) | " \
+                   f"[jpg]({user.display_avatar.with_format('jpg').url}) | " \
+                   f"[webp]({user.display_avatar.with_format('webp').url})"
         em = Embed(color=user.color,
                    description=desc,
                    title=f'Avatar for {str(user)}')

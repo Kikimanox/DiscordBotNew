@@ -212,7 +212,7 @@ return ret_7
             return await ctx.send("Can only be used on specific servers")
 
         if avatar_url.lower() == 'pfp':
-            avatar_url = ctx.author.display_avatar.with_format(format='png', size=1024).url
+            avatar_url = ctx.author.display_avatar.with_format('png', size=1024).url
         pl = PRMembers.get_or_none(PRMembers.uid == ctx.author.id)
         name = name.strip()
         if pl is None and name == "":

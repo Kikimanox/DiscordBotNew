@@ -390,7 +390,7 @@ async def dm_log_try_setup(bot):
 
 def icon_url(user):
     return user.display_avatar.url if 'gif' in str(user.display_avatar.url).split('.')[-1] else str(
-        user.display_avatar.with_format(format="png").url)
+        user.display_avatar.with_format("png").url)
 
 
 async def dm_log(bot, message: discord.Message):
@@ -414,7 +414,7 @@ async def dm_log(bot, message: discord.Message):
                 i += 1
             icon_url = message.author.display_avatar.url if 'gif' in str(message.author.display_avatar.url).split('.')[
                 -1] else str(
-                message.author.display_avatar.with_format(format="png").url)
+                message.author.display_avatar.with_format("png").url)
             em = Embed(description=desc)
             em.set_author(name=a_title, icon_url=icon_url)
             em.set_thumbnail(url=icon_url)
