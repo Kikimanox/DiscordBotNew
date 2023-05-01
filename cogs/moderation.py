@@ -1,32 +1,54 @@
 import asyncio
+import datetime
+import logging
 import re
 import sys
+import traceback
+from operator import itemgetter
 import time
 
 import discord
+from columnar import columnar
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
 
-from models.antiraid import ArGuild
-from models.serversetup import SSManager
-from utils.SimplePaginator import SimplePaginator
-from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
-import datetime
-from columnar import columnar
-from operator import itemgetter
 from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
+from models.serversetup import SSManager
+from models.sticky_message import StickyMsg
+from utils.SimplePaginator import SimplePaginator
+from discord.errors import NotFound
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class Moderation(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.tried_setup = False
         # removing multi word cmds, cross out unavail inh cmd
+        self.sticky_messages = self.get_current_sticky()
+        self.last_sticky_repost = {}
+
+    def get_current_sticky(self):
+        sticky_messages = {}
+
+        for sticky in StickyMsg.select():
+            guild_id = str(sticky.guild_id)
+            channel_id = str(sticky.channel_id)
+
+            if guild_id not in sticky_messages:
+                sticky_messages[guild_id] = {}
+
+            sticky_messages[guild_id][channel_id] = sticky.message
+
+        return sticky_messages
 
     async def set_server_stuff(self):
         if not self.tried_setup:
@@ -54,7 +76,7 @@ class Moderation(commands.Cog):
 
             def check(m):
                 return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
-                       m.author == ctx.author and m.channel == ctx.channel
+                    m.author == ctx.author and m.channel == ctx.channel
 
             try:
                 reply = await self.bot.wait_for("message", check=check, timeout=10)
@@ -106,9 +128,9 @@ class Moderation(commands.Cog):
                 old_reason = case.reason
                 case.save()
                 await ctx.send("Reason added.")
-            ctx.bot.logger.info(f"{ctx.author} ({ctx.author.id}) changed case {case_id} reason:\n"
-                                f"Old reason: {old_reason}\n"
-                                f"New reason: {reason}")
+            logger.info(f"{ctx.author} ({ctx.author.id}) changed case {case_id} reason:\n"
+                        f"Old reason: {old_reason}\n"
+                        f"New reason: {reason}")
             try:
                 if not ctx.bot.from_serversetup:
                     ctx.bot.from_serversetup = await SSManager.get_setup_formatted(ctx.bot)
@@ -125,12 +147,14 @@ class Moderation(commands.Cog):
                 d = case.logged_after - datetime.timedelta(minutes=5)
 
                 # Get the channel history
-                history = await log_in_chan.history(limit=2000, after=d).flatten()
+                history = log_in_chan.history(limit=2000, after=d)
 
                 # Filter the messages using list comprehension
-                stuff = [m for m in history if
-                         len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
-                             m.embeds[0].footer.text)]
+                stuff = []
+                async for m in history:
+                    if len(m.embeds) == 1 and m.embeds[0].footer and f'Case id: {case_id}' in str(
+                            m.embeds[0].footer.text):
+                        stuff.append(m)
 
                 if not stuff:
                     return
@@ -156,19 +180,37 @@ class Moderation(commands.Cog):
                     case.logged_after = datetime.datetime.utcnow()
                     case.logged_in_ch = log_in_chan.id
                     case.save()
-                    await sup['hook_modlog'].edit_message(msg.id, embed=em)  # edit the old one
-                    await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
-                                               regular_ch=sup['reg'], embed=em, content=cnt)
+                    try:
+                        if "*No reason provided." in cnt:
+                            await sup['hook_modlog'].edit_message(msg.id, embed=em)  # edit the old one
+                        else:
+                            await sup['hook_modlog'].edit_message(msg.id, embed=em, content=cnt)  # edit the old one
+                    except:
+                        await ctx.send("Unable to edit the message. Sending new one instead.")
+                        await dutils.try_send_hook(ctx.guild, self.bot, hook=sup['hook_reg'],
+                                                   regular_ch=sup['reg'], embed=em, content=cnt)
                     # await chan.send(content=cnt, embed=Embed)
             except:
+                await ctx.send(f"Something went wrong when updating reason for {case_id}..")
                 print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
-                ctx.bot.logger.error(f"Something went wrong when trying to update case {case_id} message\n")
+                error_logger.error(f"Something went wrong when trying to update case {case_id} message\n")
         except:
             await ctx.send("There is no case with that id.")
 
     @commands.cooldown(1, 4, commands.BucketType.user)
-    @commands.check(checks.moderator_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
+    @commands.command()
+    async def cases(self, ctx, offender: discord.Member, *extra: str):
+        """
+        Just a shortcut for `[p]lsc 0 9999 offen=(offender_id)`
+        """
+        offender_id = offender.id
+        extra_options = " ".join(extra)
+        await self.listcases(ctx, case_id=0, limit=9999, extra=f"offen=({offender_id}) {extra_options}")
+
+    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=["listcase", "lsc", 'showcase', 'showcases'])
     async def listcases(self, ctx, case_id: int = 0, limit=10, *, extra: str = ""):
         """List case(s), see help to see command usage
@@ -264,7 +306,7 @@ class Moderation(commands.Cog):
                         return await ctx.send(f"Invalid extra argument `{inv}` "
                                               f"(or you have "
                                               f"a space before `=`"
-                                              f" somewhere)\n{'' if inv is not ' ' else f'See near `{near}`'}")
+                                              f" somewhere)\n{'' if inv != ' ' else f'See near `{near}`'}")
             near = near.replace('@', '@\u200b')
             if was_eq: return await ctx.send(f"You forgot to close a `)` at `{near}`")
             if 'after=' in extra or 'before=' in extra:
@@ -282,7 +324,7 @@ class Moderation(commands.Cog):
                             bf_date = datetime.datetime(*bf)
                     except Exception as e:
                         trace = traceback.format_exc()
-                        ctx.bot.logger.error(trace)
+                        error_logger.error(trace)
                         ee = str(e).replace('@', '@\u200b')
                         return await ctx.send(f"Something went wrong when parsing **{parsing_now}** date. "
                                               f"Please check your "
@@ -292,7 +334,7 @@ class Moderation(commands.Cog):
                     trace = traceback.format_exc()
                     print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                     print(trace)
-                    ctx.bot.logger.error(trace)
+                    error_logger.error(trace)
                     return await ctx.send("Something went wrong. Please re-check usage.")
             try:
                 parsing_now = 'resp'
@@ -368,6 +410,14 @@ class Moderation(commands.Cog):
                     p = dutils.bot_pfx(ctx.bot, ctx.message)
                     rr = act['reason']
                     cid = act["case_id_on_g"]
+
+                    if rr and rr.strip() in ['Auto|selfmute', '[selfmute]']:
+                        continue
+                    if rr and str(rr).startswith('Auto|'):
+                        continue
+                    if act['jump_url'] == '(auto)':
+                        continue
+
                     reason = f"{f'Not provided. (To add: {p}case {cid} reason here)' if not rr else rr}"
                     typ = act['type'] if act['no_dm'] is False else f"s{act['type']}"
                     cr = ""
@@ -408,6 +458,9 @@ class Moderation(commands.Cog):
                     em.set_footer(text='Times are in UTC')
                     embeds.append(em)
 
+                if len(embeds) == 0:
+                    return await ctx.send("No cases found with the provided arguments.")
+
                 if not dm_me:
                     if len(embeds) == 1:
                         embeds[0].title = "Moderation action"
@@ -427,7 +480,7 @@ class Moderation(commands.Cog):
                 print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 traceback.print_exc()
                 await ctx.send("Something weird went wrong when executing querry.")
-                ctx.bot.logger.error('listcases execution ERROR:\n' + traceback.format_exc())
+                error_logger.error('listcases execution ERROR:\n' + traceback.format_exc())
         else:
             return await ctx.send("No cases found with the provided arguments.")
 
@@ -469,7 +522,7 @@ class Moderation(commands.Cog):
         while tries >= 0:
             async for entry in guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
                 if entry.target.id != member.id: continue
-                now = datetime.datetime.utcnow()
+                now = datetime.datetime.now(datetime.timezone.utc)
                 if (now - entry.created_at).total_seconds() >= 20: continue
                 found_entry = entry
                 break
@@ -564,7 +617,7 @@ class Moderation(commands.Cog):
                     act_id = await dutils.moderation_action(None, reason, "unmute", member, no_dm=no_dm,
                                                             actually_resp=actually_resp,
                                                             guild=before.guild, bot=self.bot)
-                    if 'selfmute' not in en.reason:
+                    if en.reason is None or ('selfmute' not in en.reason):
                         await dutils.post_mod_log_based_on_type(None, "unmute", act_id, offender=member,
                                                                 reason=reason, actually_resp=actually_resp,
                                                                 guild=before.guild, bot=self.bot)
@@ -580,7 +633,7 @@ class Moderation(commands.Cog):
                     async for entry in after.guild.audit_logs(action=discord.AuditLogAction.member_role_update,
                                                               limit=limit):
                         if entry.target.id != after.id: continue
-                        now = datetime.datetime.utcnow()
+                        now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
                         if (now - entry.created_at).total_seconds() >= 20: continue
                         found_entry = entry
                         break
@@ -598,7 +651,7 @@ class Moderation(commands.Cog):
                         tries -= 1
                         await asyncio.sleep(2)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def unmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted.
@@ -620,7 +673,7 @@ class Moderation(commands.Cog):
 
         await dutils.unmute_user(ctx, user, reason)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(hidden=True)
     async def sunmute(self, ctx, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted. (no dm)
@@ -642,7 +695,7 @@ class Moderation(commands.Cog):
 
         await dutils.unmute_user(ctx, user, reason, no_dm=True)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def mute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
         """Mutes users. Please check usage with .help mute
@@ -673,7 +726,7 @@ class Moderation(commands.Cog):
         `[p]selfmute 50m`"""
         await self.el_mute(ctx, [ctx.author], length, reason, False, selfmute=True)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(hidden=True)
     async def smute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
         """Mutes a user. Check usage with .help smute (no dm)
@@ -706,19 +759,19 @@ class Moderation(commands.Cog):
                                                        f"<role>`")
         rets = []
         if len(users) == 1:
-            #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, users[0]): return
-            #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.guild.get_member(ctx.bot.user.id),
+            # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, users[0]): return
+            # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.guild.get_member(ctx.bot.user.id),
             #                                                         users[0], True): return
             await dutils.mute_user(ctx, users[0], length, reason, no_dm=no_dm, selfmute=selfmute)
         else:
             p = dutils.bot_pfx(ctx.bot, ctx.message)
             for u in users:
                 try_muting = 1
-                #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, u, silent=True,
+                # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute', ctx.author, u, silent=True,
                 #                                                         can_be_same=True):
                 #    try_muting = 1234  # author top role lower
                 #    ret = "Has a higher role than you (wasn't muted) ℹ"
-                #if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute',
+                # if not await dutils.can_execute_based_on_top_role_height(ctx, 'mute',
                 #                                                         ctx.guild.get_member(ctx.bot.user.id),
                 #                                                         u, bot_test=True, silent=True,
                 #                                                         can_be_same=True):
@@ -750,7 +803,7 @@ class Moderation(commands.Cog):
             await dutils.post_mod_log_based_on_type(ctx, 'massmute', act_id, reason=rsn,
                                                     mute_time_str='indefinitely' if not length else length)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(name='nmute')
     async def newmute(self, ctx, user: discord.Member, length="", *, reason=""):
         """Same as mute, but will also work on already muted users
@@ -775,7 +828,7 @@ class Moderation(commands.Cog):
 
         await dutils.mute_user(ctx, user, length, reason, new_mute=True)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(name='snmute', hidden=True)
     async def snewmute(self, ctx, user: discord.Member, length="", *, reason=""):
         """Same as mute, but will also work on already muted users (nodm)
@@ -799,18 +852,6 @@ class Moderation(commands.Cog):
                                                        f"<role>`")
 
         await dutils.mute_user(ctx, user, length, reason, new_mute=True, no_dm=True)
-
-    @commands.check(checks.moderator_check)
-    @commands.command()
-    async def bean(self, ctx, user: discord.User, *, reason=""):
-        """Joke version of ban, this won't actually ban the user"""
-        try:
-            user_ = ctx.guild.get_member(user.id)
-            if user_: user = user_
-            await ctx.send(embed=Embed(description=f'{user.mention} has has been banned', color=0xFF0000))
-        except:
-            pass
-
 
     @commands.check(checks.moderator_check)
     @commands.command()
@@ -1153,7 +1194,6 @@ class Moderation(commands.Cog):
                     except:
                         pass
 
-
         await msg.edit(content="**Done.**")
 
         bs = ', '.join([str(u) for u in user_ids])
@@ -1233,7 +1273,7 @@ class Moderation(commands.Cog):
         act_id = await dutils.moderation_action(ctx, reason, 'clearwarn', off)
         await dutils.post_mod_log_based_on_type(ctx, 'clearwarn', act_id, offender=off, reason=reason)
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def warn(self, ctx, user: discord.Member, *, reason):
         """Warn a user with a necessary supplied reason.
@@ -1258,7 +1298,7 @@ class Moderation(commands.Cog):
         except:
             print(f"Member {'' if not user else user.id} disabled dms")
 
-    @commands.check(checks.manage_messages_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
     async def warnlist(self, ctx, user=None):
         """Show warnings for a user or display all warnings.
@@ -1416,7 +1456,7 @@ class Moderation(commands.Cog):
         """
         await dutils.unlock_channels(ctx, channels)
 
-    @commands.check(checks.moderator_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=['slow'])
     async def slowmode(self, ctx, seconds: int, *, channels=""):
         """Set a slowmode
@@ -1490,7 +1530,150 @@ class Moderation(commands.Cog):
         else:
             await ctx.send("Done.")
 
+    @commands.check(checks.moderator_check)
+    @commands.group()
+    async def sticky(self, ctx):
+        """
+        Create a sticky message. Use subcommands to make one
+        `[p]sticky start #channel 1m sticky content`
+        `[p]sticky start #channel 10s sticky content`
+        `[p]sticky start #channel 5s sticky content`
 
-def setup(bot):
+        Frequency is how old the message has to be to trigger sticky behaviour
+        So if it's set to 10s it won't trigger until
+
+        `[p]sticky stop #channel`
+
+        You may also view a list of current sticky messages by using
+        `[p]sticky list`
+
+        You may also stop all sticky messages
+        `[p]sticky stopall`
+        """
+        if ctx.invoked_subcommand is None:
+            raise commands.errors.BadArgument
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def start(self, ctx, channel: discord.TextChannel, frequency: str, *, sticky_content):
+        """Start a sticky message in the specified channel"""
+        guild_id = str(ctx.guild.id)
+        channel_id = str(channel.id)
+
+        # Parse frequency with tutils.get_seconds_from_smhdw and get seconds
+        try:
+            seconds, error = tutils.get_seconds_from_smhdw(frequency)
+            if error:
+                raise ValueError(error)
+        except Exception as ex:
+            return await ctx.send(f"{ex} try again")
+
+        # Prompt the user for confirmation
+        prompt_message = (
+            f"A sticky message with the content: `{sticky_content}`\n"
+            f"Will be created in {channel.mention}\n"
+            f"Its update frequency is `{frequency}` aka. {seconds} seconds\n\n"
+            f"Are you sure about creating this sticky?"
+        )
+        confirmation = await dutils.prompt(ctx, prompt_message)
+        if not confirmation:
+            return await ctx.send("Sticky message creation cancelled.")
+
+        if guild_id in self.sticky_messages and channel_id in self.sticky_messages[guild_id]:
+            return await ctx.send("This channel already has a sticky message. "
+                                  "Please first stop the current one and then start a new sticky message again.")
+
+        # Create the sticky message
+        sticky_content = sticky_content.replace('@', '@\u200b')
+        new_sticky_message = await channel.send(sticky_content)
+
+        # Add the sticky message to the bot's memory
+        if guild_id not in self.sticky_messages:
+            self.sticky_messages[guild_id] = {}
+        self.sticky_messages[guild_id][channel_id] = sticky_content
+
+        # Save the sticky message to the database
+        new_sticky = StickyMsg.create(channel_id=channel.id, guild_id=ctx.guild.id, message=sticky_content,
+                                      current_sticky_message_id=new_sticky_message.id,
+                                      sticky_frequency_update=seconds,
+                                      create_date=datetime.datetime.utcnow())
+
+        await ctx.send(f"Sticky message created in {channel.mention}.")
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def stop(self, ctx, channel: discord.TextChannel):
+        """Stop sticky msg"""
+        # Prompt user to confirm stopping the sticky message
+        confirmation = await dutils.prompt(ctx, "Are you sure you want to stop the sticky message in this channel?")
+
+        if confirmation:
+            # Remove sticky from the StickyMsg model and save it
+            StickyMsg.delete().where(StickyMsg.channel_id == channel.id).execute()
+            self.sticky_messages[str(ctx.guild.id)].pop(str(channel.id), None)
+
+            await ctx.send(f"Sticky message in {channel.mention} stopped.")
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def list(self, ctx):
+        """List all active sticky messages in the current server"""
+        guild_id = str(ctx.guild.id)
+        if guild_id in self.sticky_messages and self.sticky_messages[guild_id]:
+            embed = discord.Embed(title="Active Sticky Messages", color=discord.Color.blue())
+            for channel_id, message in self.sticky_messages[guild_id].items():
+                channel = ctx.guild.get_channel(int(channel_id))
+                if channel:
+                    embed.add_field(name=f"Channel: {channel.mention}", value=message, inline=False)
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("No active sticky messages.")
+
+    @commands.check(checks.moderator_check)
+    @sticky.command()
+    async def stopall(self, ctx):
+        """Stop all sticky messages"""
+        # Prompt user to confirm stopping all sticky messages
+        confirmation = await dutils.prompt(ctx, "Are you sure you want to stop all sticky messages in this guild?")
+
+        if confirmation:
+            # Remove all stickies in this guild from the StickyMsg model and save it
+            StickyMsg.delete().where(StickyMsg.guild_id == ctx.guild.id).execute()
+            self.sticky_messages[str(ctx.guild.id)] = {}
+
+            await ctx.send("All sticky messages in this guild have been stopped.")
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot or message.guild is None:
+            return
+
+        guild_id = str(message.guild.id)
+        channel_id = str(message.channel.id)
+
+        if guild_id in self.sticky_messages and channel_id in self.sticky_messages[guild_id]:
+            sticky_message = self.sticky_messages[guild_id][channel_id]
+            sticky_data = StickyMsg.get(StickyMsg.guild_id == guild_id, StickyMsg.channel_id == channel_id)
+
+            update_frequency = sticky_data.sticky_frequency_update
+            current_time = datetime.datetime.utcnow().timestamp()
+            last_update_time = sticky_data.create_date.timestamp()
+
+            if current_time - last_update_time >= update_frequency:
+                try:
+                    old_sticky_message = await message.channel.fetch_message(sticky_data.current_sticky_message_id)
+                    await old_sticky_message.delete()
+                except discord.errors.NotFound:
+                    pass
+
+                new_sticky_message = await message.channel.send(sticky_message)
+                StickyMsg.update(current_sticky_message_id=new_sticky_message.id,
+                                 create_date=datetime.datetime.utcnow()).where(
+                    (StickyMsg.guild_id == guild_id) & (StickyMsg.channel_id == channel_id)).execute()
+
+
+async def setup(
+        bot: commands.Bot
+):
     ext = Moderation(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

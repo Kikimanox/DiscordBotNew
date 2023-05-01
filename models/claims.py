@@ -48,7 +48,7 @@ class ClaimsManager:
         for G in gs:
             g = bot.get_guild(int(G))
             if not g:
-                raise Exception(f"Can't find the guild {G}")
+                raise Exception(f"Can't find the claims guild {G}")
             for k, v in config['saves_guild'][G]['categories'].items():
                 if k not in possible_for_bot: continue
 
@@ -97,7 +97,9 @@ class ClaimsManager:
                     if c.name == '_resp_specific': continue  # todo logic
                     color = "4f545c"
                     resps_for_char = []
-                    msgs = await c.history().flatten()
+                    msgs = []
+                    async for m in c.history():
+                        msgs.append(m)
                     attachements = []
                     for m in msgs:
                         #  url, is_nsfw

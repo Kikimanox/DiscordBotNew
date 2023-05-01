@@ -2,25 +2,32 @@ import asyncio
 import datetime
 import itertools
 import json
+import logging
 import random
+import traceback
 
 import discord
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from models.claims import ClaimsManager, Claimed, UserSettings, History
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
+from models.claims import ClaimsManager, Claimed, UserSettings, History
+from utils.dataIOa import dataIOa
 
 conf = dataIOa.load_json('settings/claims_settings.json')
 possible_for_bot = conf['use_these']
 
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
+
 
 class Fun(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         # _ in channel names is not allowed!!
         # if you want an - instead of a space prefix ch name with _
@@ -36,12 +43,12 @@ class Fun(commands.Cog):
             self.data = await ClaimsManager.get_data_from_server(self.bot, conf)
         except:
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            self.bot.logger.error(f"Claims data not loaded\n{traceback.format_exc()}")
+            error_logger.error(f"Claims data not loaded\n{traceback.format_exc()}")
             # traceback.print_exc()
             self.data = {'-1-1-1': '-1-1-1'}
             return
         # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        self.bot.logger.info("Claims data loaded")
+        logger.info("Claims data loaded")
 
     @commands.group(aliases=possible_for_bot)  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
     async def claim(self, ctx, *, subcmd=""):
@@ -483,7 +490,7 @@ class Fun(commands.Cog):
                 if dd > 0:
                     # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                     # print(f'Deleted {dd} expired claim data from the db')
-                    self.bot.logger.info(f'Deleted {dd} expired claim data from the db')
+                    logger.info(f'Deleted {dd} expired claim data from the db')
             except:
                 pass
             await asyncio.sleep(86400 * 3)  # every 3 days
@@ -572,7 +579,7 @@ class Fun(commands.Cog):
         CT = claim_type
         idd = ctx.author.id
         from discord import Embed
-        from models.claims import ClaimsManager, Claimed, UserSettings, History
+        from models.claims import Claimed, History
         h, _ = History.get_or_create(user=idd, type=CT)
         his = json.loads(h.meta)
         if not his: return await ctx.send("no history")
@@ -611,7 +618,9 @@ class Fun(commands.Cog):
         await ctx.channel.send(content=f'{ctx.author.mention} your {CT} claim history:', embed=em)
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Fun(bot)
     bot.running_tasks.append(bot.loop.create_task(ext.delete_old_records()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

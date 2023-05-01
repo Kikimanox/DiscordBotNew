@@ -1,36 +1,38 @@
 import asyncio
 import datetime
-import re
-
-import discord
-from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
+import logging
 import traceback
 
-from models.serversetup import SSManager
-from utils.SimplePaginator import SimplePaginator
-from utils.dataIOa import dataIOa
+import discord
+from discord import Embed
+from discord.ext import commands
+
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 from models.moderation import Reminderstbl, Timezones
+from models.serversetup import SSManager
+from utils.SimplePaginator import SimplePaginator
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class Timer:
-    def __init__(self, *, record):
-        self.id = record['id']
-        self.meta = record['meta']
-        self.guild = record['guild']
-        self.reason = record['reason']
-        self.user_id = record['user_id']
-        self.len_str = record['len_str']
-        self.expires = record['expires_on']
-        self.executed_by = record['executed_by']
-        self.executed_on = record['executed_on']
+    def __init__(self, *, record: dict):
+        self.id: int = record['id']
+        self.meta: str = record['meta']
+        self.guild: int = record['guild']
+        self.reason: str = record['reason']
+        self.user_id: int = record['user_id']
+        self.len_str: str = record['len_str']
+        self.expires: datetime.datetime = record['expires_on']
+        self.executed_by: int = record['executed_by']
+        self.executed_on: datetime.datetime = record['executed_on']
 
     @classmethod
-    def temporary(cls, *, expires, meta, guild, reason, user_id, len_str, executed_by, executed_on):
+    def temporary(cls, *, expires: datetime.datetime, meta: str, guild: int, reason: str, user_id: int,
+                  len_str: str, executed_by: int, executed_on) -> "Timer":
         pseudo = {
             'id': None,
             'meta': meta,
@@ -38,19 +40,21 @@ class Timer:
             'reason': reason,
             'user_id': user_id,
             'len_str': len_str,
-            'expires_on': expires,
+            'expires_on': expires.astimezone(datetime.timezone.utc),
             'executed_by': executed_by,
-            'executed_on': executed_on,
+            'executed_on': executed_on if executed_on == 0 else executed_on.astimezone(datetime.timezone.utc),
         }
         return cls(record=pseudo)
 
 
 class Reminders(commands.Cog):
-    def __init__(self, bot):
-        # Credit to RoboDanny for timeout code help
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
-        # self._have_data = asyncio.Event(loop=bot.loop)
-        self._have_data = asyncio.Event()
+        # Credit to RoboDanny for timeout code help
+        self._have_data = asyncio.Event(loop=bot.loop)
         self._current_timer = None
         self._task = self.bot.loop.create_task(self.dispatch_timers())
         self.tried_setup = False
@@ -155,7 +159,9 @@ class Reminders(commands.Cog):
             await self.bot.wait_until_ready()
         try:
             while not self.bot.is_closed():
-                timer = self._current_timer = await self.wait_for_active_timers(days=30)
+                timer = await self.wait_for_active_timers(days=40)
+                timer.expires = timer.expires.replace(tzinfo=datetime.timezone.utc)
+                self._current_timer = timer
                 now = datetime.datetime.utcnow()
 
                 if timer.expires >= now:
@@ -177,7 +183,13 @@ class Reminders(commands.Cog):
             +Reminderstbl.expires_on
         ).limit(1)
 
-        return Timer(record=record.dicts()[0]) if record else None
+        if record:
+            record_dict = record.dicts()[0]
+            record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
+            record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
+            return Timer(record=record_dict)
+        else:
+            return None
 
     async def wait_for_active_timers(self, days=7):
         timer = await self.get_active_timer(days=days)
@@ -191,9 +203,11 @@ class Reminders(commands.Cog):
         return await self.get_active_timer(days=days)
 
     async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(datetime.timezone.utc)
+        max_datetime = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=1)
         if not expires_on:
-            expires_on = datetime.datetime.max
+            expires_on = max_datetime
+        expires_on = expires_on.replace(tzinfo=datetime.timezone.utc)  # line 210
         delta = (expires_on - now).total_seconds()
         timer = Timer.temporary(
             expires=expires_on,
@@ -237,6 +251,10 @@ class Reminders(commands.Cog):
             self._have_data.set()
 
         # check if this timer is earlier than our currently run timer
+        error_logger.error(f"self._current_timer {self._current_timer}")
+        error_logger.error(f"expires_on {expires_on}")
+        if self._current_timer:
+            error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
             self._task.cancel()
@@ -568,7 +586,7 @@ class Reminders(commands.Cog):
                 author_id=by.id
             )
             to_info = f'Reminder created: {ctx.author} {ctx.author.id} triggers on {len_str} ({tim.executed_on})'
-            self.bot.logger.info(to_info)
+            logger.info(to_info)
             mid_part = mid_part.replace('@', '@\u200b')
             cnt = f"⏰  |  **Got it! The reminder has been set up.**"
             desc = f"**Id:** {tim.id}\n" \
@@ -587,10 +605,12 @@ class Reminders(commands.Cog):
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             # traceback.print_exc()
             await ctx.send(f"Something went wrong, please try again.")
-            self.bot.logger.error(f"Something went wrong when making a reminder\n{traceback.format_exc()}")
+            error_logger.error(f"Something went wrong when making a reminder\n{traceback.format_exc()}")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Reminders(bot)
     bot.running_tasks.append(bot.loop.create_task(ext.refresh_timers_after_a_while()))
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

@@ -1,16 +1,16 @@
 import asyncio
 import datetime
 import itertools
-from collections import Counter, defaultdict
+import os
+from collections import Counter
+
 import discord
 import pkg_resources
 import psutil
 import pygit2
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
@@ -18,7 +18,10 @@ from models.bot import BotBlacklist, BotBanlist
 
 
 class Stats(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.process = psutil.Process()
 
@@ -161,8 +164,8 @@ class Stats(commands.Cog):
         except AttributeError:
             # future proofing for 3.9 I guess
             task_retriever = asyncio.all_tasks
-        else:
-            all_tasks = task_retriever(loop=self.bot.loop)
+
+        all_tasks = task_retriever(loop=self.bot.loop)
 
         event_tasks = [
             t for t in all_tasks
@@ -300,7 +303,9 @@ class Stats(commands.Cog):
         await ctx.send("Done." if not ret else ret + '\nDone.')
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     if not hasattr(bot, 'command_stats'):
         bot.command_stats = Counter()
 
@@ -327,4 +332,4 @@ def setup(bot):
     for b in bs:  bot.banlist[b['user']] = b['meta']
 
     ext = Stats(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

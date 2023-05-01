@@ -1,24 +1,24 @@
 import asyncio
+import datetime
+import logging
+import os
+import random
+import re
 import traceback
 
+import aiohttp
 import discord
-import time
-
-import utils.dataIO as dataIO
-import os
 from discord import Embed
+from discord import File
 
 from models.antiraid import ArGuild
 from models.bot import BotBlacklist, BotBanlist
-from models.serversetup import Guild, SSManager
+from models.moderation import (Reminderstbl, Actions)
+from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
-from utils.dataIOa import dataIOa
-import re
-import datetime
-import aiohttp
-import random
-from discord import File
-from models.moderation import (Reminderstbl, Actions, Blacklist, ModManager)
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 def bot_pfx(bot, _message):
@@ -143,7 +143,7 @@ async def print_hastebin_or_file(ctx, result, just_file=True):
             try:
                 os.remove(f"tmp/{file}.txt")
             except:
-                ctx.bot.logger.error(f"tmp/{file}.txt")
+                error_logger.error(f"tmp/{file}.txt")
     else:
         return await ctx.send(result)
 
@@ -340,8 +340,8 @@ async def try_send_hook(guild, bot, hook, regular_ch, embed, content=None, log_l
                        f"Or `{bot_pfx(bot, regular_ch)}setup webhooks` if there's something else wrong.\n" \
                        f"Target channel has to be {regular_ch.mention}" \
                        f"(tip: run the command `{bot_pfx(bot, regular_ch)}sup cur`)"
-                bot.logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
-                                 f"{guild.id})**")
+                error_logger.error(f"**Logging hook and channel id mismatch, please fix!!! on: {guild} (id: "
+                                   f"{guild.id})**")
                 content = f"{'' if not content else content}\n\n{warn}"
         return await regular_ch.send(embed=embed, content=content)
 
@@ -389,7 +389,8 @@ async def dm_log_try_setup(bot):
 
 
 def icon_url(user):
-    return user.display_avatar.url if 'gif' in str(user.display_avatar.url).split('.')[-1] else str(user.avatar.replace(format="png", size=1024).url)
+    return user.display_avatar.url if 'gif' in str(user.display_avatar.url).split('.')[-1] else str(
+        user.display_avatar.with_format("png").url)
 
 
 async def dm_log(bot, message: discord.Message):
@@ -411,8 +412,9 @@ async def dm_log(bot, message: discord.Message):
             if len(descs) > 1:
                 a_title += f' {i}/{len(descs)}'
                 i += 1
-            icon_url = message.author.display_avatar.url if 'gif' in str(message.author.display_avatar.url).split('.')[-1] else str(
-                message.author.avatar.replace(format="png", size=1024).url)
+            icon_url = message.author.display_avatar.url if 'gif' in str(message.author.display_avatar.url).split('.')[
+                -1] else str(
+                message.author.display_avatar.with_format("png").url)
             em = Embed(description=desc)
             em.set_author(name=a_title, icon_url=icon_url)
             em.set_thumbnail(url=icon_url)
@@ -533,7 +535,7 @@ async def unmute_user_auto(member, guild, bot, no_dm=False, actually_resp=None, 
     except:
         # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         # traceback.print_exc()
-        bot.logger.error(f"can not auto unmute {guild} {guild.id}\n{traceback.format_exc()}")
+        error_logger.error(f"can not auto unmute {guild} {guild.id}\n{traceback.format_exc()}")
 
 
 async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
@@ -545,8 +547,8 @@ async def unmute_user(ctx, member, reason, no_dm=False, actually_resp=None):
         else:
             can_even_execute = False
         # if not can_even_execute: return ctx.send("Mute role not setup, can not complete unmute.")
-        if not can_even_execute: return ctx.bot.logger.error(f"Mute role not setup, can not "
-                                                             f"complete unmute. {ctx.guild}, {ctx.jump_url}")
+        if not can_even_execute: return error_logger.error(f"Mute role not setup, can not "
+                                                           f"complete unmute. {ctx.guild}, {ctx.jump_url}")
         mute_role = discord.utils.get(ctx.guild.roles, id=ctx.bot.from_serversetup[ctx.guild.id]['muterole'])
         if mute_role not in ctx.guild.get_member(member.id).roles:
             return await ctx.send("User is not muted")
@@ -754,7 +756,7 @@ async def moderation_action(ctx, reason, action_type, offender, no_dm=False,
         Actions.update(case_id_on_g=case_id).where(Actions.id == ins_id).execute()
         return case_id
     except:
-        bot.logger.error(f"Failed to insert mod action: {jump}")
+        error_logger.error(f"Failed to insert mod action: {jump}")
         return None
 
 
@@ -800,6 +802,12 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
     if log_type not in ['blacklist', 'whitelist']:
         em.add_field(name='Reason', value=reason, inline=True if offender else False)
 
+    try:
+        cmdi = f"[Cmd invoke happened here]({ctx.message.jump_url}) in {ctx.channel.mention}"
+        em.add_field(name="Extra info", value=cmdi, inline=True if offender else False)
+    except:
+        pass
+
     title = ""
     if log_type == 'mute':
         title = "User muted indefinitely" if mute_time_str == 'indefinitely' else f'User muted for {mute_time_str}'
@@ -837,6 +845,10 @@ async def post_mod_log_based_on_type(ctx, log_type, act_id, mute_time_str="",
     if log_type == 'kick':
         title = f"User kicked"
         em.colour = 0xe1717d
+
+    if log_type == 'clearwarn':
+        title = f"Warning cleared for offender"
+        em.colour = 0x398de4
 
     if log_type == 'massmute':
         title = "Users muted indefinitely" if mute_time_str == 'indefinitely' else f'Users muted for {mute_time_str}'
@@ -903,8 +915,8 @@ async def log(bot, title=None, txt=None, author=None,
             for txt in desc:
                 em = discord.Embed(description=txt, color=colorr)
                 if author:
-                    iconn_url = author.display_avatar.url if 'gif' in str(author.display_avatar.url).split('.')[-1] else str(
-                        author.avatar.replace(format="png", size=1024).url)
+                    iconn_url = author.display_avatar.url if 'gif' in str(author.display_avatar.url).split('.')[-1] \
+                        else str(author.display_avatar.with_format("png").url)
                     em.set_author(name=f"{title}", icon_url=iconn_url)
                 em.set_footer(text=f"{datetime.datetime.utcnow().strftime('%c')}")
                 if imageUrl:
@@ -930,7 +942,7 @@ async def log(bot, title=None, txt=None, author=None,
     except:
         # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
         # traceback.print_exc()
-        bot.logger.error(f"Something went wrong when logging\n{traceback.format_exc()}")
+        error_logger.error(f"Something went wrong when logging\n{traceback.format_exc()}")
 
 
 async def ban_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=0):
@@ -971,8 +983,13 @@ async def blacklist_from_bot(bot, offender, meta, gid, ch_to_reply_at=None, arl=
 
 
 def get_icon_url_for_member(member):
-    return member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[-1] else \
-        str(member.avatar.replace(format="png", size=1024).url)
+    avatar_url = member.display_avatar.url
+    if avatar_url and 'gif' in avatar_url.split('.')[-1]:
+        return avatar_url
+    elif member.display_avatar:
+        return member.display_avatar.with_format("png").url
+    else:
+        return member.default_avatar.url
 
 
 async def saveFiles(links, savePath='tmp', fName=''):

@@ -3,34 +3,32 @@ import datetime
 import glob
 import itertools
 import json
+import logging
+import os
 import re
+import subprocess
+import traceback
+
 import aiohttp
 import discord
 import requests
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-
-from selenium.webdriver import ActionChains
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.common.by import By
+from selenium.webdriver import ActionChains
 
-import main_d3
-from utils import dataIO
-from utils.dataIOa import dataIOa
 import utils.checks as checks
 import utils.discordUtils as dutils
-import utils.timeStuff as tutils
-from selenium import webdriver
-import selenium.webdriver.support.ui as ui
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import NoSuchElementException
-import os
-import subprocess
+from utils.dataIOa import dataIOa
 from models.partyranks import PRMembers, PRManager
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 def get_valid_filename(s):
@@ -153,8 +151,7 @@ return ret_7
 
         users = " ".join(argv[0:])
 
-        ids = users.replace("><", "> <").replace("<@", "").replace("<@!", "").replace(">", "").replace("!", "").split(
-            " ")
+        ids = users.replace("><", "> <").replace("<@", "").replace("<@!", "").replace(">", "").replace("!", "").split(" ")
 
         role_to_give = argv[0]
         ret = ""
@@ -177,7 +174,7 @@ return ret_7
 
         await ctx.send(ret)
 
-    @commands.check(checks.manage_roles_check)
+    @commands.check(checks.owner_check) # Todo: add PR server only perms later
     @commands.command()
     async def gatherpfps(self, ctx):
         """
@@ -187,6 +184,7 @@ return ret_7
             return await ctx.send("Can only be used on specific servers")
         await ctx.send("Not yet implemented")  # TODO
 
+    @commands.check(checks.owner_check)  # Todo: add PR server only perms later
     @commands.command(aliases=["prreg", "prr"])
     async def prregister(self, ctx, avatar_url, *, name=""):
         """
@@ -214,7 +212,7 @@ return ret_7
             return await ctx.send("Can only be used on specific servers")
 
         if avatar_url.lower() == 'pfp':
-            avatar_url = ctx.author.avatar.replace(format='png', size=1024).url
+            avatar_url = ctx.author.display_avatar.with_format('png', size=1024).url
         pl = PRMembers.get_or_none(PRMembers.uid == ctx.author.id)
         name = name.strip()
         if pl is None and name == "":
@@ -242,6 +240,7 @@ return ret_7
         except Exception as ex:
             await ctx.send(f"❌ Something went wrong, please try again or contact the bot owner for help: **{ex}**")
 
+    @commands.check(checks.owner_check)  # Todo: add PR server only perms later
     @commands.command(aliases=["spp"])
     async def specificprpic(self, ctx, pr_specific_avatar_url, *, pr_name=""):
         """
@@ -279,7 +278,7 @@ return ret_7
         except Exception as ex:
             await ctx.send(f"❌ Something went wrong, please try again or contact the bot owner for help: **{ex}**")
 
-    @commands.check(checks.manage_roles_check)
+    @commands.check(checks.owner_check) # Todo: add PR server only perms later
     @commands.command(aliases=['initpr', 'ipr'])
     async def initializepartyrank(self, ctx, *, prs):
         """
@@ -455,7 +454,7 @@ return ret_7
                                                    "limit on the login page?)](https://animemusicquiz.com/)"))
             await dutils.print_hastebin_or_file(ctx, f'```\n{traceback.format_exc()}```')
             traceback.print_exc()
-            ctx.bot.logger.error(traceback.format_exc())
+            error_logger.error(traceback.format_exc())
         finally:
             try:
                 driver.close()
@@ -695,7 +694,7 @@ return ret_7
                 up_to = await ch.fetch_message(up_to_id)
             else:
                 up_to = None
-                async for ms in ch.history(limit=None).filter(lambda mm: mm.author.id == 593889007750873138):
+                async for ms in (m async for m in ch.history(limit=None) if m.author.id == 593889007750873138):
                     up_to = ms
                     if '⬆' in [str(r.emoji) for r in ms.reactions]:
                         await ctx.send(f"Id of last message: `{ms.id}` (next time you need to do `;amqmp3 -1 {ms.id}`")
@@ -704,8 +703,12 @@ return ret_7
             if not up_to:
                 raise Exception("No messages found?")
 
-            messages = await ch.history(limit=None,
-                                        after=up_to.created_at - datetime.timedelta(microseconds=1)).flatten()
+            # messages = await ch.history(limit=None,
+            #                             after=up_to.created_at - datetime.timedelta(microseconds=1)).flatten()
+            messages = []
+            after = up_to.created_at - datetime.timedelta(microseconds=1)
+            async for message in ch.history(limit=None, after=after):
+                messages.append(message)
 
             await messages[0].add_reaction('⬇')
             await messages[-1].add_reaction('⬆')
@@ -906,6 +909,9 @@ return ret_7
             driver.implicitly_wait(10)
             await asyncio.sleep(5)
             opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
+            # opt.click()
+            # await asyncio.sleep(2)async def py(self,
+            # sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
             ActionChains(driver).move_to_element(opt).perform()
             await asyncio.sleep(0.3)
             # opt.click()
@@ -963,9 +969,15 @@ return ret_7
             try:
                 await asyncio.sleep(2)
                 opt = driver.find_element_by_xpath("""//*[@id="optionGlyphIcon"]""")
-                opt.click()
-                await asyncio.sleep(2)
-                sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+                # opt.click()
+                # await asyncio.sleep(2)
+                # sett = driver.find_element_by_xpath("""//*[@id="optionsContainer"]/ul/li[3]""")
+                ActionChains(driver).move_to_element(opt).perform()
+                await asyncio.sleep(0.3)
+                # opt.click()
+                # await asyncio.sleep(2)
+                sett = driver.find_element_by_xpath("""//*[@id="optionListSettings"]""")
+                ActionChains(driver).move_to_element(sett).perform()
                 sett.click()
                 mmm = driver.find_element_by_xpath("""//*[@id="settingModal"]/div/div/div[2]/div[2]""")
                 mmm.click()
@@ -1108,6 +1120,8 @@ return ret_7
         return rett
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = AmqMod(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

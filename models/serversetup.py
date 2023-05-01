@@ -5,17 +5,24 @@ Logging: id, target_ch, type, FK_GUILD, FK_Hooks
 Webhooks: id, url, id, target_ch, FK_GUILD, valid
 """
 import json
+import logging
 import os
-import discord
-import aiohttp
-from peewee import *
 from datetime import datetime
+
+import aiohttp
+import discord
+from peewee import *
+
 from utils.dataIOa import dataIOa
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 DB = "data/serversetup.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
 
 clr = dataIOa.load_json('config.json')['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]
+
 
 class BaseModel(Model):
     class Meta:
@@ -229,7 +236,7 @@ class SSManager:
                     aa = await bot.fetch_webhook(wh['hook_id'])  # wh['hook_id']
                     ret[g['id']][f"hook_{wh['type']}"] = aa
                 except:
-                    bot.logger.error(f"Webhook for guild {wh['guild']} missing")
+                    error_logger.error(f"Webhook for guild {wh['guild']} missing")
                     ret[g['id']][f"hook_{wh['type']}"] = None
             for wel in welcs:
                 if wel['guild'] != g['id']: continue

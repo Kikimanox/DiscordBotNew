@@ -1,13 +1,18 @@
-from random import randint
+import logging
+import os
 from json import decoder, dump, load
 from os import replace
 from os.path import splitext
-import os
+from random import randint
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
-class DataIOa():
+class DataIOa:
 
-    def save_json(self, filename, data):
+    @staticmethod
+    def save_json(filename, data):
         """Atomically save a JSON file given a filename and a dictionary."""
         path, _ = splitext(filename)
         tmp_file = "{}.{}.tmp".format(path, randint(1000, 9999))
@@ -17,48 +22,50 @@ class DataIOa():
             with open(tmp_file, 'r', encoding='utf-8') as f:
                 data = load(f)
         except decoder.JSONDecodeError:
-            print("Attempted to write file {} but JSON "
-                  "integrity check on tmp file has failed. "
-                  "The original file is unaltered."
-                  "".format(filename))
+            error_logger.error("Attempted to write file {} but JSON "
+                               "integrity check on tmp file has failed. "
+                               "The original file is unaltered."
+                               "".format(filename))
             return False
         except Exception as e:
-            print('A issue has occured saving ' + filename + '.\n'
-                                                             'Traceback:\n'
-                                                             '{0} {1}'.format(str(e), e.args))
+            error_logger.error('A issue has occured saving ' + filename + '.\n'
+                                                                          'Traceback:\n'
+                                                                          '{0} {1}'.format(str(e), e.args))
             return False
 
         replace(tmp_file, filename)
         return True
 
-    def load_json(self, filename):
+    @staticmethod
+    def load_json(filename):
         """Load a JSON file and return a dictionary."""
         try:
             with open(filename, 'r', encoding='utf-8') as f:
                 data = load(f)
             return data
         except Exception as e:
-            print('A issue has occured loading ' + filename + '.\n'
-                                                              'Traceback:\n'
-                                                              '{0} {1}'.format(str(e), e.args))
+            error_logger.error('A issue has occured loading ' + filename + '.\n'
+                                                                           'Traceback:\n'
+                                                                           '{0} {1}'.format(str(e), e.args))
             return {}
 
-    def append_json(self, filename, data):
+    @staticmethod
+    def append_json(filename, data):
         """Append a value to a JSON file."""
         try:
             with open(filename, 'r', encoding='utf-8') as f:
                 file = load(f)
         except Exception as e:
-            print('A issue has occured loading ' + filename + '.\n'
-                                                              'Traceback:\n'
-                                                              '{0} {1}'.format(str(e), e.args))
+            error_logger.error('A issue has occured loading ' + filename + '.\n'
+                                                                           'Traceback:\n'
+                                                                           '{0} {1}'.format(str(e), e.args))
             return False
         try:
             file.append(data)
         except Exception as e:
-            print('A issue has occured updating ' + filename + '.\n'
-                                                               'Traceback:\n'
-                                                               '{0} {1}'.format(str(e), e.args))
+            error_logger.error('A issue has occured updating ' + filename + '.\n'
+                                                                            'Traceback:\n'
+                                                                            '{0} {1}'.format(str(e), e.args))
             return False
         path, _ = splitext(filename)
         tmp_file = "{}.{}.tmp".format(path, randint(1000, 9999))
@@ -68,10 +75,10 @@ class DataIOa():
             with open(tmp_file, 'r', encoding='utf-8') as f:
                 data = load(f)
         except decoder.JSONDecodeError:
-            print("Attempted to write file {} but JSON "
-                  "integrity check on tmp file has failed. "
-                  "The original file is unaltered."
-                  "".format(filename))
+            error_logger.error("Attempted to write file {} but JSON "
+                               "integrity check on tmp file has failed. "
+                               "The original file is unaltered."
+                               "".format(filename))
             return False
         except Exception as e:
             print('A issue has occured saving ' + filename + '.\n'
@@ -82,23 +89,27 @@ class DataIOa():
         replace(tmp_file, filename)
         return True
 
-    def is_valid_json(self, filename):
+    @staticmethod
+    def is_valid_json(filename):
         """Verify that a JSON file exists and is readable. Take in a filename and return a boolean."""
         try:
             with open(filename, 'r', encoding='utf-8') as f:
                 load(f)
             return True
         except (FileNotFoundError, decoder.JSONDecodeError):
+            error_logger.error(f"FileNotFoundError {filename}")
             return False
         except Exception as e:
-            print('A issue has occured validating ' + filename + '.\n'
-                                                                 'Traceback:\n'
-                                                                 '{0} {1}'.format(str(e), e.args))
+            error_logger.error('A issue has occured validating ' + filename + '.\n'
+                                                                              'Traceback:\n'
+                                                                              '{0} {1}'.format(str(e), e.args))
             return False
 
-    def create_file_if_doesnt_exist(self, filename, whatToWriteIntoIt):
+    @staticmethod
+    def create_file_if_doesnt_exist(filename, whatToWriteIntoIt):
         if not os.path.exists(filename):
-            with open(filename, 'w') as f: f.write(whatToWriteIntoIt)
+            with open(filename, 'w') as f:
+                f.write(whatToWriteIntoIt)
 
 
 dataIOa = DataIOa()

@@ -36,16 +36,16 @@ def human_join(seq, delim=', ', final='or'):
 
 def convertTimeToReadable1(time):
     dd = arrow.get(time).datetime
-    epoch = (dd.replace(tzinfo=None) - datetime.datetime(1970, 1, 1)).total_seconds()
+    utc_dt = dd.astimezone(datetime.timezone.utc)  # Convert the datetime object to UTC
+    epoch = (utc_dt.replace(tzinfo=None) - datetime.datetime(1970, 1, 1)).total_seconds()
     return str(datetime.datetime.utcfromtimestamp(int(epoch)).strftime('%d/%m/%Y %H:%M:%S'))
 
 
 # credit to Danny
 def human_timedelta(dt, *, source=None, accuracy=3, brief=False, suffix=True):
-    now = source or datetime.datetime.utcnow()
-    # Microsecond free zone
+    now = source or datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
     now = now.replace(microsecond=0)
-    dt = dt.replace(microsecond=0)
+    dt = dt.replace(microsecond=0, tzinfo=datetime.timezone.utc)
 
     # This implementation uses relativedelta instead of the much more obvious
     # divmod approach with seconds because the seconds approach is not entirely

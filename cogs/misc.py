@@ -1,22 +1,24 @@
 import asyncio
 import datetime
+import random
+import re
+import traceback
 
 import discord
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
-import random
-import re
 from models.afking import AfkTbl, AfkManager
 
 
 class Misc(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.bot.dont_check_this_for_afk = []
         self.was_just_pinged = {}
@@ -208,7 +210,7 @@ class Misc(commands.Cog):
         await ctx.message.delete()
         member = ctx.author
         icon_url = member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[-1] else str(
-            member.avatar.replace(format="png", size=1024).url)
+            member.display_avatar.with_format("png").url)
         await ctx.send(embed=Embed(description=ctx.message.content, color=ctx.author.color)
                        .set_author(name=f"{'Add' if not yoink else 'Yoink'} emotes command invoked",
                                    icon_url=icon_url))
@@ -314,6 +316,8 @@ class Misc(commands.Cog):
                                                    f'(since {tt} ago)')
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Misc(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

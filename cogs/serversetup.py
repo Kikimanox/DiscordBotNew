@@ -1,26 +1,32 @@
 import asyncio
+import datetime
+import json
+import logging
+import os
 import random
 import re
-import time
 import traceback
-import json
-import discord
-from discord.ext import commands, tasks
-from discord import Member, Embed, File, utils
-import os
 
-from models.antiraid import ArGuild, ArManager
-from models.moderation import Blacklist, ModManager
-from utils.dataIOa import dataIOa
+import discord
+from discord import Embed
+from discord.ext import commands, tasks
+
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
-from models.serversetup import (Guild, WelcomeMsg, Logging, Webhook, SSManager)
-import datetime
+from models.antiraid import ArGuild, ArManager
+from models.moderation import Blacklist, ModManager
+from models.serversetup import (Guild, WelcomeMsg, SSManager)
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class Serversetup(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
         self.tryParseOnce = 0
         bot.loop.create_task(self.set_setup())
@@ -284,7 +290,10 @@ class Serversetup(commands.Cog):
                     "the mute role.")
                 maxx = 10
                 some_owner = (ctx.author.id == ctx.guild.owner_id or ctx.author.id == ctx.bot.config['OWNER_ID'])
-                if len(old_mute_role.members) > maxx and not some_owner:
+                old_mem = 0
+                if old_mute_role:
+                    old_mem = len(old_mute_role.members)
+                if old_mem > maxx and not some_owner:
                     return await ctx.send(f"More than {maxx} users have this role. Because of that only the server or "
                                           f"bot owner may execute this command. Please contact them.")
                 prompt = await dutils.prompt(ctx, "Mute role already exists, are you sure you want to update it?")
@@ -569,7 +578,7 @@ class Serversetup(commands.Cog):
                                           f"some channels, not both at once.")
             await self.do_setup(cmds_chs_meta=chs, ctx=ctx)
         except:
-            self.bot.logger.error(traceback.format_exc())
+            error_logger.error(traceback.format_exc())
             await ctx.send("Something went wrong, ~~are you using the correct syntax?~~")
             ctx.command.reset_cooldown(ctx)
             raise commands.errors.BadArgument
@@ -639,7 +648,7 @@ class Serversetup(commands.Cog):
 
         def checkYN(m):
             return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
-                   m.author == ctx.author and m.channel == ctx.channel
+                m.author == ctx.author and m.channel == ctx.channel
 
         def checkAuthor(m):
             return m.author == ctx.author and m.channel == ctx.channel
@@ -1015,8 +1024,8 @@ class Serversetup(commands.Cog):
                                 await send_with.send(embed=em, content=cnt)
                         except:
                             # idk if this will ever be hit but aight
-                            self.bot.logger.info(f"Error at welcome webhook send in {member.guild.id} {member.guild}! "
-                                                 f"Making new hook one.")
+                            logger.info(f"Error at welcome webhook send in {member.guild.id} {member.guild}! "
+                                        f"Making new hook one.")
 
                             try:
                                 hook = await wmsg['backup_hook'].create_webhook(name=f'Tmp name', reason="!Backup hook "
@@ -1029,7 +1038,7 @@ class Serversetup(commands.Cog):
                                 db_wmsg.save()
                                 self.bot.from_serversetup[member.guild.id]['welcomemsg']['backup_hook'] = hook
                                 send_with = hook
-                                self.bot.logger.info(f'Newest hook id {hook.id}')
+                                logger.info(f'Newest hook id {hook.id}')
                                 url = str(self.bot.user.display_avatar.url).replace('.webp', '.png')
                                 tf = f'w{str(int(datetime.datetime.utcnow().timestamp()))}w'
                                 fnn = await dutils.saveFile(url, 'tmp', tf)  # copy from dutils because circular import
@@ -1037,8 +1046,8 @@ class Serversetup(commands.Cog):
                                     await hook.edit(name=f'{self.bot.user.display_name}'[:32], avatar=fp.read())
                                 os.remove(fnn)
                             except discord.errors.Forbidden:
-                                await self.bot.logger.error(f'Missing webhook perms in '
-                                                            f'{member.guild.id} {member.guild}!')
+                                await error_logger.error(f'Missing webhook perms in '
+                                                         f'{member.guild.id} {member.guild}!')
 
                             if not wmsg['images'] and wmsg['content'] and not wmsg['desc'] \
                                     and not wmsg['title'] and not wmsg['display_mem_count']:
@@ -1048,15 +1057,16 @@ class Serversetup(commands.Cog):
             except:
                 # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                 # traceback.print_exc()
-                self.bot.logger.error(f"Couldn't welcome {str(member)} {member.id} "
-                                      f"in {str(member.guild)} {member.guild.id}\n{traceback.format_exc()}")
+                error_logger.error(f"Couldn't welcome {str(member)} {member.id} "
+                                   f"in {str(member.guild)} {member.guild.id}\n{traceback.format_exc()}")
 
         if member.guild.id in self.bot.from_serversetup:
             try:  # log it
                 sup = self.bot.from_serversetup[member.guild.id]
                 if sup['leavejoin']:
-                    icon_url = member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[-1] else str(
-                        member.avatar.replace(format="png", size=1024).url)
+                    icon_url = member.display_avatar.url if 'gif' in str(member.display_avatar.url).split('.')[
+                        -1] else str(
+                        member.display_avatar.with_format("png").url)
 
                     embed = Embed(color=0x5ace47, title=f'{str(member.name)} has joined.',
                                   description=f'📈 {member.mention} (id: {member.id})')
@@ -1080,9 +1090,9 @@ class Serversetup(commands.Cog):
 
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed, content=cnt)
-            except:
-                self.bot.logger.error(f"Join log error: {str(member)} {member.id} "
-                                      f"in {str(member.guild)} {member.guild.id}")
+            except Exception as ex:
+                error_logger.error(f"Join log error: {str(member)} {member.id} "
+                                   f"in {str(member.guild)} {member.guild.id}, exception: {ex}")
 
     @commands.Cog.listener()
     async def on_webhooks_update(self, channel):
@@ -1107,8 +1117,8 @@ class Serversetup(commands.Cog):
                     await dutils.try_send_hook(member.guild, self.bot, hook=sup['hook_leavejoin'],
                                                regular_ch=sup['leavejoin'], embed=embed)
             except:
-                self.bot.logger.error(f"Leave log error: {str(member)} {member.id} "
-                                      f"in {str(member.guild)} {member.guild.id}")
+                error_logger.error(f"Leave log error: {str(member)} {member.id} "
+                                   f"in {str(member.guild)} {member.guild.id}")
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -1117,11 +1127,11 @@ class Serversetup(commands.Cog):
             return
         if str(message.channel.id) in self.bot.from_serversetup[message.guild.id]['ignored_chs_at_log']: return
         txt = f"By: {message.author.mention} (id: {message.author.id}) in " \
-              f"{message.channel.mention}\n\n{message.content}\n"
+              f"{message.jump_url}\n\n{message.content}\n"
         if len(message.attachments) > 0:
             txt += '\n**Attachments:**\n'
-            txt += '\n'.join([a.filename for a in message.attachments])
-        await dutils.log(self.bot, "Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
+            txt += '\n'.join([f"[{a.filename}]({a.proxy_url})" for a in message.attachments])
+        await dutils.log(self.bot, f"Message deleted", txt, message.author, 0xd6260b, guild=message.guild)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -1166,7 +1176,7 @@ class Serversetup(commands.Cog):
                         ret = f"BULK DELETION HAPPENED AT {datetime.datetime.utcnow().strftime('%c')}\n" \
                               f"(ch: {ch_id}) (guild: {g_id})"
                         # print(ret)
-                        self.bot.logger.info(ret)
+                        logger.info(ret)
         except:
             await asyncio.sleep(2)
 
@@ -1294,7 +1304,7 @@ class Serversetup(commands.Cog):
             if str(e) == '_fail': return
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             # traceback.print_exc()
-            self.bot.logger.error(f'Something went wrong in serevsetup main fnc\n{traceback.format_exc()}')
+            error_logger.error(f'Something went wrong in serevsetup main fnc\n{traceback.format_exc()}')
             info = ""
             if quiet_succ:
                 for k, v in kwargs.items(): kwargs[k] = str(v)
@@ -1415,6 +1425,8 @@ class Serversetup(commands.Cog):
         await ctx.send(f"To revert thise use the command `{dutils.bot_pfx(ctx.bot, ctx.message)} unlock all silent`")
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Serversetup(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)

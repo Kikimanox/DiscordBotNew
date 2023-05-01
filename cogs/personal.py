@@ -1,19 +1,17 @@
-import asyncio
 import datetime
 
 import discord
+from discord import Embed
 from discord.ext import commands
-from discord import Member, Embed, File, utils
-import os
-import traceback
-from utils.dataIOa import dataIOa
+
 import utils.checks as checks
-import utils.discordUtils as dutils
-import utils.timeStuff as tutils
 
 
 class Personal(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: commands.Bot
+    ):
         self.bot = bot
 
     @commands.command(aliases=["ava", "pfp", "profile"])
@@ -25,14 +23,14 @@ class Personal(commands.Cog):
         `[p]avatar @user` will display user's avatar
         `[p]avatar 174406433603846145` will display user's avatar by their id
         """
-        """Get user avatar. Usage:\n.avatar or \n.avatar @user"""
+        """Get user avatar. Usage:\n[p]avatar or \n[p]avatar @user"""
         if not user: user = ctx.author
         if 'gif' in str(user.display_avatar.url).split('.')[-1]:
             desc = f"[Gif link]({user.display_avatar.url})"
         else:
-            desc = f"Links: [png]({user.avatar.replace(format='png', size=1024).url}) | " \
-                   f"[jpg]({user.avatar.replace(format='jpg', size=1024)}) | " \
-                   f"[webp]({user.avatar.replace(format='webp', size=1024)})"
+            desc = f"Links: [png]({user.display_avatar.with_format('png').url}) | " \
+                   f"[jpg]({user.display_avatar.with_format('jpg').url}) | " \
+                   f"[webp]({user.display_avatar.with_format('webp').url})"
         em = Embed(color=user.color,
                    description=desc,
                    title=f'Avatar for {str(user)}')
@@ -104,14 +102,14 @@ class Personal(commands.Cog):
         if 'gif' in str(ctx.guild.icon_url).split('.')[-1]:
             desc = f"[Gif link]({ctx.guild.icon_url})"
         else:
-            desc = f"Links: [png]({ctx.guild.icon_url_as(format='png').url}) | " \
+            desc = f"Links: [png]({ctx.guild.icon_url_as(format='png')}) | " \
                    f"[jpg]({ctx.guild.icon_url_as(format='jpg')}) | " \
                    f"[webp]({ctx.guild.icon_url_as(format='webp')})"
         em = Embed(description=desc,
                    title=f'Avatar for {str(ctx.guild)}')
         em.set_image(
             url=ctx.guild.icon_url if 'gif' in str(ctx.guild.icon_url).split('.')[-1] else ctx.guild.icon_url_as(
-                format='png').url)
+                format='png'))
         await ctx.send(embed=em)
 
     @commands.command()
@@ -174,6 +172,8 @@ class Personal(commands.Cog):
                 await ctx.send(embed=Embed(description=desc[i], color=l[2]))
 
 
-def setup(bot):
+async def setup(
+        bot: commands.Bot
+):
     ext = Personal(bot)
-    bot.add_cog(ext)
+    await bot.add_cog(ext)
