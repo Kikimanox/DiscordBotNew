@@ -7,6 +7,7 @@ import yt_dlp
 import shutil
 from fuzzywuzzy import fuzz, process
 
+from utils import checks
 from utils.SimplePaginator import SimplePaginator
 
 
@@ -16,7 +17,7 @@ class Music(commands.Cog):
         self.tmp_folder = "tmp"
         self.queues = {}
         self.voice_clients = {}
-        self.check_queue.start()
+        # self.check_queue.start()
         self.cleanup_tmp_folder()
 
     def get_song_path(self, guild_id):
@@ -30,6 +31,26 @@ class Music(commands.Cog):
                     folder_path = os.path.join(tmp_path, folder)
                     shutil.rmtree(folder_path)
 
+    async def play_next_song(self, guild_id):
+        # for guild_id in self.queues:
+        voice_client = self.voice_clients[guild_id]
+        if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
+            song_path = self.queues[guild_id][0]["local_path"]
+            source = FFmpegPCMAudio(song_path, options='-vn')
+            voice_client.play(source, after=lambda error: self.song_finished_playing(guild_id, song_path, error))
+            voice_client.source.start_time = discord.utils.utcnow()  # Store start time
+
+    def song_finished_playing(self, guild_id, song_path, error=None):
+        if error:
+            print(f"Error while playing song: {error}")
+
+        # Delay the deletion of the file
+        loop = asyncio.get_running_loop()
+        loop.call_later(10, self.delete_song_file, guild_id, song_path)
+
+        self.queues[guild_id].pop(0)
+        loop.create_task(self.play_next_song(guild_id))
+
     def delete_song_file(self, guild_id, song_path):
         try:
             os.remove(song_path)
@@ -37,35 +58,60 @@ class Music(commands.Cog):
         except Exception as e:
             print(f"Error deleting file: {song_path}\n{e}")
 
-    async def download_song(self, url, guild_id):
+    async def download_song(self, url, guild_id, playlist=False):
         ydl_opts = {
-            'format': '251',  # Opus format
+            'format': '251/250/bestaudio',  # Opus format
             'outtmpl': f"{self.get_song_path(guild_id)}/%(title)s.%(ext)s",
-            "noplaylist": True,  # Handle playlists later...
+            "noplaylist": not playlist,  # Handle playlists
             "source_address": "0.0.0.0",  # For IPv6 issues
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'opus',
-                'preferredquality': '192',
+                'preferredquality': '320',
             }],
             'quiet': True,
             'no_warnings': True
             # 'verbose': True
         }
 
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-                if info.get("duration") and info["duration"] > 10800:  # 3 hours
-                    raise Exception("Song is too long. [Max 3 hours]")
+        loop = asyncio.get_event_loop()
 
-                info = ydl.extract_info(url, download=True)
-                if info.get('entries'):
-                    info_entry0 = info['entries'][0]
-                else:
-                    info_entry0 = info
-                filename = os.path.join(self.get_song_path(guild_id), f"{info_entry0['title']}.opus")
-                return filename, info
+        def _download_song_blocking():
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+
+                    if playlist and info.get('entries') and len(info.get('entries')):
+                        entries = info['entries']
+                        if len(entries) > 10:
+                            raise Exception("Playlist is too long. [Max 10 songs]")
+
+                        song_paths = []
+                        for entry in entries:
+                            if entry.get("duration") and entry["duration"] > 10800:  # 3 hours
+                                raise Exception("Song is too long. [Max 3 hours]")
+                            info_entry = ydl.extract_info(entry['url'], download=True)
+                            filename = os.path.join(self.get_song_path(guild_id), f"{entry['title']}.opus")
+                            song_paths.append(filename)
+
+                        return song_paths, entries
+
+                    if info.get("duration") and info["duration"] > 10800:  # 3 hours
+                        raise Exception("Song is too long. [Max 3 hours]")
+
+                    info = ydl.extract_info(url, download=True)
+                    if info.get('entries'):
+                        info_entry0 = info['entries'][0]
+                    else:
+                        info_entry0 = info
+                    filename = os.path.join(self.get_song_path(guild_id), f"{info_entry0['title']}.opus")
+                    return filename, info
+
+            except Exception as ex:
+                raise Exception(ex)
+
+        try:
+            return await loop.run_in_executor(None, _download_song_blocking)
         except Exception as ex:
             raise Exception(ex)
 
@@ -142,19 +188,54 @@ class Music(commands.Cog):
                 })
 
                 await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
+                await self.play_next_song(ctx.guild.id)
 
             except Exception as ex:
-                await m.edit(content=f"❌ Failed to add `{query}` to queue. [Ex: {ex}]".replace('@', '@\u200b'))
+                print(ex)
+                await m.edit(content=f"❌ Failed to add `{query}` to queue.".replace('@', '@\u200b'))
 
-    @tasks.loop(seconds=1)
-    async def check_queue(self):
-        for guild_id in self.queues:
-            voice_client = self.voice_clients[guild_id]
-            if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
-                song_path = self.queues[guild_id][0]["local_path"]
-                source = FFmpegPCMAudio(song_path, options='-vn')
-                voice_client.play(source, after=lambda error: self.delete_song_file(guild_id, song_path))
-                voice_client.source.start_time = discord.utils.utcnow()  # Store start time
+    @commands.check(checks.owner_check)
+    @commands.command(aliases=['pp'])
+    async def playplaylist(self, ctx, *, query):
+        # Check if user is in a voice channel
+        if ctx.author.voice is None:
+            await ctx.send("You must be in a voice channel to use this command.")
+            return
+
+        # Connect to the voice channel if not connected
+        if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_connected():
+            voice_channel = ctx.author.voice.channel
+            self.voice_clients[ctx.guild.id] = await voice_channel.connect(self_deaf=True)
+
+        # Download the songs and store their info
+        async with ctx.typing():
+            m = await ctx.send(f"🔃 Adding `{query}` playlist to queue...".replace('@', '@\u200b'))
+
+            try:
+                song_paths, info_entries = await self.download_song(query, ctx.guild.id, playlist=True)
+
+                for song_path, info in zip(song_paths, info_entries):
+                    song_title = f'{info.get("title")} by {info.get("artist")}'
+
+                    if ctx.guild.id not in self.queues:
+                        self.queues[ctx.guild.id] = []
+
+                    self.queues[ctx.guild.id].append({
+                        "title": song_title,
+                        "thumbnail": info['thumbnail'],
+                        "url": info['webpage_url'],
+                        "duration": info['duration'],
+                        "requester": ctx.author,
+                        "song_title": song_title,
+                        "local_path": song_path
+                    })
+
+                    await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
+                await self.play_next_song(ctx.guild.id)
+
+            except Exception as ex:
+                await m.edit(content=f"❌ Failed to add `{query}` playlist to queue.".replace('@', '@\u200b'))
+                print(ex)
 
     @commands.command(aliases=['que'])
     async def queue(self, ctx):
@@ -201,7 +282,6 @@ class Music(commands.Cog):
 
         self.voice_clients[ctx.guild.id].stop()
         self.queues[ctx.guild.id] = []
-        self.song_info.pop(ctx.guild.id, None)
         await self.voice_clients[ctx.guild.id].disconnect()
         self.voice_clients.pop(ctx.guild.id, None)
 
@@ -220,6 +300,27 @@ class Music(commands.Cog):
             return
 
         self.voice_clients[ctx.guild.id].resume()
+
+    @commands.command()
+    async def skip(self, ctx):
+        if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_playing():
+            await ctx.send("There is no song currently playing.")
+            return
+
+        voice_client = self.voice_clients[ctx.guild.id]
+        voice_client.stop()
+        self.song_finished_playing(ctx.guild.id, self.queues[ctx.guild.id][0]["local_path"])
+
+        # Remove the current song from the queue
+        self.queues[ctx.guild.id].pop(0)
+
+        # Play the next song if it exists, otherwise stop playing
+        if len(self.queues[ctx.guild.id]) > 0:
+            await self.play_next_song(ctx.guild.id)
+        else:
+            await self.stop(ctx)
+
+        await ctx.send("Skipping to the next song.")
 
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
