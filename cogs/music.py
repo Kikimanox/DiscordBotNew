@@ -262,9 +262,9 @@ class Music(commands.Cog):
 
             if idx == 0:
                 if self.voice_clients[ctx.guild.id].is_paused():
-                    song_title = f"[Now playing (paused)] {song_title}"
+                    song_title = f"[🎵 (paused)] {song_title}"
                 else:
-                    song_title = f"[Now playing] {song_title}"
+                    song_title = f"[🎵] {song_title}"
                 current_embed.add_field(name=f"{idx + 1}. {song_title}",
                                         value=f"[requested by: {song_info['requester'].mention}]",
                                         inline=False)
