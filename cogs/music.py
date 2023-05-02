@@ -127,6 +127,11 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command(aliases=['pm'])
     async def playmultiple(self, ctx, *, query):
+        """
+        Add multiple songs to the queue (delimiter: `|`)
+        Example:
+        `[p]playmultiple epic sax guy | Bakemonogatari OP5 | PEbD3rIvais`
+        """
         queries = [q.strip() for q in query.split('|')]
         if len(queries) > 5:
             return await ctx.send("Max 5 songs can be added at once.")
@@ -135,8 +140,16 @@ class Music(commands.Cog):
             await asyncio.sleep(2)
 
     @commands.check(checks.owner_check)
-    @commands.command(aliases=['p'])
+    @commands.command(aliases=['p', 'enque'])
     async def play(self, ctx, *, query):
+        """
+        Add song to the playing queue. Input can be yt link/id or search string.
+        Examples:
+        `[p]play epic sax guy`
+        `[p]play https://www.youtube.com/watch?v=04kMy7HhWtQ`
+        `[p]play PEbD3rIvais` (<--- youtube id)
+
+        """
         # Check if user is in a voice channel
         if ctx.author.voice is None:
             await ctx.send("You must be in a voice channel to use this command.")
@@ -208,6 +221,10 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command(aliases=['pp'])
     async def playplaylist(self, ctx, *, query):
+        """
+        Same as play but only accepts playlist links/ids
+        Currently not enabled publicly
+        """
         # Check if user is in a voice channel
         if ctx.author.voice is None:
             await ctx.send("You must be in a voice channel to use this command.")
@@ -251,6 +268,9 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command(aliases=['que'])
     async def queue(self, ctx):
+        """
+        Check the current queue/order of songs.
+        """
         if ctx.guild.id not in self.queues or len(self.queues[ctx.guild.id]) == 0:
             await ctx.send("The queue is empty.")
             return
@@ -289,6 +309,9 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command()
     async def stop(self, ctx):
+        """
+        Stops music playback in this channel. Will purge the queue too.
+        """
         if ctx.guild.id not in self.voice_clients:
             await ctx.send("The bot is not in a voice channel.")
             return
@@ -301,6 +324,9 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command()
     async def pause(self, ctx):
+        """
+        Pause currenty playback. Will not purge queue.
+        """
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_playing():
             await ctx.send("There is no song currently playing.")
             return
@@ -310,6 +336,9 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command()
     async def resume(self, ctx):
+        """
+        Resume song if paused.
+        """
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_paused():
             await ctx.send("There is no song currently paused.")
             return
@@ -319,6 +348,9 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command()
     async def skip(self, ctx):
+        """
+        Skip currently playing song.
+        """
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_playing():
             await ctx.send("There is no song currently playing.")
             return
@@ -339,6 +371,9 @@ class Music(commands.Cog):
     @commands.check(checks.owner_check)
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
+        """
+        Check currently playing song info
+        """
         if ctx.guild.id not in self.queues or len(self.queues[ctx.guild.id]) == 0:
             await ctx.send("No song is currently playing.")
             return
