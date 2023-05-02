@@ -124,6 +124,7 @@ class Music(commands.Cog):
         except Exception as ex:
             raise Exception(ex)
 
+    @commands.check(checks.owner_check)
     @commands.command(aliases=['pm'])
     async def playmultiple(self, ctx, *, query):
         queries = [q.strip() for q in query.split('|')]
@@ -133,6 +134,7 @@ class Music(commands.Cog):
             await self.play(ctx, query=q)
             await asyncio.sleep(2)
 
+    @commands.check(checks.owner_check)
     @commands.command(aliases=['p'])
     async def play(self, ctx, *, query):
         # Check if user is in a voice channel
@@ -246,6 +248,7 @@ class Music(commands.Cog):
                 await m.edit(content=f"❌ Failed to add `{query}` playlist to queue.".replace('@', '@\u200b'))
                 print(ex)
 
+    @commands.check(checks.owner_check)
     @commands.command(aliases=['que'])
     async def queue(self, ctx):
         if ctx.guild.id not in self.queues or len(self.queues[ctx.guild.id]) == 0:
@@ -283,6 +286,7 @@ class Music(commands.Cog):
 
         await SimplePaginator(extras=queue_embeds).paginate(ctx)
 
+    @commands.check(checks.owner_check)
     @commands.command()
     async def stop(self, ctx):
         if ctx.guild.id not in self.voice_clients:
@@ -294,6 +298,7 @@ class Music(commands.Cog):
         await self.voice_clients[ctx.guild.id].disconnect()
         self.voice_clients.pop(ctx.guild.id, None)
 
+    @commands.check(checks.owner_check)
     @commands.command()
     async def pause(self, ctx):
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_playing():
@@ -302,6 +307,7 @@ class Music(commands.Cog):
 
         self.voice_clients[ctx.guild.id].pause()
 
+    @commands.check(checks.owner_check)
     @commands.command()
     async def resume(self, ctx):
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_paused():
@@ -310,6 +316,7 @@ class Music(commands.Cog):
 
         self.voice_clients[ctx.guild.id].resume()
 
+    @commands.check(checks.owner_check)
     @commands.command()
     async def skip(self, ctx):
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_playing():
@@ -329,6 +336,7 @@ class Music(commands.Cog):
         else:
             await ctx.send("Skipping to the next song.")
 
+    @commands.check(checks.owner_check)
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
         if ctx.guild.id not in self.queues or len(self.queues[ctx.guild.id]) == 0:
