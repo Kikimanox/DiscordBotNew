@@ -347,7 +347,6 @@ class Music(commands.Cog):
         self.voice_clients[ctx.guild.id].resume()
         await ctx.send("Resumed.")
 
-    @commands.check(checks.owner_check)
     @commands.command()
     async def skip(self, ctx):
         """
