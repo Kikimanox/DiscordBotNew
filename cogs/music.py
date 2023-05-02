@@ -43,7 +43,8 @@ class Music(commands.Cog):
         voice_client = self.voice_clients[guild_id]
         if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
             song_path = self.queues[guild_id][0]["local_path"]
-            source = FFmpegPCMAudio(song_path, options='-vn')
+            options = '-vn -c:a flac -compression_level 4'
+            source = FFmpegPCMAudio(song_path, options=options)
             voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
                 self.song_finished_playing(guild_id, song_path, error),)).start())
             voice_client.source.start_time = discord.utils.utcnow()  # Store start time
