@@ -124,8 +124,7 @@ async def custom_role_is_booster_check(
 async def onk_server_check(
         ctx: commands.Context
 ):
-    if ctx.guild.id != 695200821910044783:
-        return False
+    return ctx.guild.id == 695200821910044783
 
 
 async def light_server_check(ctx):
