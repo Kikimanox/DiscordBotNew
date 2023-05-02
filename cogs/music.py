@@ -70,7 +70,7 @@ class Music(commands.Cog):
     async def download_song(self, url, guild_id, playlist=False):
         ydl_opts = {
             'format': '251/250/bestaudio',  # Opus format
-            'outtmpl': f"{self.get_song_path(guild_id)}/%(title)s.%(ext)s",
+            'outtmpl': f"{self.get_song_path(guild_id)}/%(title|safe)s.%(ext)s",
             "noplaylist": not playlist,  # Handle playlists
             "source_address": "0.0.0.0",  # For IPv6 issues
             'postprocessors': [{
@@ -100,7 +100,7 @@ class Music(commands.Cog):
                             if entry.get("duration") and entry["duration"] > 10800:  # 3 hours
                                 raise Exception("Song is too long. [Max 3 hours]")
                             info_entry = ydl.extract_info(entry['url'], download=True)
-                            filename = os.path.join(self.get_song_path(guild_id), f"{entry['title']}.opus")
+                            filename = 'tmp' + ''.join(info_entry.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
                             song_paths.append(filename)
 
                         return song_paths, entries
@@ -113,7 +113,7 @@ class Music(commands.Cog):
                         info_entry0 = info['entries'][0]
                     else:
                         info_entry0 = info
-                    filename = os.path.join(self.get_song_path(guild_id), f"{info_entry0['title']}.opus")
+                    filename = 'tmp' + ''.join(info_entry0.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
                     return filename, info
 
             except Exception as ex:
@@ -387,9 +387,9 @@ class Music(commands.Cog):
 
         # Check if it was the last song in the queue
         if not self.queues[ctx.guild.id]:
-            await ctx.send("Skipped last song. Goodbye.")
+            await ctx.send(f"{ctx.author.mention} skipped last song. Goodbye.")
         else:
-            await ctx.send("Skipping to the next song.")
+            await ctx.send(f"{ctx.author.mention} skipped the next song.")
 
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
@@ -433,8 +433,6 @@ class Music(commands.Cog):
             guild_id = before.channel.guild.id
             # Clear the queue and song info for the guild
             self.queues.pop(guild_id, None)
-
-
 
 
 async def setup(bot: commands.Bot):
