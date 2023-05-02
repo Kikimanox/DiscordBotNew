@@ -516,6 +516,9 @@ class Serversetup(commands.Cog):
         enable [cmd54, cmd51] only in [channel3]
         enable [cmd44, cmd15] only in [channel35]`
 
+        to clear everything do
+        `[p]sup cmdschs clear`
+
         If you want to revert or change something, just run the command again
         or something (see the message history).
 
@@ -531,7 +534,7 @@ class Serversetup(commands.Cog):
                 return await ctx.send("No disabled/only_enabled settings setup for this sever.")
             chs = json.loads(g.disabled_onlyEnabled_cmds_and_chs)
             ret = 'Displaying the current setup, sending it in command invoke format in case any changes ' \
-                  'need to be applied.:\n'
+                  'need to be applied.:\n(use `sup cc clear` to clear the entire thing)'
             cc = {}
             r = ''
             for de in [('disable', 'those in'), ('enable', 'only in')]:
@@ -552,6 +555,9 @@ class Serversetup(commands.Cog):
             settings = settings.replace(',', ', ')
             settings = re.sub(' +', ' ', settings)
             chs = {}  # ch: {"only_e": [...], "dis": [...]}
+            if settings.strip() == "clear":
+                await self.do_setup(cmds_chs_meta="clear", ctx=ctx)
+                return
             for line in settings.split('\n'):
                 left = 'disable \['
                 right = 'those in \['
@@ -1286,6 +1292,8 @@ class Serversetup(commands.Cog):
                 db_guild.censor_list = ""
                 db_guild.save()
             elif cmds_chs_meta and len(kwargs) == 2:
+                if cmds_chs_meta == "clear":
+                    cmds_chs_meta = dict({})
                 c = json.dumps(cmds_chs_meta)
                 if c != db_guild.disabled_onlyEnabled_cmds_and_chs:
                     db_guild.disabled_onlyEnabled_cmds_and_chs = c
@@ -1296,7 +1304,7 @@ class Serversetup(commands.Cog):
                     raise Exception("_fail")
 
             else:
-                await ctx.send(f"You shouldn't have hit this. oi.. <@!{ctx.bot.config['OWNER_ID']}>")
+                await ctx.send(f"You shouldn't have hit this... <@!{ctx.bot.config['OWNER_ID']}>")
             if not quiet_succ: await ctx.send("Done.")
             await self.set_setup(ctx.guild.id)
             return True
