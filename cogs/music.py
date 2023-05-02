@@ -392,7 +392,7 @@ class Music(commands.Cog):
         if not self.queues[ctx.guild.id]:
             await ctx.send(f"{ctx.author.mention} skipped last song. Goodbye.")
         else:
-            await ctx.send(f"{ctx.author.mention} skipped the next song.")
+            await ctx.send(f"{ctx.author.mention} skipped to the next song.")
 
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
