@@ -139,6 +139,26 @@ class Music(commands.Cog):
             await self.play(ctx, query=q)
             await asyncio.sleep(2)
 
+    def cleaned_query(self, query):
+        # Remove "<" from the start and ">" from the end, if present
+        if query.startswith("<"):
+            query = query[1:]
+        if query.endswith(">"):
+            query = query[:-1]
+
+        # Remove "||" from the start and the end, if present
+        if query.startswith("||"):
+            query = query[2:]
+        if query.endswith("||"):
+            query = query[:-2]
+
+        if query.startswith("||<"):
+            query = query[3:]
+        if query.endswith(">||"):
+            query = query[:-3]
+
+        return query
+
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.command(aliases=['p', 'enque'])
     async def play(self, ctx, *, query):
@@ -154,6 +174,8 @@ class Music(commands.Cog):
         if ctx.author.voice is None:
             await ctx.send("You must be in a voice channel to use this command.")
             return
+
+        query = self.cleaned_query(query)
 
         # Connect to the voice channel if not connected
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_connected():
@@ -411,6 +433,8 @@ class Music(commands.Cog):
             guild_id = before.channel.guild.id
             # Clear the queue and song info for the guild
             self.queues.pop(guild_id, None)
+
+
 
 
 async def setup(bot: commands.Bot):
