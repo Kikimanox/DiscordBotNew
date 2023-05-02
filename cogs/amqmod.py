@@ -343,7 +343,10 @@ return ret_7
         pr_name = re.findall(r"\*\*__(.*?)__\*\*", msg.content)[0]
 
         chk_react = [r for r in msg.reactions if r.emoji == "✅"][0]
-        users_chk_reacted = [u for u in await chk_react.users().flatten() if not u.bot]
+        users_chk_reacted = []
+        async for user in chk_react.users():
+            if not user.bot:
+                users_chk_reacted.append(user)
 
         if str(event.emoji) == '✅':
             pl = PRMembers.get_or_none(PRMembers.uid == usr.id)

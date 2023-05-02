@@ -507,7 +507,11 @@ class Fun(commands.Cog):
         """
         if num_of_extra_opts != 0: num_of_extra_opts = num_of_extra_opts + num_options
         msg = await channel.fetch_message(msg_id)
-        usrs = list(set(itertools.chain.from_iterable([[m for m in await r.users().flatten()] for r in msg.reactions])))
+        usrs = []
+        for r in msg.reactions:
+            async for user in r.users():
+                usrs.append(user)
+        usrs = list(set(usrs))
         u_all = [u for u in usrs]
         if role_for_extra:
             u_extra = [u for u in usrs if role_for_extra.id in u._roles]
