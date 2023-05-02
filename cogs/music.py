@@ -124,7 +124,7 @@ class Music(commands.Cog):
         except Exception as ex:
             raise Exception(ex)
 
-    @commands.check(checks.owner_check)
+    @commands.cooldown(1, 25, commands.BucketType.user)
     @commands.command(aliases=['pm'])
     async def playmultiple(self, ctx, *, query):
         """
@@ -139,7 +139,7 @@ class Music(commands.Cog):
             await self.play(ctx, query=q)
             await asyncio.sleep(2)
 
-    @commands.check(checks.owner_check)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.command(aliases=['p', 'enque'])
     async def play(self, ctx, *, query):
         """
@@ -265,7 +265,6 @@ class Music(commands.Cog):
                 await m.edit(content=f"❌ Failed to add `{query}` playlist to queue.".replace('@', '@\u200b'))
                 print(ex)
 
-    @commands.check(checks.owner_check)
     @commands.command(aliases=['que'])
     async def queue(self, ctx):
         """
@@ -320,6 +319,7 @@ class Music(commands.Cog):
         self.queues[ctx.guild.id] = []
         await self.voice_clients[ctx.guild.id].disconnect()
         self.voice_clients.pop(ctx.guild.id, None)
+        await ctx.send("Stopped")
 
     @commands.check(checks.owner_check)
     @commands.command()
@@ -332,6 +332,7 @@ class Music(commands.Cog):
             return
 
         self.voice_clients[ctx.guild.id].pause()
+        await ctx.send("Paused")
 
     @commands.check(checks.owner_check)
     @commands.command()
@@ -344,6 +345,7 @@ class Music(commands.Cog):
             return
 
         self.voice_clients[ctx.guild.id].resume()
+        await ctx.send("Resumed.")
 
     @commands.check(checks.owner_check)
     @commands.command()
@@ -368,7 +370,6 @@ class Music(commands.Cog):
         else:
             await ctx.send("Skipping to the next song.")
 
-    @commands.check(checks.owner_check)
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
         """
