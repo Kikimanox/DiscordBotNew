@@ -30,8 +30,10 @@ class Quoting(commands.Cog):
         `[p]q msg | channel_mention` (eg. #general)"""
         msg = None
         if len(args) == 0:
-            msg = await ctx.channel.history(limit=2).flatten()
-            msg = msg[1]
+            messages = []
+            async for message in ctx.channel.history(limit=2):
+                messages.append(message)
+            msg = messages[1]
         if len(args) >= 1:
             potentialID = args[0]
             chan = ctx.channel
@@ -197,8 +199,10 @@ class Quoting(commands.Cog):
         `[p]raw msg | channel_mention` (eg. #general)"""
         msg = None
         if len(args) == 0:
-            msg = await ctx.channel.history(limit=2).flatten()
-            msg = msg[1]
+            messages = []
+            async for message in ctx.channel.history(limit=2):
+                messages.append(message)
+            msg = messages[1]
         if len(args) >= 1:
             potentialID = args[0]
             chan = ctx.channel
@@ -229,15 +233,6 @@ class Quoting(commands.Cog):
         for e in msg.embeds:
             msgCnt2 = e.description.replace("```", "\`\`\`")
             await ctx.send(embed=Embed(description=f'```\n{msgCnt2}\n```'))
-
-
-'''
- # limit=100, before=None, after=None, around=None, oldest_first=None
-    my_last_message = await ctx.channel.history().get(author=ctx.author)
-    messages = await ctx.channel.history().flatten()
-    async for msg in ctx.channel.history().filter(lambda m: m.author == ctx.author):
-        print(msg)
-'''
 
 
 async def setup(bot: commands.Bot):
