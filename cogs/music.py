@@ -6,9 +6,16 @@ from discord import FFmpegPCMAudio
 import yt_dlp
 import shutil
 from fuzzywuzzy import fuzz, process
-
+import threading
 from utils import checks
 from utils.SimplePaginator import SimplePaginator
+
+
+def run_coroutine_in_new_loop(coroutine):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(coroutine)
+    loop.close()
 
 
 class Music(commands.Cog):
@@ -37,10 +44,11 @@ class Music(commands.Cog):
         if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
             song_path = self.queues[guild_id][0]["local_path"]
             source = FFmpegPCMAudio(song_path, options='-vn')
-            voice_client.play(source, after=lambda error: self.song_finished_playing(guild_id, song_path, error))
+            voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
+                self.song_finished_playing(guild_id, song_path, error),)).start())
             voice_client.source.start_time = discord.utils.utcnow()  # Store start time
 
-    def song_finished_playing(self, guild_id, song_path, error=None):
+    async def song_finished_playing(self, guild_id, song_path, error=None):
         if error:
             print(f"Error while playing song: {error}")
 
@@ -48,8 +56,9 @@ class Music(commands.Cog):
         loop = asyncio.get_running_loop()
         loop.call_later(10, self.delete_song_file, guild_id, song_path)
 
-        self.queues[guild_id].pop(0)
-        loop.create_task(self.play_next_song(guild_id))
+        if self.queues[guild_id]:  # Check if the list is not empty
+            self.queues[guild_id].pop(0)
+            loop.create_task(self.play_next_song(guild_id))
 
     def delete_song_file(self, guild_id, song_path):
         try:
@@ -309,18 +318,16 @@ class Music(commands.Cog):
 
         voice_client = self.voice_clients[ctx.guild.id]
         voice_client.stop()
-        self.song_finished_playing(ctx.guild.id, self.queues[ctx.guild.id][0]["local_path"])
 
-        # Remove the current song from the queue
-        self.queues[ctx.guild.id].pop(0)
+        # Check if there are any songs in the queue before accessing the first element
+        if self.queues[ctx.guild.id]:
+            await self.song_finished_playing(ctx.guild.id, self.queues[ctx.guild.id][0]["local_path"])
 
-        # Play the next song if it exists, otherwise stop playing
-        if len(self.queues[ctx.guild.id]) > 0:
-            await self.play_next_song(ctx.guild.id)
+        # Check if it was the last song in the queue
+        if not self.queues[ctx.guild.id]:
+            await ctx.send("Skipped last song. Goodbye.")
         else:
-            await self.stop(ctx)
-
-        await ctx.send("Skipping to the next song.")
+            await ctx.send("Skipping to the next song.")
 
     @commands.command(aliases=['np', 'nowplaying'])
     async def playing(self, ctx):
