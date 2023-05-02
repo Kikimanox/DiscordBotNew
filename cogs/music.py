@@ -43,7 +43,8 @@ class Music(commands.Cog):
         voice_client = self.voice_clients[guild_id]
         if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
             song_path = self.queues[guild_id][0]["local_path"]
-            options = '-vn -c:a flac -compression_level 4'
+            options = '-vn -c:a libopus -b:a 320k'
+            options = options.split(' ')
             source = FFmpegPCMAudio(song_path, options=options)
             voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
                 self.song_finished_playing(guild_id, song_path, error),)).start())
@@ -77,7 +78,7 @@ class Music(commands.Cog):
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'opus',
-                'preferredquality': '320',
+                'preferredquality': '320k',
             }],
             'quiet': True,
             'no_warnings': True
