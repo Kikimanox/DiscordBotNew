@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import logging
 import traceback
-
+import dateutil.parser
 import discord
 from discord import Embed
 from discord.ext import commands
@@ -136,6 +136,12 @@ class Reminders(commands.Cog):
     async def call_timer(self, timer: Timer):
         try:
             rm: Reminderstbl = Reminderstbl.get(Reminderstbl.id == timer.id)
+            try:
+                if type(rm.expires_on) == str:
+                    rm.expires_on = dateutil.parser.parse(rm.expires_on)
+                rm.executed_on = rm.executed_on.replace(tzinfo=datetime.timezone.utc)
+            except Exception as ex:
+                error_logger.error(ex)
             # this is only for some weird race conciditons
             if timer.executed_on != rm.executed_on:
                 self._task.cancel()
@@ -159,10 +165,10 @@ class Reminders(commands.Cog):
             await self.bot.wait_until_ready()
         try:
             while not self.bot.is_closed():
-                timer = await self.wait_for_active_timers(days=40)
+                timer = await self.wait_for_active_timers(days=30)
                 timer.expires = timer.expires.replace(tzinfo=datetime.timezone.utc)
                 self._current_timer = timer
-                now = datetime.datetime.utcnow()
+                now = discord.utils.utcnow()
 
                 if timer.expires >= now:
                     to_sleep = (timer.expires - now).total_seconds()
@@ -185,8 +191,12 @@ class Reminders(commands.Cog):
 
         if record:
             record_dict = record.dicts()[0]
-            record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
-            record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
+            d = 0
+            if type(record_dict['expires_on']) == str:
+                record_dict['expires_on'] = dateutil.parser.parse(record_dict['expires_on'])
+            record_dict['executed_on'] = record_dict['executed_on'].replace(tzinfo=datetime.timezone.utc)
+            # record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
+            # record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
             return Timer(record=record_dict)
         else:
             return None
@@ -227,6 +237,12 @@ class Reminders(commands.Cog):
             # due to race conditions with MUTE we check if it's still in the db
             rem = Reminderstbl.get(Reminderstbl.guild == gid,
                                    Reminderstbl.user_id == uid)
+            try:
+                if type(rem.expires_on) == str:
+                    rem.expires_on = dateutil.parser.parse(rem.expires_on)
+                rem.executed_on = rem.executed_on.replace(tzinfo=datetime.timezone.utc)
+            except Exception as ex:
+                error_logger.error(ex)
 
             rem.len_str = len_str
             rem.expires_on = expires_on
@@ -240,7 +256,7 @@ class Reminders(commands.Cog):
             tim_id = Reminderstbl.insert(guild=gid, reason=reason, user_id=uid, len_str=len_str,
                                          expires_on=expires_on, executed_by=author_id, meta=meta).execute()
             timer.id = tim_id
-            timer.executed_on = (Reminderstbl.get_by_id(tim_id)).executed_on
+            timer.executed_on = (Reminderstbl.get_by_id(tim_id)).executed_on.replace(tzinfo=datetime.timezone.utc)
 
         if delta <= 30:
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
@@ -251,9 +267,9 @@ class Reminders(commands.Cog):
             self._have_data.set()
 
         # check if this timer is earlier than our currently run timer
-        #error_logger.error(f"self._current_timer {self._current_timer}")
-        #error_logger.error(f"expires_on {expires_on}")
-        #if self._current_timer:
+        # error_logger.error(f"self._current_timer {self._current_timer}")
+        # error_logger.error(f"expires_on {expires_on}")
+        # if self._current_timer:
         #    error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
