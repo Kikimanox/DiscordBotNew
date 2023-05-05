@@ -2,7 +2,7 @@ import os
 import asyncio
 import discord
 from discord.ext import commands, tasks
-from discord import FFmpegPCMAudio
+from discord import FFmpegPCMAudio, Embed
 import yt_dlp
 import shutil
 from fuzzywuzzy import fuzz, process
@@ -103,7 +103,8 @@ class Music(commands.Cog):
                             if entry.get("duration") and entry["duration"] > 10800:  # 3 hours
                                 raise Exception("Song is too long. [Max 3 hours]")
                             info_entry = ydl.extract_info(entry['url'], download=True)
-                            filename = 'tmp' + ''.join(info_entry.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
+                            filename = 'tmp' + ''.join(
+                                info_entry.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
                             song_paths.append(filename)
 
                         return song_paths, entries
@@ -116,7 +117,8 @@ class Music(commands.Cog):
                         info_entry0 = info['entries'][0]
                     else:
                         info_entry0 = info
-                    filename = 'tmp' + ''.join(info_entry0.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
+                    filename = 'tmp' + ''.join(
+                        info_entry0.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
                     return filename, info
 
             except Exception as ex:
@@ -236,7 +238,10 @@ class Music(commands.Cog):
                     "local_path": song_path
                 })
 
-                await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
+                # await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
+                await m.edit(embed=Embed(color=discord.Color.green(),
+                                         description=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b')))
+
                 await self.play_next_song(ctx.guild.id)
 
             except Exception as ex:
