@@ -1,5 +1,9 @@
 import os
 import asyncio
+import re
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
+
 import discord
 from discord.ext import commands, tasks
 from discord import FFmpegPCMAudio, Embed
@@ -38,18 +42,34 @@ class Music(commands.Cog):
                     folder_path = os.path.join(tmp_path, folder)
                     shutil.rmtree(folder_path)
 
+    async def dc_from_vc(self, gid):
+        try:
+            voice_client = self.voice_clients.get(gid)
+            if voice_client and voice_client.is_connected():
+                await voice_client.disconnect()
+        except:
+            pass
+
     async def play_next_song(self, guild_id):
-        # for guild_id in self.queues:
         voice_client = self.voice_clients[guild_id]
-        if len(self.queues[guild_id]) > 0 and not (voice_client.is_playing() or voice_client.is_paused()):
+        if guild_id in self.queues and len(self.queues[guild_id]) > 0 and not (
+                voice_client.is_playing() or voice_client.is_paused()):
             song_path = self.queues[guild_id][0]["local_path"]
-            # options = '-vn -c:a flac -compression_level 5'
-            options = '-vn -c:a libopus -b:a 320k'
+
+            # Get the audio change value
+            audio_change = await self.adjust_volume(song_path)
+
+            # Add the volume change to the FFmpeg options
+            options = f'-vn -c:a libopus -b:a 320k -af volume={audio_change}dB'
             options = options.split(' ')
             source = FFmpegPCMAudio(song_path, options=options)
+
+            # Play the audio with the adjusted volume
             voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
                 self.song_finished_playing(guild_id, song_path, error),)).start())
             voice_client.source.start_time = discord.utils.utcnow()  # Store start time
+        else:
+            await self.dc_from_vc(guild_id)
 
     async def song_finished_playing(self, guild_id, song_path, error=None):
         if error:
@@ -62,6 +82,8 @@ class Music(commands.Cog):
         if self.queues[guild_id]:  # Check if the list is not empty
             self.queues[guild_id].pop(0)
             loop.create_task(self.play_next_song(guild_id))
+        if not self.queues[guild_id]:
+            await self.dc_from_vc(guild_id)
 
     def delete_song_file(self, guild_id, song_path):
         try:
@@ -189,7 +211,7 @@ class Music(commands.Cog):
 
         # Download the song and store its info
         async with ctx.typing():
-            m = await ctx.send(f"🔃 Adding `{query}` to queue...".replace('@', '@\u200b'))
+            m = await ctx.send(f"🔃 Adding `{query}` to the queue...".replace('@', '@\u200b'))
 
             try:
                 song_path = None
@@ -201,7 +223,7 @@ class Music(commands.Cog):
                         song_path = None
                         pass
                 if song_path is None:
-                    await m.edit(content=f"🔎 Adding `{query}` to queue..."
+                    await m.edit(content=f"🔎 Adding `{query}` to the queue..."
                                          f"\nProvided query was not a youtube id or link. Trying search..."
                                  .replace('@', '@\u200b'))
                     # Otherwise, search for the song using yt-dlp
@@ -238,9 +260,12 @@ class Music(commands.Cog):
                     "local_path": song_path
                 })
 
-                # await m.edit(content=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b'))
-                await m.edit(embed=Embed(color=discord.Color.green(),
-                                         description=f"✅ Added `{song_title}` to queue.".replace('@', '@\u200b')))
+                # await m.edit(content=f"✅ Added `{song_title}` to the queue.".replace('@', '@\u200b'))
+                em = Embed(color=discord.Color.green(),
+                           description=f"✅ Added [**{song_title}**]({info['webpage_url']})"
+                                       f" to the queue.".replace('@', '@\u200b'))
+                em.set_footer(text=f'Requested by {ctx.author} ({ctx.author.id})')
+                await m.edit(content="", embed=em)
 
                 await self.play_next_song(ctx.guild.id)
 
@@ -441,6 +466,27 @@ class Music(commands.Cog):
             guild_id = before.channel.guild.id
             # Clear the queue and song info for the guild
             self.queues.pop(guild_id, None)
+
+    async def adjust_volume(self, audio):
+        def get_audio_change(audio):
+            maxpeak, maxmean = -1, -16.0
+            findaudiomean = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"mean_volume: (\-?\d+\.\d) dB")
+            findaudiopeak = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"max_volume: (\-?\d+\.\d) dB")
+            audiochange, peak, mean = 0.0, 0.0, 0.0
+
+            while peak > maxpeak or mean > maxmean:
+                command = f'ffmpeg -loglevel info -i "{audio}" -t 360 -vn -ac 2 -map 0:a:0 -af ' \
+                          f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
+                          f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
+                process = subprocess.run(command, stderr=subprocess.PIPE)
+                string = str(process.stderr.decode())
+                mean, peak = float(findaudiomean.search(string).group(1)), float(findaudiopeak.search(string).group(1))
+                audiochange += -10.0 if peak == 0.0 else min(maxpeak - peak, maxmean - mean)
+
+            return audiochange
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, get_audio_change, audio)
 
 
 async def setup(bot: commands.Bot):
