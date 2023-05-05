@@ -1434,7 +1434,7 @@ class Moderation(commands.Cog):
 
         This command will also set perma locked channels.
 
-        (`[p]lock all silent` = `[p] raid lockdown`)
+        (`[p]lock all silent` = `[p]raid lockdown`)
         """
         await dutils.lock_channels(ctx, channels)
 

@@ -353,7 +353,7 @@ class Reminders(commands.Cog):
 
         So you do `[p]rm take out the trash in 2h` instead of `[p]remind me take out the trash in 2h`
 
-        **If you want more info do `[p] remind`"""
+        **If you want more info do `[p]remind`"""
         await self.remindFunction(ctx, f'me {text}')
 
     @commands.cooldown(3, 4, commands.BucketType.user)
@@ -470,7 +470,7 @@ class Reminders(commands.Cog):
     async def removereminder(self, ctx, reminder_ids: commands.Greedy[int]):
         """Remove reminder(s) by id.
 
-        `[p]rmr 1`, `[p] rmr 1 2 5 6`"""
+        `[p]rmr 1`, `[p]rmr 1 2 5 6`"""
         if not reminder_ids:
             await ctx.send("You are either missing the argument <reminder_ids> or you have inputed some non intiger "
                            "(number) symbols.\nPlease see the examples on how to use this commands.")

@@ -6,7 +6,7 @@ converted into embeds instead of codeblocks.
 Docstr on cog class becomes category.
 Docstr on command definition becomes command
 summary and usage.
-Use [p] in command docstr for bot prefix.
+Use [p]in command docstr for bot prefix.
 See [p]help here for example.
 await bot.formatter.format_help_for(ctx, command)
 to send help page for command. Optionally pass a
