@@ -549,8 +549,7 @@ class Music(commands.Cog):
                     command = f'ffmpeg -loglevel info -t 360 -i {audio} -vn -ac 2 -map 0:a:0 -af ' \
                               f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
                               f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
-                    command = command.split(' ')  # lets not use shell=True for this case
-                    process = subprocess.run(command, stderr=subprocess.PIPE)
+                    process = subprocess.run(command, stderr=subprocess.PIPE, shell=True)
                     string = str(process.stderr.decode())
                     mean, peak = float(findaudiomean.search(string).group(1)), float(
                         findaudiopeak.search(string).group(1))
