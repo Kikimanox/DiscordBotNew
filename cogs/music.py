@@ -541,7 +541,7 @@ class Music(commands.Cog):
 
     async def adjust_volume(self, audio):
         def get_audio_change(audio):
-            maxpeak, maxmean = -1, -14.0
+            maxpeak, maxmean = -1, -12.0  # people can adjust the volume on their own on the actual bot
             findaudiomean = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"mean_volume: (\-?\d+\.\d) dB")
             findaudiopeak = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"max_volume: (\-?\d+\.\d) dB")
             audiochange, peak, mean = 0.0, 0.0, 0.0
