@@ -169,6 +169,7 @@ class Music(commands.Cog):
                         info_entry0 = info
                     filename = 'tmp' + ''.join(
                         info_entry0.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
+                    logger.info(f'Filename: {filename}')
                     return filename, info
 
             except Exception as ex:
@@ -547,7 +548,7 @@ class Music(commands.Cog):
             audiochange, peak, mean = 0.0, 0.0, 0.0
 
             while peak > maxpeak or mean > maxmean:
-                command = f'ffmpeg -loglevel info -i {quote_path(audio)} -t 360 -vn -ac 2 -map 0:a:0 -af ' \
+                command = f'ffmpeg -loglevel info -t 360 -i {quote_path(audio)} -vn -ac 2 -map 0:a:0 -af ' \
                           f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
                           f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
                 process = subprocess.run(command, stderr=subprocess.PIPE)
