@@ -543,21 +543,28 @@ class Music(commands.Cog):
 
     async def adjust_volume(self, audio):
         def get_audio_change(audio):
-            maxpeak, maxmean = -1, -12.0  # people can adjust the volume on their own on the actual bot
-            findaudiomean = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"mean_volume: (\-?\d+\.\d) dB")
-            findaudiopeak = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"max_volume: (\-?\d+\.\d) dB")
-            audiochange, peak, mean = 0.0, 0.0, 0.0
+            try:
+                maxpeak, maxmean = -1, -12.0  # people can adjust the volume on their own on the actual bot
+                findaudiomean = re.compile(
+                    r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"mean_volume: (\-?\d+\.\d) dB")
+                findaudiopeak = re.compile(
+                    r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"max_volume: (\-?\d+\.\d) dB")
+                audiochange, peak, mean = 0.0, 0.0, 0.0
 
-            while peak > maxpeak or mean > maxmean:
-                command = f'ffmpeg -loglevel info -t 360 -i {quote_path(audio)} -vn -ac 2 -map 0:a:0 -af ' \
-                          f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
-                          f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
-                process = subprocess.run(command, stderr=subprocess.PIPE)
-                string = str(process.stderr.decode())
-                mean, peak = float(findaudiomean.search(string).group(1)), float(findaudiopeak.search(string).group(1))
-                audiochange += -10.0 if peak == 0.0 else min(maxpeak - peak, maxmean - mean)
+                while peak > maxpeak or mean > maxmean:
+                    command = f'ffmpeg -loglevel info -t 360 -i {quote_path(audio)} -vn -ac 2 -map 0:a:0 -af ' \
+                              f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
+                              f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
+                    process = subprocess.run(command, stderr=subprocess.PIPE)
+                    string = str(process.stderr.decode())
+                    mean, peak = float(findaudiomean.search(string).group(1)), float(
+                        findaudiopeak.search(string).group(1))
+                    audiochange += -10.0 if peak == 0.0 else min(maxpeak - peak, maxmean - mean)
 
-            return round(audiochange, 1)  # .1 precision
+                return round(audiochange, 1)  # .1 precision
+            except Exception as ex:
+                logger.error(f"Exception in adjust_volume: {ex}")
+                return 0
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, get_audio_change, audio)
