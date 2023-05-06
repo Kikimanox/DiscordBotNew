@@ -30,6 +30,13 @@ class CustomFFmpegPCMAudio(FFmpegPCMAudio):
         self.last_pause_time = None
 
 
+def ffmpeg_per_os():
+    if os.name == 'nt':  # Windows
+        return 'ffmpeg'
+    else:  # POSIX (Linux, macOS, etc.)
+        return '/usr/bin/ffmpeg'
+
+
 def quote_path(path):
     if os.name == 'nt':  # Windows
         return f'"{path}"'
@@ -553,7 +560,7 @@ class Music(commands.Cog):
                 audiochange, peak, mean = 0.0, 0.0, 0.0
 
                 while peak > maxpeak or mean > maxmean:
-                    command = f'ffmpeg -loglevel info -t 360 -i {quote_path(audio)} -vn -ac 2 -map 0:a:0 -af ' \
+                    command = f'{ffmpeg_per_os()} -loglevel info -t 360 -i {quote_path(audio)} -vn -ac 2 -map 0:a:0 -af ' \
                               f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
                               f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
                     process = subprocess.run(command, stderr=subprocess.PIPE)
