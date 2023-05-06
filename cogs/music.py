@@ -3,6 +3,7 @@ import asyncio
 import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
+from datetime import timedelta
 
 import discord
 from discord.ext import commands, tasks
@@ -13,6 +14,14 @@ from fuzzywuzzy import fuzz, process
 import threading
 from utils import checks
 from utils.SimplePaginator import SimplePaginator
+
+
+class CustomFFmpegPCMAudio(FFmpegPCMAudio):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.start_time = None
+        self.total_paused_time = 0
+        self.last_pause_time = None
 
 
 def run_coroutine_in_new_loop(coroutine):
@@ -50,10 +59,10 @@ class Music(commands.Cog):
         except:
             pass
 
-    async def play_next_song(self, guild_id):
+    async def play_next_song(self, guild_id, start_time=None):
         voice_client = self.voice_clients[guild_id]
-        if guild_id in self.queues and len(self.queues[guild_id]) > 0 and not (
-                voice_client.is_playing() or voice_client.is_paused()):
+        if (guild_id in self.queues and len(self.queues[guild_id]) > 0 and not (
+                voice_client.is_playing() or voice_client.is_paused())) or (start_time and voice_client.is_paused()):
             song_path = self.queues[guild_id][0]["local_path"]
 
             # Get the audio change value
@@ -61,13 +70,19 @@ class Music(commands.Cog):
 
             # Add the volume change to the FFmpeg options
             options = f'-vn -c:a libopus -b:a 320k -af volume={audio_change}dB'
+            before_options = ""
+            if start_time:
+                before_options += f'-ss {start_time}'
+
             options = options.split(' ')
-            source = FFmpegPCMAudio(song_path, options=options)
+            source = CustomFFmpegPCMAudio(song_path, options=options, before_options=before_options)
 
             # Play the audio with the adjusted volume
             voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
                 self.song_finished_playing(guild_id, song_path, error),)).start())
             voice_client.source.start_time = discord.utils.utcnow()  # Store start time
+            if start_time:
+                source.start_time = discord.utils.utcnow() - timedelta(seconds=int(start_time))
         else:
             await self.dc_from_vc(guild_id)
 
@@ -386,21 +401,61 @@ class Music(commands.Cog):
             await ctx.send("There is no song currently playing.")
             return
 
-        self.voice_clients[ctx.guild.id].pause()
+        voice_client = self.voice_clients[ctx.guild.id]
+        voice_client.pause()
+        voice_client.source.last_pause_time = discord.utils.utcnow()
         await ctx.send("Paused")
 
-    @commands.check(checks.owner_check)
     @commands.command()
     async def resume(self, ctx):
         """
         Resume song if paused.
         """
         if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_paused():
-            await ctx.send("There is no song currently paused.")
+            await ctx.send("No song is currently paused.")
             return
 
-        self.voice_clients[ctx.guild.id].resume()
-        await ctx.send("Resumed.")
+        voice_client = self.voice_clients[ctx.guild.id]
+        source = voice_client.source
+        if source.last_pause_time:
+            source.total_paused_time = 0
+            source.last_pause_time = None
+
+        voice_client.resume()
+        await ctx.send("Resumed")
+
+    @commands.cooldown(1, 20, commands.BucketType.guild)
+    @commands.command()
+    async def seek(self, ctx, time_str):
+        """
+        Seek to a specific position in the current song.
+        Format: `[p]seek MM:SS`
+        """
+        # Check if a song is currently playing
+        if ctx.guild.id not in self.voice_clients or not self.voice_clients[ctx.guild.id].is_playing():
+            await ctx.send("There is no song currently playing.")
+            return
+
+        # Convert time_str (MM:SS) to seconds
+        try:
+            minutes, seconds = time_str.split(':')
+            seek_time = int(minutes) * 60 + int(seconds)
+        except ValueError:
+            await ctx.send("Invalid time format. Please use MM:SS format.")
+            return
+
+        song = self.queues[ctx.guild.id][0]
+        if seek_time < 0 or seek_time >= song['duration'] - 2:
+            await ctx.send("Invalid seek time. Please provide a time within the song's duration.")
+            return
+
+        # Pause the current playback
+        self.voice_clients[ctx.guild.id].pause()
+
+        # Play the song from the specified position
+        await self.play_next_song(ctx.guild.id, start_time=f'{seek_time}')
+        await ctx.send(f"Seeking to {time_str}.".replace('@', '@\u200b'))
+        await self.playing(ctx)
 
     @commands.command()
     async def skip(self, ctx):
@@ -439,8 +494,11 @@ class Music(commands.Cog):
                          icon_url=song["requester"].display_avatar.url)
         embed.set_thumbnail(url=song["thumbnail"])
 
-        # Calculate elapsed time since the song started playing
-        elapsed_time = (discord.utils.utcnow() - self.voice_clients[ctx.guild.id].source.start_time).total_seconds()
+        voice_client = self.voice_clients[ctx.guild.id]
+        source = voice_client.source
+        if source.last_pause_time:
+            source.total_paused_time = (discord.utils.utcnow() - source.last_pause_time).total_seconds()
+        elapsed_time = (discord.utils.utcnow() - source.start_time).total_seconds() - source.total_paused_time
 
         # Create a progress bar for the song's duration
         progress_bar = self.create_progress_bar(elapsed_time, song["duration"], 20)
