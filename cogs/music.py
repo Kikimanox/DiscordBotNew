@@ -78,7 +78,9 @@ class Music(commands.Cog):
             song_path = self.queues[guild_id][0]["local_path"]
 
             # Get the audio change value
+            logger.info(f"Adjusting volume for {song_path}")
             audio_change = await self.adjust_volume(song_path)
+            logger.info(f"Audio change for {song_path} was {audio_change}")
             # audio_change = 0
 
             # Add the volume change to the FFmpeg options
@@ -169,7 +171,6 @@ class Music(commands.Cog):
                         info_entry0 = info
                     filename = 'tmp' + ''.join(
                         info_entry0.get('requested_downloads')[0].get('filepath').split('tmp')[1:])
-                    logger.info(f'Filename: {filename}')
                     return filename, info
 
             except Exception as ex:
