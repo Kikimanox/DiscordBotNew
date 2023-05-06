@@ -70,11 +70,12 @@ class Music(commands.Cog):
         if (guild_id in self.queues and len(self.queues[guild_id]) > 0 and not (
                 voice_client.is_playing() or voice_client.is_paused())) or (start_time and voice_client.is_paused()):
             song_path = self.queues[guild_id][0]["local_path"]
+            song_title = self.queues[guild_id][0]["title"]
 
             # Get the audio change value
-            logger.info(f"Adjusting volume for {song_path}")
+            logger.info(f'Adjusting volume for {song_path}')
             audio_change = await self.adjust_volume(song_path)
-            logger.info(f"Audio change for {song_path} was {audio_change}")
+            logger.info(f'Audio change for {song_path} ({song_title}) was {audio_change}')
             # audio_change = 0
 
             # Add the volume change to the FFmpeg options
