@@ -17,6 +17,7 @@ from fuzzywuzzy import fuzz, process
 import threading
 from utils import checks
 from utils.SimplePaginator import SimplePaginator
+from asyncio import ensure_future
 
 logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
@@ -45,6 +46,10 @@ class Music(commands.Cog):
         self.voice_clients = {}
         # self.check_queue.start()
         self.cleanup_tmp_folder()
+        self.event_loop = asyncio.get_running_loop()
+
+    def schedule_coroutine(self, coroutine):
+        self.event_loop.call_soon_threadsafe(asyncio.ensure_future, coroutine)
 
     def get_song_path(self, guild_id):
         return f"{self.tmp_folder}/music_{guild_id}"
@@ -91,13 +96,27 @@ class Music(commands.Cog):
                 return
 
             # Play the audio with the adjusted volume
-            voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
-                self.song_finished_playing(guild_id, song_path, error),)).start())
+            voice_client.play(source, after=lambda error: self.schedule_coroutine(
+                self.song_finished_playing(guild_id, song_path, error)))
             voice_client.source.start_time = discord.utils.utcnow()  # Store start time
             if start_time:
                 source.start_time = discord.utils.utcnow() - timedelta(seconds=int(start_time))
         else:
-            await self.dc_from_vc(guild_id)
+            # await self.dc_from_vc(guild_id)
+            return  # something is already playing, play it later
+
+    async def delete_song_file_with_retries(self, song_path, retries=3, delay=120):
+        for i in range(retries):
+            try:
+                os.remove(song_path)
+                logger.info(f"Deleted file: {song_path}")
+                break
+            except OSError as e:
+                if i < retries - 1:
+                    logger.warning(f"Error deleting file (attempt {i + 1}): {song_path}\n{e}")
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Failed to delete file after {retries} attempts: {song_path}\n{e}")
 
     async def song_finished_playing(self, guild_id, song_path, error=None):
         if error:
@@ -105,7 +124,7 @@ class Music(commands.Cog):
 
         # Delay the deletion of the file
         loop = asyncio.get_running_loop()
-        loop.call_later(10, self.delete_song_file, guild_id, song_path)
+        loop.call_later(30, self.schedule_coroutine, self.delete_song_file_with_retries(song_path))
 
         if self.queues[guild_id]:  # Check if the list is not empty
             self.queues[guild_id].pop(0)
