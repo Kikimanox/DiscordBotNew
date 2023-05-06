@@ -85,6 +85,9 @@ class Music(commands.Cog):
 
             # options = options.split(' ')
             source = CustomFFmpegPCMAudio(song_path, options=options, before_options=before_options)
+            if guild_id not in self.voice_clients:
+                self.queues.pop(guild_id, None)
+                return
 
             # Play the audio with the adjusted volume
             voice_client.play(source, after=lambda error: threading.Thread(target=run_coroutine_in_new_loop, args=(
@@ -273,6 +276,10 @@ class Music(commands.Cog):
 
                 if ctx.guild.id not in self.queues:
                     self.queues[ctx.guild.id] = []
+
+                if ctx.guild.id not in self.voice_clients:
+                    self.queues.pop(ctx.guild.id, None)
+                    return await ctx.send("Bot left vc before song could be added.")
 
                 self.queues[ctx.guild.id].append({
                     "title": song_title,
