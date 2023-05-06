@@ -385,6 +385,8 @@ class Music(commands.Cog):
 
         await SimplePaginator(extras=queue_embeds).paginate(ctx)
 
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.owner_check)
     @commands.command()
     async def stop(self, ctx):
@@ -401,7 +403,8 @@ class Music(commands.Cog):
         self.voice_clients.pop(ctx.guild.id, None)
         await ctx.send("Stopped")
 
-    @commands.check(checks.owner_check)
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command()
     async def pause(self, ctx):
         """
@@ -416,6 +419,8 @@ class Music(commands.Cog):
         voice_client.source.last_pause_time = discord.utils.utcnow()
         await ctx.send("Paused")
 
+    @commands.cooldown(1, 5, commands.BucketType.guild)
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command()
     async def resume(self, ctx):
         """
@@ -435,6 +440,7 @@ class Music(commands.Cog):
         await ctx.send("Resumed")
 
     @commands.cooldown(1, 20, commands.BucketType.guild)
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command()
     async def seek(self, ctx, time_str):
         """
