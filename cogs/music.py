@@ -4,6 +4,7 @@ import asyncio
 import re
 import subprocess
 import time
+import traceback
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 import shlex
@@ -563,7 +564,7 @@ class Music(commands.Cog):
 
                 return round(audiochange, 1)  # .1 precision
             except Exception as ex:
-                logger.error(f"Exception in adjust_volume: {ex}")
+                logger.error(f"Exception in adjust_volume: {ex} | {traceback.print_exception()}")
                 return 0
 
         loop = asyncio.get_event_loop()
