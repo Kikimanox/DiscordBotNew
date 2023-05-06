@@ -3,9 +3,10 @@ import os
 import asyncio
 import re
 import subprocess
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
-
+import shlex
 import discord
 from discord.ext import commands, tasks
 from discord import FFmpegPCMAudio, Embed
@@ -26,6 +27,13 @@ class CustomFFmpegPCMAudio(FFmpegPCMAudio):
         self.start_time = None
         self.total_paused_time = 0
         self.last_pause_time = None
+
+
+def quote_path(path):
+    if os.name == 'nt':  # Windows
+        return f'"{path}"'
+    else:  # POSIX (Linux, macOS, etc.)
+        return shlex.quote(path)
 
 
 def run_coroutine_in_new_loop(coroutine):
@@ -71,14 +79,15 @@ class Music(commands.Cog):
 
             # Get the audio change value
             audio_change = await self.adjust_volume(song_path)
+            # audio_change = 0
 
             # Add the volume change to the FFmpeg options
-            options = f'-vn -c:a libopus -b:a 320k -af volume={audio_change}dB'
+            options = f'-vn -b:a 320k -af volume={audio_change}dB'
             before_options = ""
             if start_time:
                 before_options += f'-ss {start_time}'
 
-            options = options.split(' ')
+            # options = options.split(' ')
             source = CustomFFmpegPCMAudio(song_path, options=options, before_options=before_options)
 
             # Play the audio with the adjusted volume
@@ -114,7 +123,7 @@ class Music(commands.Cog):
     async def download_song(self, url, guild_id, playlist=False):
         ydl_opts = {
             'format': '251/250/bestaudio',  # Opus format
-            'outtmpl': f"{self.get_song_path(guild_id)}/%(title|safe)s.%(ext)s",
+            'outtmpl': f"{self.get_song_path(guild_id)}/{int(time.time())}.%(ext)s",
             "noplaylist": not playlist,  # Handle playlists
             "source_address": "0.0.0.0",  # For IPv6 issues
             'postprocessors': [{
@@ -532,13 +541,13 @@ class Music(commands.Cog):
 
     async def adjust_volume(self, audio):
         def get_audio_change(audio):
-            maxpeak, maxmean = -1, -16.0
+            maxpeak, maxmean = -1, -14.0
             findaudiomean = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"mean_volume: (\-?\d+\.\d) dB")
             findaudiopeak = re.compile(r"\[Parsed_volumedetect_\d+ @ [0-9a-zA-Z]+\] " + r"max_volume: (\-?\d+\.\d) dB")
             audiochange, peak, mean = 0.0, 0.0, 0.0
 
             while peak > maxpeak or mean > maxmean:
-                command = f'ffmpeg -loglevel info -i "{audio}" -t 360 -vn -ac 2 -map 0:a:0 -af ' \
+                command = f'ffmpeg -loglevel info -i {quote_path(audio)} -t 360 -vn -ac 2 -map 0:a:0 -af ' \
                           f'"volume={audiochange}dB:precision=fixed,volumedetect" -sn ' \
                           f'-hide_banner -nostats -max_muxing_queue_size 4096 -f null -'
                 process = subprocess.run(command, stderr=subprocess.PIPE)
@@ -546,7 +555,7 @@ class Music(commands.Cog):
                 mean, peak = float(findaudiomean.search(string).group(1)), float(findaudiopeak.search(string).group(1))
                 audiochange += -10.0 if peak == 0.0 else min(maxpeak - peak, maxmean - mean)
 
-            return audiochange
+            return round(audiochange, 1)  # .1 precision
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, get_audio_change, audio)
