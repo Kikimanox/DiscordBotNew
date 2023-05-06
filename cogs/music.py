@@ -1,3 +1,4 @@
+import logging
 import os
 import asyncio
 import re
@@ -14,6 +15,9 @@ from fuzzywuzzy import fuzz, process
 import threading
 from utils import checks
 from utils.SimplePaginator import SimplePaginator
+
+logger = logging.getLogger(f"info")
+error_logger = logging.getLogger(f"error")
 
 
 class CustomFFmpegPCMAudio(FFmpegPCMAudio):
@@ -275,6 +279,8 @@ class Music(commands.Cog):
                     "local_path": song_path
                 })
 
+                await self.play_next_song(ctx.guild.id)
+
                 # await m.edit(content=f"✅ Added `{song_title}` to the queue.".replace('@', '@\u200b'))
                 em = Embed(color=discord.Color.green(),
                            description=f"✅ Added [**{song_title}**]({info['webpage_url']})"
@@ -282,11 +288,10 @@ class Music(commands.Cog):
                 em.set_footer(text=f'Requested by {ctx.author} ({ctx.author.id})')
                 await m.edit(content="", embed=em)
 
-                await self.play_next_song(ctx.guild.id)
-
             except Exception as ex:
-                print(ex)
-                await m.edit(content=f"❌ Failed to add `{query}` to queue.".replace('@', '@\u200b'))
+                # print(ex)
+                error_logger.error(f"❌ Failed to add `{query}` to queue: {ex}")
+                await m.edit(content=f"❌ Failed to add `{query}` to queue. Try again maybe?".replace('@', '@\u200b'))
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['pp'])
