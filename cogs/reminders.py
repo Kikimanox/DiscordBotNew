@@ -212,25 +212,31 @@ class Reminders(commands.Cog):
 
     @staticmethod
     async def get_active_timer(days=7):
+        logger.info("Inside get_active_timer")
         now = datetime.datetime.utcnow()
         record = Reminderstbl.select().where(Reminderstbl.expires_on < (now + datetime.timedelta(days=days))).order_by(
             +Reminderstbl.expires_on
         ).limit(1)
-
+        logger.info(f"Record {record}")
         if record:
             record_dict = record.dicts()[0]
-            d = 0
             if type(record_dict['expires_on']) == str:
                 record_dict['expires_on'] = dateutil.parser.parse(record_dict['expires_on'])
             record_dict['executed_on'] = record_dict['executed_on'].replace(tzinfo=datetime.timezone.utc)
             # record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
             # record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
-            return Timer(record=record_dict)
+            logger.info(f"Record dict is {record_dict}")
+            tim = Timer(record=record_dict)
+            logger.info(f"returning timer made from record_dict: {tim}")
+            return tim
         else:
+            logger.info("No record found, returning None in get_active_timer")
             return None
 
     async def wait_for_active_timers(self, days=7):
+        logger.info("Inside wait_for_active_timers")
         timer = await self.get_active_timer(days=days)
+        logger.info(f"get_active_timer returned {timer}")
         if timer is not None:
             self._have_data.set()
             return timer
@@ -238,6 +244,7 @@ class Reminders(commands.Cog):
         self._have_data.clear()
         self._current_timer = None
         await self._have_data.wait()
+        logger.info("_have_data was set (this is a print in wait_for_active_timers) ... running get_active_timer")
         return await self.get_active_timer(days=days)
 
     async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
@@ -303,13 +310,15 @@ class Reminders(commands.Cog):
         # error_logger.error(f"expires_on {expires_on}")
         # if self._current_timer:
         #    error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
-        logger.info(f"Comparing self._current_timer: {self._current_timer} and expires_on: {expires_on} and s._ct.exp")
+        logger.info(f"Comparing self._current_timer: {self._current_timer} and "
+                    f"expires_on: {expires_on} and s._ct.exp: {self._current_timer.expires}")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
             logger.info("cancelling tasak and re-running it")
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
+        logger.info(f"Returning timer {timer}")
         return timer
 
     async def refresh_timers_after_a_while(self):
