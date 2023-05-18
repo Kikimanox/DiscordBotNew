@@ -187,22 +187,26 @@ class Reminders(commands.Cog):
         logger.info("In dispatch timers")
         try:
             while not self.bot.is_closed():
+                logger.info("---Inside while not self.bot.is_closed():, time to wait for active timer")
                 timer = await self.wait_for_active_timers(days=30)
                 timer.expires = timer.expires.replace(tzinfo=datetime.timezone.utc)
+                logger.info(f"---Got active timer: {timer}")
                 self._current_timer = timer
                 now = discord.utils.utcnow()
 
-                logger.info(f"Timer {timer} checking if >= now")
+                logger.info(f"Timer checking if >= now: {timer}")
                 if timer.expires >= now:
                     to_sleep = (timer.expires - now).total_seconds()
                     await asyncio.sleep(to_sleep)
 
-                logger.info(f"Timer {timer} running call_timer")
+                logger.info(f"running call_timer for: {timer} ")
                 await self.call_timer(timer)
 
         except asyncio.CancelledError:
+            logger.info("In displatch timers: a timer with a shorter time has beeb found")
             raise  # a timer with a shorter time has beeb found
         except(OSError, discord.ConnectionClosed):
+            logger.info("In displatch timers: OSError, discord.ConnectionClosed")
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
