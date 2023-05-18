@@ -30,6 +30,11 @@ class Timer:
         self.executed_by: int = record['executed_by']
         self.executed_on: datetime.datetime = record['executed_on']
 
+    def __str__(self) -> str:
+        return f"Timer(id={self.id}, meta={self.meta}, guild={self.guild}, reason={self.reason}, " \
+               f"user_id={self.user_id}, len_str={self.len_str}, expires={self.expires}, " \
+               f"executed_by={self.executed_by}, executed_on={self.executed_on})"
+
     @classmethod
     def temporary(cls, *, expires: datetime.datetime, meta: str, guild: int, reason: str, user_id: int,
                   len_str: str, executed_by: int, executed_on) -> "Timer":
@@ -232,6 +237,7 @@ class Reminders(commands.Cog):
         return await self.get_active_timer(days=days)
 
     async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
+        logger.info("Inside create_timer")
         now = datetime.datetime.now(datetime.timezone.utc)
         max_datetime = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=1)
         if not expires_on:
@@ -277,12 +283,15 @@ class Reminders(commands.Cog):
             timer.id = tim_id
             timer.executed_on = (Reminderstbl.get_by_id(tim_id)).executed_on.replace(tzinfo=datetime.timezone.utc)
 
+        logger.info(f"Timer created: {timer}")
         if delta <= 30:
+            logger.info(f"We in short timer optimisation")
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
             return timer
 
         # only set the data check if it can be waited on
         if delta <= (86400 * 40):  # 40 days
+            logger.info(f"Delta ({delta}) is less than 40 days!")
             self._have_data.set()
 
         # check if this timer is earlier than our currently run timer
@@ -290,8 +299,10 @@ class Reminders(commands.Cog):
         # error_logger.error(f"expires_on {expires_on}")
         # if self._current_timer:
         #    error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
+        logger.info(f"Comparing self._current_timer: {self._current_timer} and expires_on: {expires_on} and s._ct.exp")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
+            logger.info("cancelling tasak and re-running it")
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
