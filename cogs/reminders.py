@@ -311,7 +311,7 @@ class Reminders(commands.Cog):
         # if self._current_timer:
         #    error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
         logger.info(f"Comparing self._current_timer: {self._current_timer} and "
-                    f"expires_on: {expires_on} and s._ct.exp: {self._current_timer.expires}")
+                    f"expires_on: {expires_on} and s._ct.exp")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
             logger.info("cancelling tasak and re-running it")
