@@ -102,7 +102,7 @@ class Moderation(commands.Cog):
         except discord.HTTPException:
             await ctx.send("Something went wrong! Could not purge.")
 
-    @commands.check(checks.moderator_check)
+    @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=["c"])
     async def case(self, ctx, case_id: int, *, reason):
         """Supply or edit reason for a moderation action"""
