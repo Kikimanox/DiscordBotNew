@@ -21,8 +21,8 @@ from models.sticky_message import StickyMsg
 from utils.SimplePaginator import SimplePaginator
 from discord.errors import NotFound
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class Moderation(commands.Cog):

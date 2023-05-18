@@ -14,8 +14,8 @@ from models.moderation import Reminderstbl, Timezones
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class Timer:
@@ -288,7 +288,7 @@ class Reminders(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.command(aliases=['mutc', 'setmyutc'])
     async def myutc(self, ctx, new_utc: float):
-        """Set your utc so you don't need to use UTC time for reminding
+        """Set your utc, so you don't need to use UTC time for reminding
 
         if your timezone is UTC+2 use:
         `[p]setmyutc 2`

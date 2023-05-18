@@ -19,8 +19,8 @@ from utils import checks
 from utils.SimplePaginator import SimplePaginator
 from asyncio import ensure_future
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class CustomFFmpegPCMAudio(FFmpegPCMAudio):

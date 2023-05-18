@@ -8,8 +8,8 @@ import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class Quoting(commands.Cog):

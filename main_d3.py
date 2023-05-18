@@ -43,8 +43,8 @@ def setup_logger(logger_name, level=logging.INFO):
 # handlers it already had and replace with new ones initialized above
 setup_logger("info", logging.INFO)
 setup_logger("error", logging.ERROR)
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 ch = logging.StreamHandler()
 ch.setFormatter(formatter)
 logging.getLogger('').addHandler(ch)

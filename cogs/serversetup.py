@@ -18,8 +18,8 @@ from models.antiraid import ArGuild, ArManager
 from models.moderation import Blacklist, ModManager
 from models.serversetup import (Guild, WelcomeMsg, SSManager)
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class Serversetup(commands.Cog):

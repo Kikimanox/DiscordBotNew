@@ -16,8 +16,8 @@ from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
 from models.react_command_to_delete import CommandOwner
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class Ignorethis(commands.Cog):

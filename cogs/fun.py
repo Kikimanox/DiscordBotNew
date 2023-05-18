@@ -19,8 +19,8 @@ from utils.dataIOa import dataIOa
 conf = dataIOa.load_json('settings/claims_settings.json')
 possible_for_bot = conf['use_these']
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class Fun(commands.Cog):

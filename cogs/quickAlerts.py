@@ -13,8 +13,8 @@ import utils.timeStuff as tutils
 from models.quickAlerts import QuickAlerts
 from models.views import AlertSelectMenuView
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 def get_human_readable_timedelta(seconds):

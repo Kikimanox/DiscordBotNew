@@ -17,8 +17,8 @@ from models.moderation import (Reminderstbl, Actions)
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 def bot_pfx(bot, _message):
