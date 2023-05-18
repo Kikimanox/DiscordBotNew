@@ -217,15 +217,16 @@ class Reminders(commands.Cog):
         record = Reminderstbl.select().where(Reminderstbl.expires_on < (now + datetime.timedelta(days=days))).order_by(
             +Reminderstbl.expires_on
         ).limit(1)
-        logger.info(f"Record is: {record}")
         if record:
+            logger.info("Found record...")
             record_dict = record.dicts()[0]
+            logger.info(f"Original Record dict is: {record_dict}")
             if type(record_dict['expires_on']) == str:
                 record_dict['expires_on'] = dateutil.parser.parse(record_dict['expires_on'])
             record_dict['executed_on'] = record_dict['executed_on'].replace(tzinfo=datetime.timezone.utc)
             # record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
             # record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
-            logger.info(f"Record dict is {record_dict}")
+            logger.info(f"New Record dict is {record_dict}")
             tim = Timer(record=record_dict)
             logger.info(f"returning timer made from record_dict: {tim}")
             return tim
