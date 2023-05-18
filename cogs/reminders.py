@@ -151,6 +151,9 @@ class Reminders(commands.Cog):
             try:
                 if type(rm.expires_on) == str:
                     rm.expires_on = dateutil.parser.parse(rm.expires_on)
+                if type(rm.executed_on) == str:
+                    rm.executed_on = dateutil.parser.parse(rm.executed_on)
+                rm.expires_on = rm.expires_on.replace(tzinfo=datetime.timezone.utc)
                 rm.executed_on = rm.executed_on.replace(tzinfo=datetime.timezone.utc)
             except Exception as ex:
                 error_logger.error(ex)
@@ -223,6 +226,10 @@ class Reminders(commands.Cog):
             logger.info(f"Original Record dict is: {record_dict}")
             if type(record_dict['expires_on']) == str:
                 record_dict['expires_on'] = dateutil.parser.parse(record_dict['expires_on'])
+            if type(record_dict['executed_on']) == str:
+                record_dict['executed_on'] = dateutil.parser.parse(record_dict['executed_on== '])
+
+            record_dict['expires_on'] = record_dict['expires_on'].replace(tzinfo=datetime.timezone.utc)
             record_dict['executed_on'] = record_dict['executed_on'].replace(tzinfo=datetime.timezone.utc)
             # record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
             # record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
@@ -277,7 +284,10 @@ class Reminders(commands.Cog):
             try:
                 if type(rem.expires_on) == str:
                     rem.expires_on = dateutil.parser.parse(rem.expires_on)
+                if type(rem.executed_on) == str:
+                    rem.executed_on = dateutil.parser.parse(rem.executed_on)
                 rem.executed_on = rem.executed_on.replace(tzinfo=datetime.timezone.utc)
+                rem.expires_on = rem.expires_on.replace(tzinfo=datetime.timezone.utc)
             except Exception as ex:
                 error_logger.error(ex)
 
