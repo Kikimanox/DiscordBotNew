@@ -217,7 +217,7 @@ class Reminders(commands.Cog):
         record = Reminderstbl.select().where(Reminderstbl.expires_on < (now + datetime.timedelta(days=days))).order_by(
             +Reminderstbl.expires_on
         ).limit(1)
-        logger.info(f"Record {record}")
+        logger.info(f"Record is: {record}")
         if record:
             record_dict = record.dicts()[0]
             if type(record_dict['expires_on']) == str:
