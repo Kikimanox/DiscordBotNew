@@ -463,7 +463,7 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
             if not massbanning:
                 bot.just_banned_by_bot[f'{member.id}_{guild.id}'] = 1
             # await member.ban(reason=reason, delete_message_days=removeMsgs)
-            await guild.ban(member, reason=reason, delete_message_days=removeMsgs)
+            await guild.ban(member, reason=reason, delete_message_seconds=removeMsgs * 24 * 60 * 60)
             if softban:
                 # await member.unban(reason='Softbanned')
                 await guild.unban(member, reason='Softbanned')

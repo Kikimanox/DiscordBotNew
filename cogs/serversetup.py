@@ -981,7 +981,7 @@ class Serversetup(commands.Cog):
             try:
                 self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] = 2
                 await member.ban(reason="User joined when they were blacklisted. Removed the user from "
-                                        "the datbase blacklist", delete_message_days=0)
+                                        "the datbase blacklist", delete_message_seconds=0)
                 Blacklist.delete().where(Blacklist.user_id == member.id, Blacklist.guild == member.guild.id).execute()
                 self.bot.moderation_blacklist = ModManager.return_blacklist_lists()
             except:
