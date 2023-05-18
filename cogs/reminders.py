@@ -69,7 +69,9 @@ class Reminders(commands.Cog):
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
 
     async def execute_reminder(self, timer: Timer):
+        logger.info(f"Inside execute_reminder for timer {timer}")
         if timer.meta.startswith('mute'):
+            logger.info("enterintg unmuting logic")
             guild = self.bot.get_guild(timer.guild)
             if guild:
                 user = guild.get_member(timer.user_id)
@@ -83,8 +85,10 @@ class Reminders(commands.Cog):
                         can_even_execute = False
                     if can_even_execute:
                         no_dm = bool(timer.meta == 'mute_nodm')
+                        logger.info(f"executing dutils.unmute_user_auto: {user}, {guild}, bot, {no_dm}")
                         await dutils.unmute_user_auto(user, guild, self.bot, no_dm,
                                                       self.bot.user, "Auto")
+            logger.info("finished unmuting logic")
         if timer.meta.startswith('reminder_'):
             exec_user = self.bot.get_user(timer.executed_by)
             guild = self.bot.get_guild(timer.guild)
@@ -126,6 +130,8 @@ class Reminders(commands.Cog):
                         except:
                             pass
 
+        logger.info(f"Leaving execute_reminder for {timer}")
+
     async def short_timer_optimisation(self, seconds, timer):
         await asyncio.sleep(seconds)
         if not self.bot.from_serversetup:
@@ -134,6 +140,7 @@ class Reminders(commands.Cog):
         await self.call_timer(timer)
 
     async def call_timer(self, timer: Timer):
+        logger.info(f"Time to call timer {timer}")
         try:
             rm: Reminderstbl = Reminderstbl.get(Reminderstbl.id == timer.id)
             try:
@@ -143,26 +150,36 @@ class Reminders(commands.Cog):
             except Exception as ex:
                 error_logger.error(ex)
             # this is only for some weird race conciditons
+
+            logger.info(f"Got reminder for timer: {rm}")
             if timer.executed_on != rm.executed_on:
+                logger.info(f"Timer and rm was: timer.executed_on != rm.executed_on, cancellign task")
                 self._task.cancel()
                 self._task = self.bot.loop.create_task(self.dispatch_timers())
                 return
             if rm.periodic != 0:
+                logger.info(f"RM is periodic, time to increment it again: {rm}")
                 rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
                 rm.save()
+                logger.info(f"Periodic RM incremented: {rm}")
             else:
+                logger.info(f"Deleting non periodic reminder instance")
                 rm.delete_instance()
-        except:
+        except Exception as ex:
+            logger.error(f"Empty exception in call_timer, just returning {ex}")
             return  # reminder should have been executed but it was deleted
             # and no other reminders have been created during that time. Just return here.
         if not self.bot.from_serversetup:
             if not self.tried_setup:
                 await self.set_server_stuff()
+        logger.info(f"Time to execute timer {timer}")
         await self.execute_reminder(timer)
+        logger.info(f"execute_reminder done inside call_timer {timer}")
 
     async def dispatch_timers(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
+        logger.info("In dispatch timers")
         try:
             while not self.bot.is_closed():
                 timer = await self.wait_for_active_timers(days=30)
@@ -170,10 +187,12 @@ class Reminders(commands.Cog):
                 self._current_timer = timer
                 now = discord.utils.utcnow()
 
+                logger.info(f"Timer {timer} checking if >= now")
                 if timer.expires >= now:
                     to_sleep = (timer.expires - now).total_seconds()
                     await asyncio.sleep(to_sleep)
 
+                logger.info(f"Timer {timer} running call_timer")
                 await self.call_timer(timer)
 
         except asyncio.CancelledError:
