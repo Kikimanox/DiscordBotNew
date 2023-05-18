@@ -227,7 +227,7 @@ class Reminders(commands.Cog):
             if type(record_dict['expires_on']) == str:
                 record_dict['expires_on'] = dateutil.parser.parse(record_dict['expires_on'])
             if type(record_dict['executed_on']) == str:
-                record_dict['executed_on'] = dateutil.parser.parse(record_dict['executed_on== '])
+                record_dict['executed_on'] = dateutil.parser.parse(record_dict['executed_on'])
 
             record_dict['expires_on'] = record_dict['expires_on'].replace(tzinfo=datetime.timezone.utc)
             record_dict['executed_on'] = record_dict['executed_on'].replace(tzinfo=datetime.timezone.utc)
