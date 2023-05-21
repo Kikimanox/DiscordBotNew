@@ -4,7 +4,7 @@ import asyncio
 import datetime
 import logging
 import traceback
-
+import dateutil.parser
 import discord
 from discord import Embed
 from discord.ext import commands
@@ -35,6 +35,11 @@ class Timer:
         self.expires: datetime.datetime = record['expires_on']
         self.executed_by: int = record['executed_by']
         self.executed_on: datetime.datetime = record['executed_on']
+
+    def __str__(self) -> str:
+        return f"Timer(id={self.id}, meta={self.meta}, guild={self.guild}, reason={self.reason}, " \
+               f"user_id={self.user_id}, len_str={self.len_str}, expires={self.expires}, " \
+               f"executed_by={self.executed_by}, executed_on={self.executed_on})"
 
     @classmethod
     def temporary(cls, *, expires: datetime.datetime, meta: str, guild: int, reason: str, user_id: int,
@@ -75,7 +80,9 @@ class Reminders(commands.Cog):
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
 
     async def execute_reminder(self, timer: Timer):
+        logger.info(f"Inside execute_reminder for timer {timer}")
         if timer.meta.startswith('mute'):
+            logger.info("enterintg unmuting logic")
             guild = self.bot.get_guild(timer.guild)
             if guild:
                 user = guild.get_member(timer.user_id)
@@ -89,8 +96,10 @@ class Reminders(commands.Cog):
                         can_even_execute = False
                     if can_even_execute:
                         no_dm = bool(timer.meta == 'mute_nodm')
+                        logger.info(f"executing dutils.unmute_user_auto: {user}, {guild}, bot, {no_dm}")
                         await dutils.unmute_user_auto(user, guild, self.bot, no_dm,
                                                       self.bot.user, "Auto")
+            logger.info("finished unmuting logic")
         if timer.meta.startswith('reminder_'):
             exec_user = self.bot.get_user(timer.executed_by)
             guild = self.bot.get_guild(timer.guild)
@@ -132,6 +141,8 @@ class Reminders(commands.Cog):
                         except:
                             pass
 
+        logger.info(f"Leaving execute_reminder for {timer}")
+
     async def short_timer_optimisation(self, seconds, timer):
         await asyncio.sleep(seconds)
         if not self.bot.from_serversetup:
@@ -140,65 +151,106 @@ class Reminders(commands.Cog):
         await self.call_timer(timer)
 
     async def call_timer(self, timer: Timer):
+        logger.info(f"Time to call timer {timer}")
         try:
             rm: Reminderstbl = Reminderstbl.get(Reminderstbl.id == timer.id)
+            try:
+                if type(rm.expires_on) == str:
+                    rm.expires_on = dateutil.parser.parse(rm.expires_on)
+                if type(rm.executed_on) == str:
+                    rm.executed_on = dateutil.parser.parse(rm.executed_on)
+                rm.expires_on = rm.expires_on.replace(tzinfo=datetime.timezone.utc)
+                rm.executed_on = rm.executed_on.replace(tzinfo=datetime.timezone.utc)
+            except Exception as ex:
+                error_logger.error(ex)
             # this is only for some weird race conciditons
+
+            logger.info(f"Got reminder for timer: {rm}")
             if timer.executed_on != rm.executed_on:
+                logger.info(f"Timer and rm was: timer.executed_on != rm.executed_on, cancellign task")
                 self._task.cancel()
                 self._task = self.bot.loop.create_task(self.dispatch_timers())
                 return
             if rm.periodic != 0:
+                logger.info(f"RM is periodic, time to increment it again: {rm}")
                 rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
                 rm.save()
+                logger.info(f"Periodic RM incremented: {rm}")
             else:
+                logger.info(f"Deleting non periodic reminder instance")
                 rm.delete_instance()
-        except:
+        except Exception as ex:
+            logger.error(f"Empty exception in call_timer, just returning {ex}")
             return  # reminder should have been executed but it was deleted
             # and no other reminders have been created during that time. Just return here.
         if not self.bot.from_serversetup:
             if not self.tried_setup:
                 await self.set_server_stuff()
+        logger.info(f"Time to execute timer {timer}")
         await self.execute_reminder(timer)
+        logger.info(f"execute_reminder done inside call_timer {timer}")
 
     async def dispatch_timers(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
+        logger.info("In dispatch timers")
         try:
             while not self.bot.is_closed():
-                timer = await self.wait_for_active_timers(days=40)
+                logger.info("---Inside while not self.bot.is_closed():, time to wait for active timer")
+                timer = await self.wait_for_active_timers(days=30)
                 timer.expires = timer.expires.replace(tzinfo=datetime.timezone.utc)
+                logger.info(f"---Got active timer: {timer}")
                 self._current_timer = timer
-                now = datetime.datetime.utcnow()
+                now = discord.utils.utcnow()
 
+                logger.info(f"Timer checking if >= now: {timer}")
                 if timer.expires >= now:
                     to_sleep = (timer.expires - now).total_seconds()
                     await asyncio.sleep(to_sleep)
 
+                logger.info(f"running call_timer for: {timer} ")
                 await self.call_timer(timer)
 
         except asyncio.CancelledError:
+            logger.info("In displatch timers: a timer with a shorter time has beeb found")
             raise  # a timer with a shorter time has beeb found
         except(OSError, discord.ConnectionClosed):
+            logger.info("In displatch timers: OSError, discord.ConnectionClosed")
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
     @staticmethod
     async def get_active_timer(days=7):
+        logger.info("Inside get_active_timer")
         now = datetime.datetime.utcnow()
         record = Reminderstbl.select().where(Reminderstbl.expires_on < (now + datetime.timedelta(days=days))).order_by(
             +Reminderstbl.expires_on
         ).limit(1)
-
         if record:
+            logger.info("Found record...")
             record_dict = record.dicts()[0]
-            record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
-            record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
-            return Timer(record=record_dict)
+            logger.info(f"Original Record dict is: {record_dict}")
+            if type(record_dict['expires_on']) == str:
+                record_dict['expires_on'] = dateutil.parser.parse(record_dict['expires_on'])
+            if type(record_dict['executed_on']) == str:
+                record_dict['executed_on'] = dateutil.parser.parse(record_dict['executed_on'])
+
+            record_dict['expires_on'] = record_dict['expires_on'].replace(tzinfo=datetime.timezone.utc)
+            record_dict['executed_on'] = record_dict['executed_on'].replace(tzinfo=datetime.timezone.utc)
+            # record_dict['expires_on'] = record_dict['expires_on'].astimezone(datetime.timezone.utc)
+            # record_dict['executed_on'] = record_dict['executed_on'].astimezone(datetime.timezone.utc)
+            logger.info(f"New Record dict is {record_dict}")
+            tim = Timer(record=record_dict)
+            logger.info(f"returning timer made from record_dict: {tim}")
+            return tim
         else:
+            logger.info("No record found, returning None in get_active_timer")
             return None
 
     async def wait_for_active_timers(self, days=7):
+        logger.info("Inside wait_for_active_timers")
         timer = await self.get_active_timer(days=days)
+        logger.info(f"get_active_timer returned {timer}")
         if timer is not None:
             self._have_data.set()
             return timer
@@ -206,9 +258,11 @@ class Reminders(commands.Cog):
         self._have_data.clear()
         self._current_timer = None
         await self._have_data.wait()
+        logger.info("_have_data was set (this is a print in wait_for_active_timers) ... running get_active_timer")
         return await self.get_active_timer(days=days)
 
     async def create_timer(self, *, expires_on, meta, gid, reason, uid, len_str, author_id, should_update=False):
+        logger.info("Inside create_timer")
         now = datetime.datetime.now(datetime.timezone.utc)
         max_datetime = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=1)
         if not expires_on:
@@ -233,6 +287,15 @@ class Reminders(commands.Cog):
             # due to race conditions with MUTE we check if it's still in the db
             rem = Reminderstbl.get(Reminderstbl.guild == gid,
                                    Reminderstbl.user_id == uid)
+            try:
+                if type(rem.expires_on) == str:
+                    rem.expires_on = dateutil.parser.parse(rem.expires_on)
+                if type(rem.executed_on) == str:
+                    rem.executed_on = dateutil.parser.parse(rem.executed_on)
+                rem.executed_on = rem.executed_on.replace(tzinfo=datetime.timezone.utc)
+                rem.expires_on = rem.expires_on.replace(tzinfo=datetime.timezone.utc)
+            except Exception as ex:
+                error_logger.error(ex)
 
             rem.len_str = len_str
             rem.expires_on = expires_on
@@ -246,26 +309,33 @@ class Reminders(commands.Cog):
             tim_id = Reminderstbl.insert(guild=gid, reason=reason, user_id=uid, len_str=len_str,
                                          expires_on=expires_on, executed_by=author_id, meta=meta).execute()
             timer.id = tim_id
-            timer.executed_on = (Reminderstbl.get_by_id(tim_id)).executed_on
+            timer.executed_on = (Reminderstbl.get_by_id(tim_id)).executed_on.replace(tzinfo=datetime.timezone.utc)
 
+        logger.info(f"Timer created: {timer}")
         if delta <= 30:
+            logger.info(f"We in short timer optimisation")
             self.bot.loop.create_task(self.short_timer_optimisation(delta, timer))
             return timer
 
         # only set the data check if it can be waited on
         if delta <= (86400 * 40):  # 40 days
+            logger.info(f"Delta ({delta}) is less than 40 days!")
             self._have_data.set()
 
         # check if this timer is earlier than our currently run timer
-        #error_logger.error(f"self._current_timer {self._current_timer}")
-        #error_logger.error(f"expires_on {expires_on}")
-        #if self._current_timer:
+        # error_logger.error(f"self._current_timer {self._current_timer}")
+        # error_logger.error(f"expires_on {expires_on}")
+        # if self._current_timer:
         #    error_logger.error(f"self._current_timer.expires {self._current_timer.expires}")
+        logger.info(f"Comparing self._current_timer: {self._current_timer} and "
+                    f"expires_on: {expires_on} and s._ct.exp")
         if self._current_timer and expires_on < self._current_timer.expires:
             # cancel the task and re-run it
+            logger.info("cancelling tasak and re-running it")
             self._task.cancel()
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
+        logger.info(f"Returning timer {timer}")
         return timer
 
     async def refresh_timers_after_a_while(self):
@@ -278,7 +348,7 @@ class Reminders(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.command(aliases=['mutc', 'setmyutc'])
     async def myutc(self, ctx, new_utc: float):
-        """Set your utc so you don't need to use UTC time for reminding
+        """Set your utc, so you don't need to use UTC time for reminding
 
         if your timezone is UTC+2 use:
         `[p]setmyutc 2`
@@ -343,7 +413,7 @@ class Reminders(commands.Cog):
 
         So you do `[p]rm take out the trash in 2h` instead of `[p]remind me take out the trash in 2h`
 
-        **If you want more info do `[p] remind`"""
+        **If you want more info do `[p]remind`"""
         await self.remindFunction(ctx, f'me {text}')
 
     @commands.cooldown(3, 4, commands.BucketType.user)
@@ -460,7 +530,7 @@ class Reminders(commands.Cog):
     async def removereminder(self, ctx, reminder_ids: commands.Greedy[int]):
         """Remove reminder(s) by id.
 
-        `[p]rmr 1`, `[p] rmr 1 2 5 6`"""
+        `[p]rmr 1`, `[p]rmr 1 2 5 6`"""
         if not reminder_ids:
             await ctx.send("You are either missing the argument <reminder_ids> or you have inputed some non intiger "
                            "(number) symbols.\nPlease see the examples on how to use this commands.")

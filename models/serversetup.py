@@ -15,8 +15,8 @@ from peewee import *
 
 from utils.dataIOa import dataIOa
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 DB = "data/serversetup.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})

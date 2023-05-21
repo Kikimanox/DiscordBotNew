@@ -5,8 +5,8 @@ from os import replace
 from os.path import splitext
 from random import randint
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 class DataIOa:

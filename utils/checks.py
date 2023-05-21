@@ -57,7 +57,7 @@ async def manage_emojis_check(
             isinstance(ctx.author, Member) and ctx.author.guild_permissions.manage_emojis)
 
 
-async def moderator_and_underground_idols_check(ctx):
+async def moderator_or_underground_idols_check(ctx):
     return await moderator_check(ctx) or await moderator_check_custom(ctx, 1099400199920693248)
 
 
@@ -124,8 +124,7 @@ async def custom_role_is_booster_check(
 async def onk_server_check(
         ctx: commands.Context
 ):
-    if ctx.guild.id != 695200821910044783:
-        return False
+    return ctx.guild.id == 695200821910044783
 
 
 async def light_server_check(ctx):

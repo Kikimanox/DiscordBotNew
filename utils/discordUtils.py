@@ -17,8 +17,8 @@ from models.moderation import (Reminderstbl, Actions)
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger('info')
+error_logger = logging.getLogger('error')
 
 
 def bot_pfx(bot, _message):
@@ -463,7 +463,7 @@ async def ban_function(ctx, user, reason="", removeMsgs=0, massbanning=False,
             if not massbanning:
                 bot.just_banned_by_bot[f'{member.id}_{guild.id}'] = 1
             # await member.ban(reason=reason, delete_message_days=removeMsgs)
-            await guild.ban(member, reason=reason, delete_message_days=removeMsgs)
+            await guild.ban(member, reason=reason, delete_message_seconds=removeMsgs * 24 * 60 * 60)
             if softban:
                 # await member.unban(reason='Softbanned')
                 await guild.unban(member, reason='Softbanned')
