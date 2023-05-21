@@ -27,6 +27,25 @@ img_regexp = r'<!--[\s\S]*?-->|(?P<url>(http(s?):)?\/?\/?[^,;" \n\t>]+?\.(jpg|gi
 url_regex = r'(?:https://)?\w+\.\S*[^.\s]'
 
 
+class CooldownModified:
+    def __init__(
+            self,
+            rate: float = 1,
+            per: float = 30
+    ):
+        """
+        :rtype: Optional[commands.Cooldown]
+        """
+        self.rate = rate
+        self.per = per
+
+    async def __call__(self, message: Message) -> Optional[commands.Cooldown]:
+        if message.author.id == 1234567:  # ID
+            return commands.Cooldown(self.rate, self.per)
+        else:
+            return None
+
+
 class ClubsCommand(commands.Cog):
     club_data: List[ClubData] = []
 
@@ -74,8 +93,13 @@ class ClubsCommand(commands.Cog):
         2nd highest number of pings
         3rd sorted alphabetically
         """
-        self.club_data = sorted(temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name))
+        self.club_data = sorted(temp_data,
+                                key=lambda x: (-x.member_count, -x.pings, x.club_name))
 
+    @commands.dynamic_cooldown(
+        type=commands.BucketType.user,
+        cooldown=CooldownModified()  # type: ignore
+    )
     @commands.command(
         name="pingclub",
         aliases=["ping"],
@@ -117,6 +141,10 @@ class ClubsCommand(commands.Cog):
                     )
             await ctx.send(embed=em, delete_after=60)
 
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user,
+    )
     @get_the_clubs.command(
         name="ping",
         description="ping a club"
@@ -278,7 +306,7 @@ class ClubsCommand(commands.Cog):
         result = await ctx.choose_value_with_button(
             content=f"Club `{club_name}` not found\n"
                     f"Is this the club?",
-            entries=similar_clubs,
+            entries=similar_clubs,  # type: ignore
             timeout=30
         )
 
