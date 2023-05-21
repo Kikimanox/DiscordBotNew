@@ -21,7 +21,7 @@ class ClubData:
     creator_id: Optional[int] = 0
     creator_name: Optional[str] = ""
     description: str = ""
-    pings: Optional[int] = 0
+    pings: int = 0
     member_count: int = 0
     image_url: str = ""
     members: List[int] = field(default_factory=list)
