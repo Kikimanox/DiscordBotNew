@@ -1,6 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from discord.ext import commands
+
+import aiofiles
+import json
+from discord.ext import commands, tasks
+from pathlib import Path
+from typing import List, Optional
+
+from models.club_data import ClubData
 
 from discord import Embed
 from datetime import datetime
@@ -16,11 +23,54 @@ error_logger = logging.getLogger("error")
 
 
 class ClubsCommand(commands.Cog):
+    club_data: List[ClubData] = []
+
     def __init__(
             self,
             bot: KanaIsTheBest
     ):
         self.bot = bot
+
+        self.club_data_path = Path(__file__).cwd() / "data" / "clubs.json"
+
+    async def cog_load(self) -> None:
+        await self.club_data_initialization()
+
+    async def cog_unload(self):
+        self.refresh_club_data_to_cache.stop()
+
+    async def club_data_initialization(self):
+        if not self.club_data_path.exists():
+            # If it doesn't exist, create the file
+            async with aiofiles.open(self.club_data_path, mode="w+", encoding="utf-8") as file:
+                await file.write(json.dumps({}))
+            return
+
+        await self.refresh_club_data_to_cache.start()
+
+    @tasks.loop(hours=24, reconnect=True)
+    async def refresh_club_data_to_cache(self):
+        async with aiofiles.open(self.club_data_path, mode="r+", encoding="utf-8") as file:
+            content = await file.read()
+            data: dict = json.loads(content)
+        temp_data: List[ClubData] = []
+        for key, value in data.items():
+            value = ClubData(
+                club_name=key,
+                club_data=value
+            )
+            temp_data.append(value)
+        """
+        Multiple sort, since the reverse=False we need to reverse the member count and
+        pings too.
+
+        Now it would sort with:
+        1st highest number of members
+        2nd highest number of pings
+        3rd sorted alphabetically
+        """
+        self.club_data = sorted(
+            temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name))
 
     @commands.command(
         name="pingclub",
