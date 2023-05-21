@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from models.club_data import ClubData
 
-from discord import Embed
+from discord import Embed, app_commands, Interaction
 from datetime import datetime
 
 import logging
@@ -46,7 +46,7 @@ class ClubsCommand(commands.Cog):
                 await file.write(json.dumps({}))
             return
 
-        await self.refresh_club_data_to_cache.start()
+        self.refresh_club_data_to_cache.start()
 
     @tasks.loop(hours=24, reconnect=True)
     async def refresh_club_data_to_cache(self):
@@ -69,15 +69,18 @@ class ClubsCommand(commands.Cog):
         2nd highest number of pings
         3rd sorted alphabetically
         """
-        self.club_data = sorted(
-            temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name))
+        self.club_data = sorted(temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name))
 
     @commands.command(
         name="pingclub",
         aliases=["ping"],
         description="ping a club"
     )
-    async def ping_a_club_normal(self, ctx: Context):
+    async def ping_a_club_normal(
+            self,
+            ctx: Context,
+            club_name: str
+    ):
         await ctx.send("here")
 
     @commands.hybrid_group(
@@ -109,8 +112,52 @@ class ClubsCommand(commands.Cog):
         name="ping",
         description="ping a club"
     )
-    async def ping_a_club_v2(self, ctx: Context):
+    @app_commands.describe(
+        club_name="Name of the club"
+    )
+    async def ping_a_club_v2(
+            self,
+            ctx: Context,
+            club_name: str
+    ):
         await ctx.send("here2")
+
+    @ping_a_club_v2.autocomplete(name="club_name")
+    async def autocomplete_club_names(
+            self,
+            interaction: Interaction,
+            current: str
+    ):
+        club_list: List[app_commands.Choice] = []
+        author_id = interaction.user.id
+        command_name = interaction.command.name
+
+        for club in self.club_data:
+            user_check = club.check_if_author_is_in_the_club(
+                author_id=author_id)
+
+            if command_name == "ping" and not user_check:
+                continue
+
+            if len(current) == 0:
+                item = app_commands.Choice(
+                    name=club.club_name,
+                    value=club.club_name
+                )
+                club_list.append(item)
+            else:
+                if current.lower() in club.club_name.lower() or \
+                   current.lower() in club.description.lower():
+
+                    item = app_commands.Choice(
+                        name=club.club_name,
+                        value=club.club_name
+                    )
+                    club_list.append(item)
+            if len(club_list) > 24:
+                break
+
+        return club_list
 
 
 async def setup(
