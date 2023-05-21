@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from utils.club_data import ClubData
 
-from discord import Embed, app_commands, Interaction
+from discord import Embed, app_commands, Interaction, Message
 from datetime import datetime
 
 import logging
@@ -141,6 +141,24 @@ class ClubsCommand(commands.Cog):
             club_name: str,
             link: Optional[str] = None
     ):
+        async def send_message_via_normal_or_channel(
+                searched_for_related_club: bool,
+                message_content: str,
+                delete_after: Optional[float] = None
+        ) -> Message:
+            if searched_for_related_club:
+                return_message = await ctx.channel_send(
+                    content=message_content,
+                    delete_after=delete_after
+                )
+            else:
+                return_message = await ctx.send(
+                    content=message_content,
+                    delete_after=delete_after
+                )
+
+            return return_message
+
         # Check if it is a normal command and if it has replied message
         # If there is replied message, get the link from there
         if link is None:
@@ -153,6 +171,8 @@ class ClubsCommand(commands.Cog):
 
         # Search for the club with its name
         club = await self.search_the_club_for(club_name=club_name)
+
+        search_for_related_club = False
         if club is None:
             # If there is no club based from name, search for the closest club based from name
             similar_club = await self.fetch_similar_clubs(ctx=ctx, club_name=club_name)
@@ -161,27 +181,42 @@ class ClubsCommand(commands.Cog):
 
             club = similar_club
             club_name = similar_club.club_name
+            search_for_related_club = True
 
         check_author = club.check_if_author_is_in_the_club(
             author_id=ctx.author.id, ctx=ctx)
 
         if not check_author:
-            await ctx.send(content=f"{ctx.author.mention} is not part of {club_name}. "
-                           "Please join the club {club_name}",
-                           delete_after=10)
+            content = f"{ctx.author.mention} is not part of {club_name}. "
+            "Please join the club {club_name}"
+            await send_message_via_normal_or_channel(
+                searched_for_related_club=search_for_related_club,
+                message_content=content,
+                delete_after=10
+            )
             return
 
         check_blacklisted = club.check_if_author_is_blacklisted(
             author_id=ctx.author.id)
         if check_blacklisted:
-            await ctx.send(content=f"`{ctx.author.name}#{ctx.author.discriminator}` "
-                           "can't perform the ping club for the"
-                                   f"club `{club_name}`", delete_after=15)
+            content = f"`{ctx.author.name}#{ctx.author.discriminator}` " \
+                      "can't perform the ping club for the" \
+                      f"club `{club_name}`"
+            await send_message_via_normal_or_channel(
+                searched_for_related_club=search_for_related_club,
+                message_content=content,
+                delete_after=15
+            )
             return
 
         member_mentions = club.create_member_mention_list(ctx)
         if member_mentions is None:
-            await ctx.send("Error in the number of members", delete_after=10)
+            content = "Error in the number of members"
+            await send_message_via_normal_or_channel(
+                searched_for_related_club=search_for_related_club,
+                message_content=content,
+                delete_after=10
+            )
             return
 
         await club.update_ping(file_path=self.club_data_path)
@@ -190,15 +225,13 @@ class ClubsCommand(commands.Cog):
         for index, member_mention in enumerate(member_mentions):
             msg = f"Club: `{club_name}`\n" \
                   f"{member_mention}"
+            if link is not None:
+                msg += f"\n{link}"
 
-            if index == 0:
-                if link is not None:
-                    msg += f"\n{link}"
+            if index == 0 and not search_for_related_club:
                 message = await ctx.send(content=msg)
             else:
                 # This is for the interaction, so it won't be reply chain
-                if link is not None:
-                    msg += f"\n<{link}>"
                 message = await ctx.channel_send(content=msg)
             message_list.append(message)
 
