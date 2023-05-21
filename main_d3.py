@@ -13,6 +13,7 @@ import traceback
 import discord
 from discord import Embed, Client, Reaction, VoiceClient, app_commands, Activity, ActivityType
 from discord.ext import commands
+from bot import KanaIsTheBest
 
 import utils.discordUtils as dutils
 from models.afking import AfkManager
@@ -75,105 +76,7 @@ def get_pre_or_mention(_bot, _message):
 
 
 VoiceClient.warn_nacl = False
-bot = commands.Bot(command_prefix=get_pre_or_mention, intents=intents)
-###
-bot.all_cmds = {}
-bot.running_tasks = []
-bot.from_serversetup = {}
-bot.running_chapters = {}
-bot.chapters_json = {}
-bot.anti_raid = ArManager.get_ar_data()
-bot.currently_afk = AfkManager.return_whole_afk_list()
-bot.moderation_blacklist = {-1: 'dummy'}
-bot.reaction_roles = RRManager.return_whole_rr_list()
-###
-bot.config = dataIOa.load_json('config.json')
-bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
-bot.help_command = Help()
-bot.before_run_cmd = 0
-bot.just_banned_by_bot = {}
-bot.just_kicked_by_bot = {}
-bot.just_muted_by_bot = {}
-bot.banned_cuz_blacklist = {}
-
-bot.emote_servers_tmp = [
-    777942981197299732,
-    777943001539411968,
-    777943027241975828,
-    777943043223060511,
-    777943082300604447,
-    777943112764489769,
-    1102341791312773191,
-    1102341945499586600,
-    1102341791312773191
-]
-bot.emote_servers_perm = [
-    777943294353080380
-]
-
-
-@bot.event
-async def on_ready():
-    ###
-    if hasattr(bot, 'all_cmds') and not bot.all_cmds: bot.all_cmds = {}
-    if hasattr(bot, 'running_tasks') and not bot.running_tasks: bot.running_tasks = []
-    if hasattr(bot, 'from_serversetup') and not bot.from_serversetup: bot.from_serversetup = {}
-    if hasattr(bot, 'running_chapters') and not bot.from_serversetup: bot.running_chapters = {}
-    if hasattr(bot, 'chapters_json') and not bot.from_serversetup: bot.chapters_json = {}
-    if hasattr(bot, 'anti_raid') and not bot.anti_raid: bot.anti_raid = ArManager.get_ar_data()
-    if hasattr(bot, 'currently_afk') and not bot.currently_afk: bot.currently_afk = AfkManager.return_whole_afk_list()
-    if hasattr(bot, 'moderation_blacklist') and not bot.moderation_blacklist: bot.moderation_blacklist = {-1: 'dummy'}
-    if hasattr(bot, 'reaction_roles') and not bot.reaction_roles: bot.reaction_roles = RRManager.return_whole_rr_list()
-    ###
-    bot.config = dataIOa.load_json('config.json')
-    bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
-    bot.uptime = datetime.datetime.utcnow()
-    # bot.ranCommands = 0
-    bot.help_command = Help()
-
-    bot.help_command = Help()
-    logger.info("Bot logged in and ready.")
-    print(discord.utils.oauth_url(bot.user.id) + '&permissions=8')
-    print('------------------------------------------')
-    if os.path.isfile("restart.json"):
-        restartData = dataIOa.load_json("restart.json")
-        try:
-            guild = bot.get_guild(restartData["guild"])
-            channel = guild.get_channel(restartData["channel"])
-            await channel.send("Restarted.")
-        except:
-            print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-            trace = traceback.format_exc()
-            error_logger.error(trace)
-            print(trace)
-            print("couldn't send restarted message to channel.")
-        finally:
-            os.remove("restart.json")
-
-    await load_all_cogs_except(['_newCogTemplate', 'manga', 'bets'])
-    if os.name != 'nt':
-        os.setpgrp()
-
-    config = dataIOa.load_json("config.json")
-
-    # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
-    # if config['CLIENT_ID'] in [705157369130123346, 589921811349635072]:
-    #     await bot.load_extension("cogs.manga")
-    #     await bot.load_extension("cogs.bets")
-
-    # The Prefix comma isn't visible, shows as `.` instead of `,`
-    # activity = Activity(name=f"\"{Prefix}\" for the Prefix", type=ActivityType.listening)
-    # await bot.change_presence(activity=activity)
-
-
-# @bot.event
-# async def on_reaction_add(reaction: Reaction, user: Client):
-#     if user != bot.user:
-#         x_mark = '\U0000274c'
-#         if str(reaction.emoji) == x_mark:
-#             if reaction.message.author.id == bot.user.id:
-#                 message = reaction.message
-#                 await message.delete()
+bot = KanaIsTheBest(command_prefix=get_pre_or_mention, intents=intents)
 
 
 def exit_bot(self):
@@ -581,65 +484,6 @@ async def shutdown(ctx):
 
 
 @bot.event
-async def on_command_error(
-        ctx: commands.Context,
-        error
-):
-    if not bot.is_ready():
-        await bot.wait_until_ready()
-    error = getattr(error, "original", error)
-    if isinstance(error, commands.errors.CommandNotFound):
-        pass
-    elif isinstance(error, commands.MissingRole):
-        await ctx.send(f"You don't have the right role to invoke the command")
-    elif isinstance(error, app_commands.MissingRole):
-        await ctx.send(f"You don't have the right role to invoke the command")
-    elif isinstance(error, commands.CommandInvokeError):
-        # print("Command invoke error exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
-        logger.info("Command invoke error exception in command '{}', "
-                    "{}".format(ctx.command.qualified_name, str(error)))
-    elif isinstance(error, commands.CommandOnCooldown):
-        extra = ""
-        time_until = float("{:.2f}".format(error.retry_after))
-        await ctx.send(f"⏲ Command on cooldown, try again"
-                       f" in **{time_until}s**" + extra, delete_after=5)
-    elif isinstance(error, commands.errors.CheckFailure):
-        if ctx.command.qualified_name == 'getrole booster':
-            return await ctx.send("⚠ Only server boosters may use this command.")
-        await ctx.send("⚠ You don't have permissions to use that command.")
-        error_logger.error('CMD ERROR NoPerms'
-                           f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
-    elif isinstance(error, commands.errors.MissingRequiredArgument):
-        formatter = Help()
-        help_msg = await formatter.format_help_for(ctx, ctx.command)
-        await ctx.send(content="Missing required arguments. Command info:", embed=help_msg[0])
-        error_logger.error('CMD ERROR MissingArgs '
-                           f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
-    elif isinstance(error, commands.errors.BadArgument):
-        formatter = Help()
-        help_msg = await formatter.format_help_for(ctx, ctx.command)
-        await ctx.send(content="⚠ You have provided an invalid argument. Command info:", embed=help_msg[0])
-        error_logger.error('CMD ERROR BadArg '
-                           f'{ctx.author} ({ctx.author.id}) tried to invoke: {ctx.message.content}')
-    elif isinstance(error, commands.errors.MaxConcurrencyReached):
-        if ctx.command.qualified_name == 'getrole booster':
-            return await ctx.send(bot.config['BOOSTER_CUSTOM_ROLES_GETTER'][str(ctx.guild.id)]['WARN_MSG'])
-        await ctx.send(f"This command has reached the max number of concurrent jobs: "
-                       f"`{error.number}`. Please wait for the running commands to finish before requesting again.")
-    else:
-        await ctx.send("An unknown error occurred with the `{}` command.".format(ctx.command.name))
-        trace = traceback.format_exception(type(error), error, error.__traceback__)
-        trace_str = "".join(trace)
-        print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        print(trace_str)
-        print("Other exception in command '{}', {}".format(ctx.command.qualified_name, str(error)))
-        error_logger.error(
-            f"Command invoked but FAILED: {ctx.command} | By user: {ctx.author} (id: {str(ctx.author.id)}) "
-            f"| Message: {ctx.message.content} | "
-            f"Error: {trace_str}")
-
-
-@bot.event
 async def on_error(event, *args, **kwargs):
     if not bot.is_ready():
         await bot.wait_until_ready()
@@ -663,13 +507,20 @@ async def on_error(event, *args, **kwargs):
 async def before_any_command(ctx):
     if not bot.is_ready():
         await bot.wait_until_ready()
-    if hasattr(bot, 'logger'):
-        if ctx.guild:
-            gg = f' In {ctx.guild} (id: {ctx.guild.id}) |'
-        else:
-            gg = ' In dms'
-        logger.info(f"Command invoked: {ctx.command} | By user: {str(ctx.author)} (id: {str(ctx.author.id)}) "
-                    f"|{gg} Message: {ctx.message.content}")
+
+    if ctx.guild:
+        gg = f' In {ctx.guild} (id: {ctx.guild.id}) |'
+    else:
+        gg = ' In dms'
+
+    if ctx.interaction is not None:
+        command_type = "App command"
+        content = ctx.interaction.data
+    else:
+        command_type = "Command"
+        content = ctx.message.content
+    logger.info(f"{command_type} invoked: {ctx.command} | By user: {str(ctx.author)} "
+                f"(id: {str(ctx.author.id)}) |{gg} Message: {content}")
     bot.before_run_cmd += 1
 
 
@@ -722,8 +573,9 @@ if __name__ == '__main__':
         try:
             print(f'Connected: ---{datetime.datetime.utcnow().strftime("%c")}---')
             asyncio.run(main())
-            print(f'Disconected: ---{datetime.datetime.utcnow().strftime("%c")}---')
-        except Exception as e:
+            print(f'Disconnected: ---{datetime.datetime.utcnow().strftime("%c")}---')
+        except Exception as ex:
+            error_logger.error(ex)
             print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             traceback.print_exc()
         print("Waiting for restart (30 seconds)")
