@@ -208,11 +208,15 @@ class ClubsCommand(commands.Cog):
                 timeout=15,
                 check_same_user=True
             )
+            if link_message is None:
+                return
             result = re.findall(url_regex, link_message.content)
             result_link = result[0] if len(result) > 0 else None
 
             # Edit the earlier message if the link was added
             if result_link is not None:
+                # If found the link, removed the embed for much easier interface
+                await link_message.edit(suppress=True)
                 for message in message_list:
                     content = message.content
                     content += f"\n{result_link}"
