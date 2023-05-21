@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING
 
 import aiofiles
 import json
+import re
 from discord.ext import commands, tasks
 from pathlib import Path
+from difflib import SequenceMatcher
 from typing import List, Optional
 
 from utils.club_data import ClubData
@@ -20,6 +22,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("info")
 error_logger = logging.getLogger("error")
+
+img_regexp = r'<!--[\s\S]*?-->|(?P<url>(http(s?):)?\/?\/?[^,;" \n\t>]+?\.(jpg|gif|png))'
+url_regex = r'(?:https://)?\w+\.\S*[^.\s]'
 
 
 class ClubsCommand(commands.Cog):
@@ -79,9 +84,13 @@ class ClubsCommand(commands.Cog):
     async def ping_a_club_normal(
             self,
             ctx: Context,
-            club_name: str
+            club_name: str,
+            *,
+            link: Optional[str] = None
     ):
-        await ctx.send("here")
+        await self.pinging_the_club(
+            ctx, club_name, link
+        )
 
     @commands.hybrid_group(
         name="club",
@@ -113,14 +122,144 @@ class ClubsCommand(commands.Cog):
         description="ping a club"
     )
     @app_commands.describe(
-        club_name="Name of the club"
+        club_name="Name of the club",
+        link="Link to share"
     )
     async def ping_a_club_v2(
             self,
             ctx: Context,
-            club_name: str
+            club_name: str,
+            link: Optional[str] = None
     ):
-        await ctx.send("here2")
+        await self.pinging_the_club(
+            ctx, club_name, link
+        )
+
+    async def pinging_the_club(
+            self,
+            ctx: Context,
+            club_name: str,
+            link: Optional[str] = None
+    ):
+        # Check if it is a normal command and if it has replied message
+        # If there is replied message, get the link from there
+        if link is None:
+            reply_message_link = None
+            if ctx.interaction is None and ctx.message.reference is not None:
+                content = ctx.message.reference.cached_message.content
+                result = re.findall(url_regex, content)
+                reply_message_link = result[0] if len(result) > 0 else None
+            link = reply_message_link
+
+        # Search for the club with its name
+        club = await self.search_the_club_for(club_name=club_name)
+        if club is None:
+            # If there is no club based from name, search for the closest club based from name
+            similar_club = await self.fetch_similar_clubs(ctx=ctx, club_name=club_name)
+            if similar_club is None:
+                return
+
+            club = similar_club
+            club_name = similar_club.club_name
+
+        check_author = club.check_if_author_is_in_the_club(
+            author_id=ctx.author.id, ctx=ctx)
+
+        if not check_author:
+            await ctx.send(content=f"{ctx.author.mention} is not part of {club_name}. "
+                           "Please join the club {club_name}",
+                           delete_after=10)
+            return
+
+        check_blacklisted = club.check_if_author_is_blacklisted(
+            author_id=ctx.author.id)
+        if check_blacklisted:
+            await ctx.send(content=f"`{ctx.author.name}#{ctx.author.discriminator}` "
+                           "can't perform the ping club for the"
+                                   f"club `{club_name}`", delete_after=15)
+            return
+
+        member_mentions = club.create_member_mention_list(ctx)
+        if member_mentions is None:
+            await ctx.send("Error in the number of members", delete_after=10)
+            return
+
+        await club.update_ping(file_path=self.club_data_path)
+
+        message_list = []
+        for index, member_mention in enumerate(member_mentions):
+            msg = f"Club: `{club_name}`\n" \
+                  f"{member_mention}"
+
+            if index == 0:
+                if link is not None:
+                    msg += f"\n{link}"
+                message = await ctx.send(content=msg)
+            else:
+                # This is for the interaction, so it won't be reply chain
+                if link is not None:
+                    msg += f"\n<{link}>"
+                message = await ctx.channel_send(content=msg)
+            message_list.append(message)
+
+        if len(message_list) > 0 and link is None:
+            # If there is no link, wait for 15 seconds and wait for the link
+            link_message = await ctx.wait_for_message(
+                timeout=15,
+                check_same_user=True
+            )
+            result = re.findall(url_regex, link_message.content)
+            result_link = result[0] if len(result) > 0 else None
+
+            # Edit the earlier message if the link was added
+            if result_link is not None:
+                for message in message_list:
+                    content = message.content
+                    content += f"\n{result_link}"
+                    await message.edit(
+                        content=content
+                    )
+
+    async def search_the_club_for(
+            self,
+            club_name: str
+    ) -> Optional[ClubData]:
+        clubs = [club for club in self.club_data if club.club_name.lower()
+                 == club_name.lower()]
+        if len(clubs) == 0:
+            return None
+        else:
+            return clubs[0]
+
+    async def fetch_similar_clubs(
+            self,
+            ctx: Context,
+            club_name: str
+    ) -> Optional[ClubData]:
+        similar_clubs = await self.find_similar_clubs(club_name=club_name)
+
+        result = await ctx.choose_value_with_button(
+            content=f"Club `{club_name}` not found\n"
+                    f"Is this the club?",
+            entries=similar_clubs,
+            timeout=30
+        )
+
+        club = await self.search_the_club_for(club_name=f"{result}")
+        return club
+
+    async def find_similar_clubs(
+            self,
+            club_name: str,
+            number_of_similar_clubs: int = 5
+    ) -> List[str]:
+        similarity = []
+        for club in self.club_data:
+            ratio = SequenceMatcher(None, club_name, club.club_name).ratio()
+            similarity.append((ratio, club.club_name))
+        similarity = sorted(similarity, reverse=True)
+        tmp = [name for ratio, name in similarity]
+        return tmp[0:number_of_similar_clubs]
 
     @ping_a_club_v2.autocomplete(name="club_name")
     async def autocomplete_club_names(
@@ -147,8 +286,7 @@ class ClubsCommand(commands.Cog):
                 club_list.append(item)
             else:
                 if current.lower() in club.club_name.lower() or \
-                   current.lower() in club.description.lower():
-
+                        current.lower() in club.description.lower():
                     item = app_commands.Choice(
                         name=club.club_name,
                         value=club.club_name

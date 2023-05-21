@@ -20,7 +20,7 @@ class ClubData:
     club_data: dict
     creator_id: Optional[int] = 0
     creator_name: Optional[str] = ""
-    description: Optional[str] = ""
+    description: str = ""
     pings: Optional[int] = 0
     member_count: int = 0
     image_url: str = ""
@@ -71,9 +71,9 @@ class ClubData:
 
     def check_if_all_of_list_exist_on_this_club(
             self,
-            memberList: List[int]
+            member_list: List[int]
     ) -> bool:
-        check = all(item in self.members for item in memberList)
+        check = all(item in self.members for item in member_list)
         return check
 
     def create_member_mention_list(
