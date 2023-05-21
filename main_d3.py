@@ -11,17 +11,13 @@ import time
 import traceback
 
 import discord
-from discord import Embed, Client, Reaction, VoiceClient, app_commands, Activity, ActivityType
+from discord import Embed, VoiceClient, app_commands
 from discord.ext import commands
 from bot import KanaIsTheBest
 
 import utils.discordUtils as dutils
-from models.afking import AfkManager
-from models.antiraid import ArManager
-from models.reactionroles import RRManager
 from utils.checks import owner_check, admin_check, moderator_check_no_ctx
 from utils.dataIOa import dataIOa
-from utils.help import Help
 
 formatter = logging.Formatter('%(asctime)s - %(threadName)s - %(name)s - %(levelname)s - %(message)s')
 if not os.path.exists("logs"):
@@ -44,8 +40,8 @@ def setup_logger(logger_name, level=logging.INFO):
 # handlers it already had and replace with new ones initialized above
 setup_logger("info", logging.INFO)
 setup_logger("error", logging.ERROR)
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
 ch = logging.StreamHandler()
 ch.setFormatter(formatter)
 logging.getLogger('').addHandler(ch)
@@ -555,7 +551,7 @@ async def load_all_cogs_except(cogs_to_exclude):
             if extension[:-3] not in cogs_to_exclude:
                 try:
                     await bot.load_extension("cogs." + extension[:-3])
-                except Exception as e:
+                except Exception:
                     print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
                     traceback.print_exc()
 

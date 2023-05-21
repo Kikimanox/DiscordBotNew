@@ -71,7 +71,7 @@ class KanaIsTheBest(commands.Bot):
         # if os.name != "nt":
         #     os.setpgrp()
 
-        config = dataIOa.load_json("config.json")
+        # config = dataIOa.load_json("config.json")
 
         # Temporarily adding manga and bets only to ai bot ~~and dev bot~~
         # if config["CLIENT_ID"] in [705157369130123346, 589921811349635072]:
