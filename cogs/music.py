@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import os
 import asyncio
 import discord
@@ -10,6 +13,10 @@ import threading
 from utils import checks
 from utils.SimplePaginator import SimplePaginator
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 def run_coroutine_in_new_loop(coroutine):
     loop = asyncio.new_event_loop()
@@ -19,7 +26,10 @@ def run_coroutine_in_new_loop(coroutine):
 
 
 class Music(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: KanaIsTheBest
+    ):
         self.bot = bot
         self.tmp_folder = "tmp"
         self.queues = {}
@@ -126,7 +136,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['pm'])
-    async def playmultiple(self, ctx, *, query):
+    async def playmultiple(self, ctx: Context, *, query):
         """
         Add multiple songs to the queue (delimiter: `|`)
         Example:
@@ -141,7 +151,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['p', 'enque'])
-    async def play(self, ctx, *, query):
+    async def play(self, ctx: Context, *, query):
         """
         Add song to the playing queue. Input can be yt link/id or search string.
         Examples:
@@ -220,7 +230,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['pp'])
-    async def playplaylist(self, ctx, *, query):
+    async def playplaylist(self, ctx: Context, *, query):
         """
         Same as play but only accepts playlist links/ids
         Currently not enabled publicly
@@ -267,7 +277,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['que'])
-    async def queue(self, ctx):
+    async def queue(self, ctx: Context):
         """
         Check the current queue/order of songs.
         """
@@ -308,7 +318,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def stop(self, ctx):
+    async def stop(self, ctx: Context):
         """
         Stops music playback in this channel. Will purge the queue too.
         """
@@ -323,7 +333,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def pause(self, ctx):
+    async def pause(self, ctx: Context):
         """
         Pause currenty playback. Will not purge queue.
         """
@@ -335,7 +345,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def resume(self, ctx):
+    async def resume(self, ctx: Context):
         """
         Resume song if paused.
         """
@@ -347,7 +357,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def skip(self, ctx):
+    async def skip(self, ctx: Context):
         """
         Skip currently playing song.
         """
@@ -370,7 +380,7 @@ class Music(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['np', 'nowplaying'])
-    async def playing(self, ctx):
+    async def playing(self, ctx: Context):
         """
         Check currently playing song info
         """
@@ -413,6 +423,6 @@ class Music(commands.Cog):
             self.queues.pop(guild_id, None)
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: KanaIsTheBest):
     ext = Music(bot)
     await bot.add_cog(ext)

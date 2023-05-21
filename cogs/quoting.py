@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import logging
 import traceback
 
@@ -8,17 +11,24 @@ import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
 
 
 class Quoting(commands.Cog):
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(
+            self,
+            bot: KanaIsTheBest
+    ):
         self.bot = bot
 
     @commands.command(aliases=["q"])
-    async def quote(self, ctx, *args):
+    async def quote(self, ctx: Context, *args):
         """Quote a message.
 
         `[p]q` (will quote the last message)
@@ -92,7 +102,7 @@ class Quoting(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.check(checks.admin_check)
     @commands.command()
-    async def archive(self, ctx):
+    async def archive(self, ctx: Context):
         """Remove all pins and post them in the channel.
 
         Make sure to lock the channel from view before doing so, avoiding
@@ -158,7 +168,7 @@ class Quoting(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.manage_messages_check)
     @commands.command()
-    async def pinstatus(self, ctx, *arg):
+    async def pinstatus(self, ctx: Context, *arg):
         """Check pin count status on the server.
 
         Pin counts exceeding 40 will be bolded in the output. Usage:
@@ -184,7 +194,7 @@ class Quoting(commands.Cog):
         await msg.delete()
 
     @commands.command()
-    async def raw(self, ctx, *args):
+    async def raw(self, ctx: Context, *args):
         """
         Get raw message content and display it.
 
@@ -235,6 +245,6 @@ class Quoting(commands.Cog):
             await ctx.send(embed=Embed(description=f'```\n{msgCnt2}\n```'))
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: KanaIsTheBest):
     ext = Quoting(bot)
     await bot.add_cog(ext)

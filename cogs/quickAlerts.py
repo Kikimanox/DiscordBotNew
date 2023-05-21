@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import datetime
 import logging
 import traceback
@@ -13,8 +16,12 @@ import utils.timeStuff as tutils
 from models.quickAlerts import QuickAlerts
 from models.views import AlertSelectMenuView
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
 
 
 def get_human_readable_timedelta(seconds):
@@ -35,7 +42,10 @@ def get_human_readable_timedelta(seconds):
 
 
 class QuickAlertsC(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: KanaIsTheBest
+    ):
         self.bot = bot
         # move this out of the code somewhere ~~someday~~
         self.__alerts_data = {
@@ -87,7 +97,7 @@ class QuickAlertsC(commands.Cog):
         logger.info("Alerts data loaded")
 
     @commands.command()
-    async def test123(self, ctx):
+    async def test123(self, ctx: Context):
         test_ch = 545660080184492046
         test_msg_id = 601379769283510272
         test_msg = await (ctx.guild.get_channel(test_ch)).fetch_message(test_msg_id)
@@ -215,6 +225,6 @@ class QuickAlertsC(commands.Cog):
             logger.info(f"Alert with target_embed_message_id {message.id} deleted due to message deletion")
 
 
-async def setup(bot: commands.Bot):
+async def setup(bot: KanaIsTheBest):
     ext = QuickAlertsC(bot)
     await bot.add_cog(ext)

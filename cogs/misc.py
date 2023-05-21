@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 import datetime
 import random
@@ -13,11 +16,15 @@ import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 from models.afking import AfkTbl, AfkManager
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 class Misc(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.bot.dont_check_this_for_afk = []
@@ -27,7 +34,7 @@ class Misc(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @commands.command()
-    async def say(self, ctx, channel: discord.TextChannel, *, text=""):
+    async def say(self, ctx: Context, channel: discord.TextChannel, *, text=""):
         """Say something in a specified channel
 
         Will also send any/all attached images if any. Usage examples:
@@ -104,7 +111,7 @@ class Misc(commands.Cog):
 
     @commands.check(checks.admin_check)
     @commands.command(aliases=["qs"])
-    async def quicksay(self, ctx, channel: discord.TextChannel, *, text: str = ""):
+    async def quicksay(self, ctx: Context, channel: discord.TextChannel, *, text: str = ""):
         """Say something in a specified channel quickly"""
         if not text and not ctx.message.attachments:
             return await ctx.send("You forgot the content or attachements")
@@ -122,7 +129,7 @@ class Misc(commands.Cog):
 
     @commands.cooldown(3, 10, commands.BucketType.user)
     @commands.command()
-    async def choose(self, ctx, *, options: str):
+    async def choose(self, ctx: Context, *, options: str):
         """Split options with | and have the bot pick one of them"""
         opts = options.split('|')
         if len(options) < 2:
@@ -133,7 +140,7 @@ class Misc(commands.Cog):
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command()
-    async def afk(self, ctx, *, afk_text=""):
+    async def afk(self, ctx: Context, *, afk_text=""):
         """Set your status as afk, notifiying people who mention you while in this state.
         Examples:
         `[p]afk` (will ser your afk status, but won't provide any message when pinged)
@@ -188,7 +195,7 @@ class Misc(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.check(checks.manage_emojis_check)
     @commands.command(aliases=['addemotes', "ae"])
-    async def addemote(self, ctx, *, emotes):
+    async def addemote(self, ctx: Context, *, emotes):
         """Add emotes to the server.
 
         `[p]addemote newEmoteName image_url`
@@ -198,14 +205,14 @@ class Misc(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def yoink(self, ctx, *, emotes):
+    async def yoink(self, ctx: Context, *, emotes):
         """Yoink some emotes:
 
         `[p]yoink name url`
         `[p]yoink name url name2 url2` (etc., can have multiple)"""
         await self.add_emote_or_yoink(ctx, emotes, True)
 
-    async def add_emote_or_yoink(self, ctx, emotes, yoink):
+    async def add_emote_or_yoink(self, ctx: Context, emotes, yoink):
         emotes = str(emotes).replace('\n', ' ') + ' '
         await ctx.message.delete()
         member = ctx.author
@@ -317,7 +324,7 @@ class Misc(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Misc(bot)
     await bot.add_cog(ext)

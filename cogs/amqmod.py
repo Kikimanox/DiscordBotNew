@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 import datetime
 import glob
@@ -27,6 +30,11 @@ import utils.discordUtils as dutils
 from utils.dataIOa import dataIOa
 from models.partyranks import PRMembers, PRManager
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+
 logger = logging.getLogger(f"info")
 error_logger = logging.getLogger(f"error")
 
@@ -37,7 +45,10 @@ def get_valid_filename(s):
 
 
 class AmqMod(commands.Cog):
-    def __init__(self, bot):
+    def __init__(
+            self,
+            bot: KanaIsTheBest
+    ):
         self.bot = bot
         self.guild_pr_channels = {
             920092394945384508: {
@@ -109,7 +120,7 @@ return ret_7
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=['amqcleanup', 'amqc'])
-    async def amqclean(self, ctx):
+    async def amqclean(self, ctx: Context):
         """Empty uploaded_links and uploaded_name json files"""
         with open('data/_amq/uploaded_links.json', 'w') as f:
             f.write("[]")
@@ -127,7 +138,7 @@ return ret_7
     @commands.check(checks.manage_roles_check)
     @commands.cooldown(3, 5, commands.BucketType.user)
     @commands.command(aliases=['gr'])
-    async def giveroles(self, ctx, *, role_and_users):
+    async def giveroles(self, ctx: Context, *, role_and_users):
         """Use this command to give roles to users.
         Usage:
         `[p]gr @Slot1D4dj @User1 @User2 @User3`
@@ -176,7 +187,7 @@ return ret_7
 
     @commands.check(checks.owner_check) # Todo: add PR server only perms later
     @commands.command()
-    async def gatherpfps(self, ctx):
+    async def gatherpfps(self, ctx: Context):
         """
         Get pfps
         """
@@ -186,7 +197,7 @@ return ret_7
 
     @commands.check(checks.owner_check)  # Todo: add PR server only perms later
     @commands.command(aliases=["prreg", "prr"])
-    async def prregister(self, ctx, avatar_url, *, name=""):
+    async def prregister(self, ctx: Context, avatar_url, *, name=""):
         """
         Register yourself so you can be allowed to join PRs.
         You can also use this command to update your avatar if you've already registered.
@@ -242,7 +253,7 @@ return ret_7
 
     @commands.check(checks.owner_check)  # Todo: add PR server only perms later
     @commands.command(aliases=["spp"])
-    async def specificprpic(self, ctx, pr_specific_avatar_url, *, pr_name=""):
+    async def specificprpic(self, ctx: Context, pr_specific_avatar_url, *, pr_name=""):
         """
         Be sure that you registered yourself beforehand by uising the command:
         `[p]prregister`
@@ -280,7 +291,7 @@ return ret_7
 
     @commands.check(checks.owner_check) # Todo: add PR server only perms later
     @commands.command(aliases=['initpr', 'ipr'])
-    async def initializepartyrank(self, ctx, *, prs):
+    async def initializepartyrank(self, ctx: Context, *, prs):
         """
         Use this command to start a PR or multiple PRs.
         The way the command works is you input
@@ -398,7 +409,7 @@ return ret_7
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def amqmp3(self, ctx, start_from_page: int = -999, up_to_id: int = -999):
+    async def amqmp3(self, ctx: Context, start_from_page: int = -999, up_to_id: int = -999):
         """Crawl (start_from_page), parse (up_to_id) from #komugi & upload
         -1 -1 = Catbox process only
         -2 X = Skip table parse ; Parse messages up to including X, Skip MAL update
@@ -466,25 +477,25 @@ return ret_7
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def gibcode(self, ctx):
+    async def gibcode(self, ctx: Context):
         """Get the code"""
         await ctx.send(self.gib_code)
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def docrawl(self, ctx, start_from_page=1):
+    async def docrawl(self, ctx: Context, start_from_page=1):
         """Crawl and map ann mal ids [RUN ONLY LOCALLY]"""
         await self.el_crawl(ctx, start_from_page)
 
     @commands.check(checks.owner_check)
     @commands.command()
-    async def catboxpls(self, ctx):
+    async def catboxpls(self, ctx: Context):
         """testing"""
         await self.el_catboxpls(ctx)
 
     @commands.check(checks.owner_check)
     @commands.command(aliases=["pmmal"])
-    async def parsemsgsandaddtomal(self, ctx, up_to_id: int):
+    async def parsemsgsandaddtomal(self, ctx: Context, up_to_id: int):
         """From newest up to including the one"""
         await self.el_mal(ctx, up_to_id)
 
@@ -525,7 +536,7 @@ return ret_7
                     off += 300
         # return ret
 
-    async def upload_file_to_catbox(self, file, ctx):
+    async def upload_file_to_catbox(self, file, ctx: Context):
         # https://github.com/amq-script-project/AMQ-Scripts/blob/master/programs/old-expand-but-better/catbox.py
         origname = file
         if re.match(r"^.*\.webm$", file):
@@ -601,7 +612,7 @@ return ret_7
             traceback.print_exc()
             return False
 
-    async def el_crawl(self, ctx, start_from_page: int, _driver=None):
+    async def el_crawl(self, ctx: Context, start_from_page: int, _driver=None):
         # if not await dutils.prompt(ctx, "Are you running this locally?"):
         #    return await ctx.send("Cancelled")
         await ctx.send("Starting to crawl")
@@ -687,7 +698,7 @@ return ret_7
         if not _driver:
             driver.close()
 
-    async def el_mal(self, ctx, up_to_id: int, _driver=None):
+    async def el_mal(self, ctx: Context, up_to_id: int, _driver=None):
         try:
             chid = 784815078041583638  # KOMUGI
             ch = ctx.guild.get_channel(chid)
@@ -853,7 +864,7 @@ return ret_7
             return False
             raise
 
-    async def el_get_no_mp3(self, ctx, driver, just_last_invoke=False, d_scripts=None):
+    async def el_get_no_mp3(self, ctx: Context, driver, just_last_invoke=False, d_scripts=None):
         driver.get("https://animemusicquiz.com/?forceLogin=True")
         driver.implicitly_wait(10)
 
@@ -1002,7 +1013,7 @@ return ret_7
             except:
                 await ctx.send("Something went wrong when updagint MAL list back to kikimanox2")
 
-    async def el_catboxpls(self, ctx, auto=False):
+    async def el_catboxpls(self, ctx: Context, auto=False):
         rets = []
         ret = ""
         to_ret = """
@@ -1124,7 +1135,7 @@ return ret_7
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = AmqMod(bot)
     await bot.add_cog(ext)

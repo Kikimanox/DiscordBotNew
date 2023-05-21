@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import asyncio
 import datetime
 import json
@@ -18,14 +20,18 @@ from models.antiraid import ArGuild, ArManager
 from models.moderation import Blacklist, ModManager
 from models.serversetup import (Guild, WelcomeMsg, SSManager)
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
+
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
 
 
 class Serversetup(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.tryParseOnce = 0
@@ -43,7 +49,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @commands.group(aliases=["sup"])
-    async def setup(self, ctx):
+    async def setup(self, ctx: Context):
         """Use the subcommands to setup server related stuff
 
         By itself this command doesn't do anything"""
@@ -52,7 +58,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.command(aliases=["cur"], name="current")
-    async def _current(self, ctx):
+    async def _current(self, ctx: Context):
         """Display current server setup"""
         desc = ""
         em = Embed(title="Current setup", color=ctx.bot.config['BOT_DEFAULT_EMBED_COLOR'])
@@ -134,7 +140,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @setup.command(aliases=["ae"])
-    async def almosteverything(self, ctx,
+    async def almosteverything(self, ctx: Context,
                                mute_role: discord.Role,
                                moderator_role: discord.Role,
                                logging_regular_channel: discord.TextChannel,
@@ -199,7 +205,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.group()
-    async def webhooks(self, ctx):
+    async def webhooks(self, ctx: Context):
         """Webhook related setups, use subcommands
 
         By itself this command doesn't do anything
@@ -222,25 +228,25 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @webhooks.command()
-    async def regularlogging(self, ctx, hook_id: int, target_channel: discord.TextChannel):
+    async def regularlogging(self, ctx: Context, hook_id: int, target_channel: discord.TextChannel):
         """Regular logging hook"""
         await self.do_setup(hook_reg=hook_id, hook_reg_target=target_channel, ctx=ctx)
 
     @commands.check(checks.admin_check)
     @webhooks.command()
-    async def leavejoin(self, ctx, hook_id: int, target_channel: discord.TextChannel):
+    async def leavejoin(self, ctx: Context, hook_id: int, target_channel: discord.TextChannel):
         """Leave and join logging hook"""
         await self.do_setup(hook_leavejoin=hook_id, hook_leavejoin_target=target_channel, ctx=ctx)
 
     @commands.check(checks.admin_check)
     @webhooks.command()
-    async def modlog(self, ctx, hook_id: int, target_channel: discord.TextChannel):
+    async def modlog(self, ctx: Context, hook_id: int, target_channel: discord.TextChannel):
         """Moderation log logging hook"""
         await self.do_setup(hook_modlog=hook_id, hook_modlog_target=target_channel, ctx=ctx)
 
     @commands.check(checks.admin_check)
     @setup.group()
-    async def logging(self, ctx):
+    async def logging(self, ctx: Context):
         """Logging channels related setups, use subcommands
 
         By itself this command doesn't do anything"""
@@ -249,26 +255,26 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @logging.command()
-    async def regular(self, ctx, channel: discord.TextChannel):
+    async def regular(self, ctx: Context, channel: discord.TextChannel):
         """Logging for deleted/edited messages"""
         await self.do_setup(ctx=ctx, logging_reg=channel)
 
     @commands.check(checks.admin_check)
     @logging.command(name="leavejoin")
-    async def _leavejoin(self, ctx, channel: discord.TextChannel):
+    async def _leavejoin(self, ctx: Context, channel: discord.TextChannel):
         """Logging for leave/join messages"""
         await self.do_setup(ctx=ctx, logging_leavejoin=channel)
 
     @commands.check(checks.admin_check)
     @logging.command(name="modlog")
-    async def _modlog(self, ctx, channel: discord.TextChannel):
+    async def _modlog(self, ctx: Context, channel: discord.TextChannel):
         """Logging for moderation related actions"""
         await self.do_setup(ctx=ctx, logging_modlog=channel)
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @setup.command(name="muterolenew")
-    async def _muterolenew(self, ctx, *, role: discord.Role):
+    async def _muterolenew(self, ctx: Context, *, role: discord.Role):
         """Setup muterole
         Note, this command may be used with any role, but it's main
         purpose/use is to setup the mute role perms on the channels."""
@@ -349,7 +355,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @setup.group()
-    async def muterolechperms(self, ctx, *, role: discord.Role):
+    async def muterolechperms(self, ctx: Context, *, role: discord.Role):
         """Update channel perms for the mute role"""
         if role.is_default():
             return await ctx.send('Cannot use the @\u200beveryone role.')
@@ -360,7 +366,7 @@ class Serversetup(commands.Cog):
         await self.update_mute_role_perms(ctx, role)
 
     @staticmethod
-    async def update_mute_role_perms(ctx, role):
+    async def update_mute_role_perms(ctx: Context, role):
         msg = await ctx.send('Applying channel permissions')
         for ch in ctx.guild.text_channels:
             overwrites_muted = ch.overwrites_for(role)
@@ -377,7 +383,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.command()
-    async def modrole(self, ctx, *, role: discord.Role):
+    async def modrole(self, ctx: Context, *, role: discord.Role):
         """Setup moderator specific role"""
         if role.is_default():
             return await ctx.send('Cannot use the @\u200beveryone role.')
@@ -389,7 +395,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.group(aliases=['dlg'])
-    async def dontlogchannel(self, ctx):
+    async def dontlogchannel(self, ctx: Context):
         """Add or remove channels to not log from"""
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
@@ -397,7 +403,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @dontlogchannel.command(name='add')
-    async def _add(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+    async def _add(self, ctx: Context, channels: commands.Greedy[discord.TextChannel]):
         """Add chanenls (max 3 at once) to be ignore by the bot when logging"""
         if len(channels) > 3: return await ctx.send("Command takes up to 3 channels at once for a batch update.")
         for channel in channels:
@@ -407,7 +413,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @dontlogchannel.command(name='remove')
-    async def _remove(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+    async def _remove(self, ctx: Context, channels: commands.Greedy[discord.TextChannel]):
         """Remove chanenls (max 3 at once) from ignored channels when loggin"""
         if len(channels) > 3: return await ctx.send("Command takes up to 3 channels at once for a batch update.")
         for channel in channels:
@@ -416,14 +422,14 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.group(aliases=['cl', 'censorlist'])
-    async def censor(self, ctx):
+    async def censor(self, ctx: Context):
         """Add or remove words to the censor list."""
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
     @commands.check(checks.moderator_check)
     @censor.command()
-    async def add(self, ctx, *, words):
+    async def add(self, ctx: Context, *, words):
         """Add words to censor list (multi words use **"** between)"""
         if words.count('"') % 2 != 0: return await ctx.send('Uneven number of " found.')
         if '""' in words: return await ctx.send('You can not use `""` in words')
@@ -451,7 +457,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @censor.command()
-    async def remove(self, ctx, *, words):
+    async def remove(self, ctx: Context, *, words):
         """Remove words from censor list (multi words use **"** between)"""
         if words.count('"') % 2 != 0: return await ctx.send('Uneven number of " found.')
         if '""' in words: return await ctx.send('You can not use `""` in words')
@@ -479,7 +485,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @censor.command()
-    async def clear(self, ctx):
+    async def clear(self, ctx: Context):
         """Clear censor list"""
         p = await dutils.prompt(ctx, "Are you sure you want to clear the entire censor list?")
         if p:
@@ -489,7 +495,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @censor.command()
-    async def show(self, ctx, compact=""):
+    async def show(self, ctx: Context, compact=""):
         """Show censor list (for compact view `[p]cl show compact`)"""
         db_guild = SSManager.get_or_create_and_get_guild(ctx.guild.id)
         delim = '\n' if compact != 'compact' else ' '
@@ -503,7 +509,7 @@ class Serversetup(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @setup.command(aliases=['cmdschs', 'cc'])
-    async def commandschannels(self, ctx, *, settings=""):
+    async def commandschannels(self, ctx: Context, *, settings=""):
         """Disable cmds in certain channels, or only enable them in certain chs.
 
         > Running this command with no arguments will display current settings
@@ -585,7 +591,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @setup.group(aliases=['wm'])
-    async def welcomemsg(self, ctx):
+    async def welcomemsg(self, ctx: Context):
         """Main w.m. setup command, use subcommands
 
         Initially you're suppose to use
@@ -602,7 +608,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @welcomemsg.command(aliases=['m'])
-    async def mainsetup(self, ctx, target_channel: discord.TextChannel):
+    async def mainsetup(self, ctx: Context, target_channel: discord.TextChannel):
         """Go trough the entire setup process
 
         With this command you can setup an image or more images to be randomly picked
@@ -837,14 +843,14 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def targetch(self, ctx, target_channel: discord.TextChannel):
+    async def targetch(self, ctx: Context, target_channel: discord.TextChannel):
         """Fine tune target channel"""
         await SSManager.update_or_error_welcomemsg_target_ch(target_channel.id, ctx.guild.id, ctx)
         await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def displaymemcount(self, ctx):
+    async def displaymemcount(self, ctx: Context):
         """Fine tune if you want to display member count"""
         the_bool = True
         confirm = await dutils.prompt(ctx, "**Do you wish to enable showing member count on welcome message?**")
@@ -856,21 +862,21 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def title(self, ctx, *, title):
+    async def title(self, ctx: Context, *, title):
         """Fine tune embed title"""
         await SSManager.update_or_error_welcomemsg_title(title, ctx.guild.id, ctx)
         await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def desc(self, ctx, *, description):
+    async def desc(self, ctx: Context, *, description):
         """Fine tune embed desscription"""
         await SSManager.update_or_error_welcomemsg_desc(description, ctx.guild.id, ctx)
         await self.set_setup(ctx.guild.id)
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def images(self, ctx, *, images):
+    async def images(self, ctx: Context, *, images):
         """Fine tune embed image(s) (seperate with a space)"""
         images = " ".join(images.replace('\n', ' ').split())
         for i in images.split():
@@ -880,7 +886,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def content(self, ctx, *, cnt):
+    async def content(self, ctx: Context, *, cnt):
         """Fine tune message outside of the embed
 
         [username] will be replaced with new user ping"""
@@ -889,7 +895,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def color(self, ctx, *, color):
+    async def color(self, ctx: Context, *, color):
         """Fine tune embed color
 
         Color format, one of:
@@ -906,7 +912,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @welcomemsg.command(aliases=["cur"])
-    async def current(self, ctx):
+    async def current(self, ctx: Context):
         """Display all current information regarding welcome messages"""
         if hasattr(ctx.bot, 'from_serversetup') and ('welcomemsg' not in ctx.bot.from_serversetup):
             if self.tryParseOnce < 1:
@@ -940,7 +946,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.admin_check)
     @welcomemsg.command()
-    async def test(self, ctx):
+    async def test(self, ctx: Context):
         """Do a test welcome on yourself in this channel"""
         try:
             db_wmsg = WelcomeMsg.get(WelcomeMsg.guild == ctx.guild.id)
@@ -1314,7 +1320,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.group(aliases=['r'])
-    async def raid(self, ctx):
+    async def raid(self, ctx: Context):
         """Setup raid and protection related settings
         By itself this comand doesn't do anything, use subcommands
         """
@@ -1323,7 +1329,7 @@ class Serversetup(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @raid.command(aliases=['m'])
-    async def manual(self, ctx):
+    async def manual(self, ctx: Context):
         """Read up the manual
         By itself this comand doesn't do anything except show the manual
         Level explenations
@@ -1356,7 +1362,7 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.moderator_check)
     @raid.command(aliases=['l', 'lvl'])
-    async def level(self, ctx, anti_raid_level: int = -1, max_allowed_mentions: int = 3):
+    async def level(self, ctx: Context, anti_raid_level: int = -1, max_allowed_mentions: int = 3):
         """Fine tune raid protection level [0-3]"""
         db_guild = None
         pl = {0: '✅', 1: '⚠', 2: '🔥', 3: '💥'}
@@ -1419,14 +1425,14 @@ class Serversetup(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.moderator_check)
     @raid.command()
-    async def lockdown(self, ctx):
+    async def lockdown(self, ctx: Context):
         """Same as using `[p]lock all silent`"""
         await dutils.lock_channels(ctx, "all silent")
         await ctx.send(f"To revert thise use the command `{dutils.bot_pfx(ctx.bot, ctx.message)} unlock all silent`")
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Serversetup(bot)
     await bot.add_cog(ext)

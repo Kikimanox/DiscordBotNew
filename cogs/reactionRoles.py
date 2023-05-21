@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 import traceback
 
@@ -9,6 +12,11 @@ import utils.checks as checks
 import utils.discordUtils as dutils
 from models.reactionroles import ReactionRolesModel, RRManager
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+
 TEST_EMOTES_MSG_PENDING = "Testing emotes for the reactions. Status: Pending ❔"
 TEST_EMOTES_MSG_PASSED = "Testing emotes for the reactions. Status: Passed ✅"
 TEST_EMOTES_MSG_FAILED = "Testing emotes for the reactions. Status: Failed ❌"
@@ -17,14 +25,14 @@ TEST_EMOTES_MSG_FAILED = "Testing emotes for the reactions. Status: Failed ❌"
 class ReactionRoles(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @commands.group(invoke_without_command=True, aliases=["rr"])
-    async def reactionrole(self, ctx, channel: discord.TextChannel, msgID: int):
+    async def reactionrole(self, ctx: Context, channel: discord.TextChannel, msgID: int):
         """Just init reaction roles, for everything else use subcommands.
 
         This command will initialize the channel and message id into
@@ -52,7 +60,7 @@ class ReactionRoles(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @reactionrole.command(aliases=['cur'])
-    async def current(self, ctx, msg_id: int = 0):
+    async def current(self, ctx: Context, msg_id: int = 0):
         """Display current info, can check all or just one (by msg id)"""
         if msg_id == 0:
             confirm = await dutils.prompt(ctx, "Are you sure you want to check **all** the rrs?")
@@ -110,7 +118,7 @@ class ReactionRoles(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @reactionrole.command()
-    async def add(self, ctx, msgID: int, *, emotesAndReactions):
+    async def add(self, ctx: Context, msgID: int, *, emotesAndReactions):
         """Add new reactions to an existing reaction message
 
         Format for adding the emotes and binding them to roles is as follows:
@@ -130,7 +138,7 @@ class ReactionRoles(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.admin_check)
     @reactionrole.command()
-    async def refresh(self, ctx, msgID: int, *, emotesAndReactions):
+    async def refresh(self, ctx: Context, msgID: int, *, emotesAndReactions):
         """Change which roles are tracked (use `[p]help rr refresh` please)
 
         This command is a hack/workaround when this use case:
@@ -150,7 +158,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.check(checks.admin_check)
     @reactionrole.command()
-    async def remove(self, ctx, msgID: int):
+    async def remove(self, ctx: Context, msgID: int):
         """Remove message id and tracking from save
 
         `[p]rr remove MSG_ID`"""
@@ -213,7 +221,7 @@ class ReactionRoles(commands.Cog):
         except:
             pass
 
-    async def do_rr_stuff(self, ctx, msgID, emotesAndReactions, refreshing=False):
+    async def do_rr_stuff(self, ctx: Context, msgID, emotesAndReactions, refreshing=False):
         if ctx.guild.id not in ctx.bot.reaction_roles:
             return await ctx.send("No rrs initialized")
 
@@ -287,7 +295,7 @@ class ReactionRoles(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = ReactionRoles(bot)
     await bot.add_cog(ext)

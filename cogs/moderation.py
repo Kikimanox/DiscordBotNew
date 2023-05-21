@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 import datetime
 import logging
@@ -21,14 +24,18 @@ from models.sticky_message import StickyMsg
 from utils.SimplePaginator import SimplePaginator
 from discord.errors import NotFound
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
+
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
 
 
 class Moderation(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.tried_setup = False
@@ -59,7 +66,7 @@ class Moderation(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.check(checks.moderator_check)
     @commands.command(aliases=['prune'])
-    async def purge(self, ctx, count: int, *users: discord.User):
+    async def purge(self, ctx: Context, count: int, *users: discord.User):
         """Clears a given number of messages or until the given message id.
 
         `[p]purge n` - purges the last n messages. Ex: .purge 100
@@ -104,7 +111,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(aliases=["c"])
-    async def case(self, ctx, case_id: int, *, reason):
+    async def case(self, ctx: Context, case_id: int, *, reason):
         """Supply or edit reason for a moderation action"""
         if case_id > sys.maxsize: return await ctx.send("Case id too big, breaking system limits!")
         try:
@@ -201,7 +208,7 @@ class Moderation(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
-    async def cases(self, ctx, offender: discord.Member, *extra: str):
+    async def cases(self, ctx: Context, offender: discord.Member, *extra: str):
         """
         Just a shortcut for `[p]lsc 0 9999 offen=(offender_id)`
         """
@@ -212,7 +219,7 @@ class Moderation(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=["listcase", "lsc", 'showcase', 'showcases'])
-    async def listcases(self, ctx, case_id: int = 0, limit=10, *, extra: str = ""):
+    async def listcases(self, ctx: Context, case_id: int = 0, limit=10, *, extra: str = ""):
         """List case(s), see help to see command usage
         Use this command to see a case or multiple caes
 
@@ -486,7 +493,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command()
-    async def s_(self, ctx):
+    async def s_(self, ctx: Context):
         """Run me if you don't know what this is. Use; `[p]s_`
         Silent commands
         In case you haven't known, most of the commands in this module
@@ -653,7 +660,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
-    async def unmute(self, ctx, user: discord.Member, *, reason=""):
+    async def unmute(self, ctx: Context, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted.
 
         `[p]unmute @user`
@@ -675,7 +682,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(hidden=True)
-    async def sunmute(self, ctx, user: discord.Member, *, reason=""):
+    async def sunmute(self, ctx: Context, user: discord.Member, *, reason=""):
         """Unmutes a user if they are muted. (no dm)
 
         `[p]sunmute @user`
@@ -697,7 +704,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
-    async def mute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
+    async def mute(self, ctx: Context, users: commands.Greedy[discord.Member], length="", *, reason=""):
         """Mutes users. Please check usage with .help mute
 
         Supply a #d#h#m#s for a timed mute. Examples:
@@ -717,7 +724,7 @@ class Moderation(commands.Cog):
         await self.el_mute(ctx, users, length, reason, False)
 
     @commands.command()
-    async def selfmute(self, ctx, length, *, reason=""):
+    async def selfmute(self, ctx: Context, length, *, reason=""):
         """Mute yourself [5min - 24h]
 
         Supply a #d#h#m#s for a timed mute (requiered). Examples:
@@ -728,7 +735,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(hidden=True)
-    async def smute(self, ctx, users: commands.Greedy[discord.Member], length="", *, reason=""):
+    async def smute(self, ctx: Context, users: commands.Greedy[discord.Member], length="", *, reason=""):
         """Mutes a user. Check usage with .help smute (no dm)
 
         Same as mute, but won't dm the muted user
@@ -744,7 +751,7 @@ class Moderation(commands.Cog):
         if len(users) > 10: return await ctx.send("Max 10 users")
         await self.el_mute(ctx, users, length, reason, True)
 
-    async def el_mute(self, ctx, users, length, reason, no_dm, selfmute=False):
+    async def el_mute(self, ctx: Context, users, length, reason, no_dm, selfmute=False):
         if not self.bot.from_serversetup:
             if not self.tried_setup:
                 await self.set_server_stuff()
@@ -805,7 +812,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(name='nmute')
-    async def newmute(self, ctx, user: discord.Member, length="", *, reason=""):
+    async def newmute(self, ctx: Context, user: discord.Member, length="", *, reason=""):
         """Same as mute, but will also work on already muted users
         (nmute = newmute)
         When muting an already muted user their old timeout will be
@@ -830,7 +837,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(name='snmute', hidden=True)
-    async def snewmute(self, ctx, user: discord.Member, length="", *, reason=""):
+    async def snewmute(self, ctx: Context, user: discord.Member, length="", *, reason=""):
         """Same as mute, but will also work on already muted users (nodm)
 
         When muting an already muted user their old timeout will be
@@ -855,7 +862,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def ban(self, ctx, user: discord.User, *, reason=""):
+    async def ban(self, ctx: Context, user: discord.User, *, reason=""):
         """Ban a user with an optional reason. Prefix with `s` for "no dm"
 
         Tip:
@@ -885,7 +892,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def kick(self, ctx, user: discord.Member, *, reason=""):
+    async def kick(self, ctx: Context, user: discord.Member, *, reason=""):
         """Kick a user from the server
 
         `[p]sban @user`
@@ -913,7 +920,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def skick(self, ctx, user: discord.Member, *, reason=""):
+    async def skick(self, ctx: Context, user: discord.Member, *, reason=""):
         """Kick a user from the server (no dm)
 
         `[p]sban @user`
@@ -936,7 +943,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def sban(self, ctx, user: discord.User, *, reason=""):
+    async def sban(self, ctx: Context, user: discord.User, *, reason=""):
         """Ban a user with an optionally supplied reason. **(won't dm them)**
 
         `[p]sban @user`
@@ -954,7 +961,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def banish(self, ctx, user: discord.User, *, reason=""):
+    async def banish(self, ctx: Context, user: discord.User, *, reason=""):
         """Same as ban but also deletes message history (7 days)
 
         `[p]banish @user`
@@ -972,7 +979,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def sbanish(self, ctx, user: discord.User, *, reason=""):
+    async def sbanish(self, ctx: Context, user: discord.User, *, reason=""):
         """Same as ban but also deletes message history (7 days) **(no dm)**
 
         `[p]sbanish @user`
@@ -990,7 +997,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def softban(self, ctx, clear_messages_days: int, user: discord.User, *, reason=""):
+    async def softban(self, ctx: Context, clear_messages_days: int, user: discord.User, *, reason=""):
         """Ban then unban (see help for details)
 
         This command allows you to specifiy the amount of days worth
@@ -1017,7 +1024,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def ssoftban(self, ctx, clear_messages_days: int, user: discord.User, *, reason=""):
+    async def ssoftban(self, ctx: Context, clear_messages_days: int, user: discord.User, *, reason=""):
         """Ban then unban right away (won't dm them)
 
          This command allows you to specifiy the amount of days worth
@@ -1044,7 +1051,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def softbanish(self, ctx, user: discord.User, *, reason=""):
+    async def softbanish(self, ctx: Context, user: discord.User, *, reason=""):
         """Ban, but unban right away also deletes message history (7 days)
 
         `[p]softbanish @user`
@@ -1063,7 +1070,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def ssoftbanish(self, ctx, user: discord.User, *, reason=""):
+    async def ssoftbanish(self, ctx: Context, user: discord.User, *, reason=""):
         """Ban, but unban right away also dels msg history (7d) **(no dm)**
 
         `[p]ssoftbanish @user`
@@ -1083,7 +1090,7 @@ class Moderation(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.ban_members_check)
     @commands.command()
-    async def massban(self, ctx, delete_messages_days: int, *users: discord.User):
+    async def massban(self, ctx: Context, delete_messages_days: int, *users: discord.User):
         """Ban multiple users at once (no dm by default)
 
         **delete_messages_days** => Has to be 0 or more and 7 or less
@@ -1130,7 +1137,7 @@ class Moderation(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.check(checks.ban_members_check)
     @commands.command(hidden=True)
-    async def massbantest(self, ctx, delete_messages_days: int, *users):
+    async def massbantest(self, ctx: Context, delete_messages_days: int, *users):
         """Test if massban would work with these arguments"""
         if delete_messages_days > 7 or delete_messages_days < 0:
             await ctx.send("**delete_messages_days**"
@@ -1161,7 +1168,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.ban_members_check)
     @commands.command()
-    async def blacklist(self, ctx, *user_ids: int):
+    async def blacklist(self, ctx: Context, *user_ids: int):
         """Blacklist a user or users by id
 
         Use `blacklistshow` to see current blacklist
@@ -1203,7 +1210,7 @@ class Moderation(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def blacklistshow(self, ctx):
+    async def blacklistshow(self, ctx: Context):
         # bs = [b for b in Blacklist.select().dicts()]
         # if not bs: return await ctx.send("Blacklist is empty.")
         # ret = ' '.join([b[''] for b in bs])
@@ -1220,7 +1227,7 @@ class Moderation(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(checks.moderator_check)
     @commands.command(hidden=True)
-    async def whitelist(self, ctx, *user_ids: int):
+    async def whitelist(self, ctx: Context, *user_ids: int):
         """Delete ids from the blacklist"""
         user_ids = list(set(user_ids))  # remove dupes
         de = Blacklist.delete().where(Blacklist.guild == ctx.guild.id, Blacklist.user_id << user_ids).execute()
@@ -1233,7 +1240,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.manage_messages_check)
     @commands.command(aliases=['clearwarn'])
-    async def clearwarns(self, ctx, user, *, reason=""):
+    async def clearwarns(self, ctx: Context, user, *, reason=""):
         """Clear warnings of a user (optional reason)"""
         if ctx.message.mentions:
             member = ctx.message.mentions[0]
@@ -1275,7 +1282,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
-    async def warn(self, ctx, user: discord.Member, *, reason):
+    async def warn(self, ctx: Context, user: discord.Member, *, reason):
         """Warn a user with a necessary supplied reason.
 
          `[p]warn @user Reason goes here` (reason has to be supplied)
@@ -1300,7 +1307,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command()
-    async def warnlist(self, ctx, user=None):
+    async def warnlist(self, ctx: Context, user=None):
         """Show warnings for a user or display all warnings.
 
         `[p]warnlist @user`
@@ -1422,7 +1429,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def lock(self, ctx, *, channels=""):
+    async def lock(self, ctx: Context, *, channels=""):
         """Lock msg sending in a channel or channels (must be mentioned).
 
         `[p]lock` - Locks current channel
@@ -1440,7 +1447,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command()
-    async def unlock(self, ctx, *, channels=""):
+    async def unlock(self, ctx: Context, *, channels=""):
         """Unlock message sending in the channel.
 
         `[p]unlock` - Unlocks current channel
@@ -1458,7 +1465,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_and_underground_idols_check)
     @commands.command(aliases=['slow'])
-    async def slowmode(self, ctx, seconds: int, *, channels=""):
+    async def slowmode(self, ctx: Context, seconds: int, *, channels=""):
         """Set a slowmode
 
         `[p]slowmode 5` - Sets the slowmode to 5 seconds
@@ -1502,7 +1509,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(aliases=["hcf"])
-    async def hidechannelfrom(self, ctx, channel: discord.TextChannel, members: commands.Greedy[discord.Member]):
+    async def hidechannelfrom(self, ctx: Context, channel: discord.TextChannel, members: commands.Greedy[discord.Member]):
         """Hide channel from memebrs"""
         didnt_work = ""
         for m in members:
@@ -1517,7 +1524,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.command(aliases=["uhcf"])
-    async def unhidechannelfrom(self, ctx, channel: discord.TextChannel, members: commands.Greedy[discord.Member]):
+    async def unhidechannelfrom(self, ctx: Context, channel: discord.TextChannel, members: commands.Greedy[discord.Member]):
         """Unhide channel from memebrs"""
         didnt_work = ""
         for m in members:
@@ -1532,7 +1539,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.group()
-    async def sticky(self, ctx):
+    async def sticky(self, ctx: Context):
         """
         Create a sticky message. Use subcommands to make one
         `[p]sticky start #channel 1m sticky content`
@@ -1555,7 +1562,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @sticky.command()
-    async def start(self, ctx, channel: discord.TextChannel, frequency: str, *, sticky_content):
+    async def start(self, ctx: Context, channel: discord.TextChannel, frequency: str, *, sticky_content):
         """Start a sticky message in the specified channel"""
         guild_id = str(ctx.guild.id)
         channel_id = str(channel.id)
@@ -1602,7 +1609,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @sticky.command()
-    async def stop(self, ctx, channel: discord.TextChannel):
+    async def stop(self, ctx: Context, channel: discord.TextChannel):
         """Stop sticky msg"""
         # Prompt user to confirm stopping the sticky message
         confirmation = await dutils.prompt(ctx, "Are you sure you want to stop the sticky message in this channel?")
@@ -1616,7 +1623,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @sticky.command()
-    async def list(self, ctx):
+    async def list(self, ctx: Context):
         """List all active sticky messages in the current server"""
         guild_id = str(ctx.guild.id)
         if guild_id in self.sticky_messages and self.sticky_messages[guild_id]:
@@ -1631,7 +1638,7 @@ class Moderation(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @sticky.command()
-    async def stopall(self, ctx):
+    async def stopall(self, ctx: Context):
         """Stop all sticky messages"""
         # Prompt user to confirm stopping all sticky messages
         confirmation = await dutils.prompt(ctx, "Are you sure you want to stop all sticky messages in this guild?")
@@ -1673,7 +1680,7 @@ class Moderation(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Moderation(bot)
     await bot.add_cog(ext)

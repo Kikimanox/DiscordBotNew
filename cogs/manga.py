@@ -1,4 +1,6 @@
-import json
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import json
 import random
 import re
@@ -10,18 +12,22 @@ from discord.ext import commands
 
 import utils.discordUtils as dutils
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 class Manga(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         # Credit: appu1232
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(aliases=["chapter", "chap"])
-    async def manga(self, ctx, chapter: str, page: str = None):
+    async def manga(self, ctx: Context, chapter: str, page: str = None):
         """Display a page from a chapter and flip through pages/chapters.
           `[p]manga 5` - loads the first page of chapter 5.
           `[p]manga 20 7` - loads the 7th page of chapter 20.
@@ -168,7 +174,7 @@ class Manga(commands.Cog):
             await self.chapter_flip(event)
 
     @commands.command(aliases=['ganti'])
-    async def search(self, ctx, *, text: str):
+    async def search(self, ctx: Context, *, text: str):
         """Text search through guya.moe, defaults to the Oshi no Ko series.
 
         --guya mobile phone (for searching the kaguya-sama manga)
@@ -291,7 +297,7 @@ class Manga(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Manga(bot)
     # bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))

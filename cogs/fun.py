@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 import datetime
 import itertools
@@ -16,17 +19,22 @@ import utils.timeStuff as tutils
 from models.claims import ClaimsManager, Claimed, UserSettings, History
 from utils.dataIOa import dataIOa
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+
 conf = dataIOa.load_json('settings/claims_settings.json')
 possible_for_bot = conf['use_these']
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
 
 
 class Fun(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         # _ in channel names is not allowed!!
@@ -51,7 +59,7 @@ class Fun(commands.Cog):
         logger.info("Claims data loaded")
 
     @commands.group(aliases=possible_for_bot)  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
-    async def claim(self, ctx, *, subcmd=""):
+    async def claim(self, ctx: Context, *, subcmd=""):
         """Get your daily claim for a certain theme
 
         Command usages:
@@ -95,7 +103,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(1, 120, commands.BucketType.user)
     @claim.command()
-    async def multi(self, ctx, *claim_types):
+    async def multi(self, ctx: Context, *claim_types):
         """Claim multiple at once, ex: `[p]claim multi bride spirit vtuber`"""
         if str(claim_types[0]) == 'all':
             ar = possible_for_bot
@@ -143,7 +151,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(1, 5, commands.BucketType.user)
     @claim.command()
-    async def current(self, ctx, *user):
+    async def current(self, ctx: Context, *user):
         """Display currently claimed claim"""
         users = ' '.join(user)
         if not self.data:
@@ -188,7 +196,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(1, 5, commands.BucketType.user)
     @claim.command()
-    async def history(self, ctx, *user):
+    async def history(self, ctx: Context, *user):
         """See claim history"""
         users = ' '.join(user)
         if not self.data:
@@ -260,7 +268,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @claim.command()
-    async def nsfw(self, ctx, cmd_type="", setting: str = ""):
+    async def nsfw(self, ctx: Context, cmd_type="", setting: str = ""):
         """Nsfw [off|default]
         If you want to for example turn off nsfw for the vtuber command use:
         `[p]claim nsfw vtuber TYPE`
@@ -277,7 +285,7 @@ class Fun(commands.Cog):
         u.save()
         await ctx.send(f"Your nsfw setting for `{cmd_type}` has ben set to `{setting}`")
 
-    async def do_claim(self, ctx, c_type, claim_cd=20, multi_claim=False):
+    async def do_claim(self, ctx: Context, c_type, claim_cd=20, multi_claim=False):
         if not self.data:
             if multi_claim: return "Hold up a little bit, I'm still loading the data."
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
@@ -470,7 +478,7 @@ class Fun(commands.Cog):
                 del self.just_claimed[d_key]
 
     @commands.command(hidden=True, aliases=['m'])
-    async def mood(self, ctx):
+    async def mood(self, ctx: Context):
         """Will be back soonTM"""
         await ctx.send("Command will be back soon™")
 
@@ -497,7 +505,7 @@ class Fun(commands.Cog):
 
     @commands.check(checks.owner_check)
     @commands.command(hidden=True, aliases=["g_r"])
-    async def g_roulette(self, ctx, num_winners: int, msg_id: int, channel: discord.TextChannel,
+    async def g_roulette(self, ctx: Context, num_winners: int, msg_id: int, channel: discord.TextChannel,
                          num_options: int, lines_in_font: int = 0, role_for_extra: discord.Role = None,
                          num_of_extra_opts: int = 0):
         """Leggo 1. stuff 2. stuff [for b only]3. stuff extra
@@ -579,7 +587,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.command(hidden=True)
-    async def cclaims(self, ctx, claim_type: str, limit: int):
+    async def cclaims(self, ctx: Context, claim_type: str, limit: int):
         CT = claim_type
         idd = ctx.author.id
         from discord import Embed
@@ -623,7 +631,7 @@ class Fun(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Fun(bot)
     bot.running_tasks.append(bot.loop.create_task(ext.delete_old_records()))

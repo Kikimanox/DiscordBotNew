@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 
 import discord
@@ -7,18 +10,22 @@ from discord.ext import commands
 import utils.checks as checks
 import utils.discordUtils as dutils
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 class CustomRoles(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.gettingRoles = {}
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.group(invoke_without_command=True)
-    async def getrole(self, ctx):
+    async def getrole(self, ctx: Context):
         """This command is only used for verification
 
         For the rest of the functionalities use subcommands,
@@ -33,7 +40,7 @@ class CustomRoles(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(checks.custom_role_is_booster_check)
     @getrole.command()
-    async def booster(self, ctx, roleHexColor, *, roleName):
+    async def booster(self, ctx: Context, roleHexColor, *, roleName):
         """Get yourself a custom role or change it's name or color
 
         Example, arguments are:
@@ -52,7 +59,7 @@ class CustomRoles(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.check(checks.custom_role_is_booster_check)
     @getrole.command()
-    async def reset(self, ctx):
+    async def reset(self, ctx: Context):
         """Remove your custom role"""
         if str(ctx.guild.id) in self.gettingRoles and self.gettingRoles[str(ctx.guild.id)]: return await ctx.send(
             "Someone is already getting/removing their role, please wait a little bit.")
@@ -76,7 +83,7 @@ class CustomRoles(commands.Cog):
         finally:
             self.gettingRoles[str(ctx.guild.id)] = 0
 
-    async def getRoleFunction(self, ancohrID1, anchorID2, ctx, roleName, roleHexColor):
+    async def getRoleFunction(self, ancohrID1, anchorID2, ctx: Context, roleName, roleHexColor):
 
         if str(ctx.guild.id) in self.gettingRoles and self.gettingRoles[str(ctx.guild.id)]: return await ctx.send(
             "Someone is already getting/removing their role, please wait a little bit.")
@@ -129,7 +136,7 @@ class CustomRoles(commands.Cog):
         return [r for r in guild.roles if a1.position > r.position > a2.position]
 
     @staticmethod
-    async def insertRoleUnderRole(ctx, newRole, anchorID):
+    async def insertRoleUnderRole(ctx: Context, newRole, anchorID):
         aa = 11
         while True:
             # print('----')
@@ -211,7 +218,7 @@ class CustomRoles(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = CustomRoles(bot)
     # bot.running_tasks.append(bot.loop.create_task(ext.if_you_need_loop()))

@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import asyncio
 import datetime
 import itertools
@@ -16,18 +18,22 @@ import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 from models.bot import BotBlacklist, BotBanlist
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 class Stats(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.process = psutil.Process()
 
     @commands.cooldown(1, 20, commands.BucketType.user)
     @commands.command()
-    async def latency(self, ctx):
+    async def latency(self, ctx: Context):
         """Check bot response time."""
         await ctx.send(f"Current latency **{round(self.bot.latency * 1000)}ms**")
 
@@ -35,7 +41,7 @@ class Stats(commands.Cog):
         return tutils.human_timedelta(self.bot.uptime, accuracy=None, brief=brief, suffix=False)
 
     @commands.command()
-    async def uptime(self, ctx):
+    async def uptime(self, ctx: Context):
         """Check how long the bot has been up for."""
         if not hasattr(self.bot, 'ranCommands'): return await ctx.send("I am still starting up, hold on please.")
         await ctx.send(f'Uptime: **{self.get_bot_uptime()}**')
@@ -56,7 +62,7 @@ class Stats(commands.Cog):
         return '\n'.join(self.format_commit(c) for c in commits)
 
     @commands.command()
-    async def about(self, ctx):
+    async def about(self, ctx: Context):
         """Tells you information about the bot itself."""
         if not hasattr(self.bot, 'uptime'): return await ctx.send("I am still starting up, hold on please.")
         revision = self.get_last_commits()
@@ -115,7 +121,7 @@ class Stats(commands.Cog):
 
     @commands.command(aliases=['hp'])
     @commands.check(checks.owner_check)
-    async def bothealth(self, ctx):
+    async def bothealth(self, ctx: Context):
         """Various bot health monitoring tools."""
 
         # This uses a lot of private methods because there is no
@@ -221,7 +227,7 @@ class Stats(commands.Cog):
 
     @commands.command(aliases=['cmdss'])
     @commands.check(checks.owner_check)
-    async def commandstats(self, ctx, limit=20):
+    async def commandstats(self, ctx: Context, limit=20):
         """Shows command stats.
         Use a negative number for bottom instead of top.
         This is only for the current session.
@@ -245,13 +251,13 @@ class Stats(commands.Cog):
 
     @commands.command(aliases=['bb'], hidden=True)
     @commands.check(checks.owner_check)
-    async def lsbotblacklist(self, ctx, limit=20):
+    async def lsbotblacklist(self, ctx: Context, limit=20):
         """Show blacklisted users up to a limit"""
         await self.botbl_disp(ctx, limit, self.bot.blacklist, "Bot blacklist")
 
     @commands.command(aliases=['bbb'], hidden=True)
     @commands.check(checks.owner_check)
-    async def lsbotbanlist(self, ctx, limit=20):
+    async def lsbotbanlist(self, ctx: Context, limit=20):
         """Show banned users up to a limit"""
         await self.botbl_disp(ctx, limit, self.bot.banlist, "Bot banlist")
 
@@ -265,7 +271,7 @@ class Stats(commands.Cog):
 
     @commands.cooldown(1, 60 * 60 * 7, commands.BucketType.user)
     @commands.command(hidden=True)
-    async def unblacklistme(self, ctx):
+    async def unblacklistme(self, ctx: Context):
         """Remove yourself from the blacklist"""
         if ctx.author.id in ctx.bot.blacklist:
             BotBlacklist.delete().where(BotBlacklist.user == ctx.author.id).execute()
@@ -278,7 +284,7 @@ class Stats(commands.Cog):
 
     @commands.command()
     @commands.check(checks.admin_check)
-    async def botunblacklist(self, ctx, user_ids: commands.Greedy[int]):
+    async def botunblacklist(self, ctx: Context, user_ids: commands.Greedy[int]):
         """Unblacklist user by id [Admin only]"""
         ret = ''
         for user_id in user_ids:
@@ -291,7 +297,7 @@ class Stats(commands.Cog):
 
     @commands.command()
     @commands.check(checks.admin_check)
-    async def botunban(self, ctx, user_ids: commands.Greedy[int]):
+    async def botunban(self, ctx: Context, user_ids: commands.Greedy[int]):
         """Unban user by id [Admin only]"""
         ret = ''
         for user_id in user_ids:
@@ -304,7 +310,7 @@ class Stats(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     if not hasattr(bot, 'command_stats'):
         bot.command_stats = Counter()
@@ -325,11 +331,13 @@ async def setup(
 
     bot.blacklist = {}
     bs = [q for q in BotBlacklist.select().dicts()]
-    for b in bs:  bot.blacklist[b['user']] = b['meta']
+    for b in bs:
+        bot.blacklist[b['user']] = b['meta']
 
     bot.banlist = {}
     bs = [q for q in BotBanlist.select().dicts()]
-    for b in bs:  bot.banlist[b['user']] = b['meta']
+    for b in bs:
+        bot.banlist[b['user']] = b['meta']
 
     ext = Stats(bot)
     await bot.add_cog(ext)

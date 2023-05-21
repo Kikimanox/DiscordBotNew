@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import asyncio
 import datetime
 import logging
@@ -14,8 +16,12 @@ from models.moderation import Reminderstbl, Timezones
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 
-logger = logging.getLogger(f"info")
-error_logger = logging.getLogger(f"error")
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
 
 
 class Timer:
@@ -50,7 +56,7 @@ class Timer:
 class Reminders(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         # Credit to RoboDanny for timeout code help
@@ -609,8 +615,9 @@ class Reminders(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Reminders(bot)
+
     bot.running_tasks.append(bot.loop.create_task(ext.refresh_timers_after_a_while()))
     await bot.add_cog(ext)

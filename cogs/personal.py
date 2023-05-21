@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import datetime
 
 import discord
@@ -6,16 +9,20 @@ from discord.ext import commands
 
 import utils.checks as checks
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 class Personal(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
 
     @commands.command(aliases=["ava", "pfp", "profile"])
-    async def avatar(self, ctx, user: discord.Member = None):
+    async def avatar(self, ctx: Context, user: discord.Member = None):
         """
         Get a user's avatar.
 
@@ -38,7 +45,7 @@ class Personal(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command()
-    async def whois(self, ctx, member: discord.Member = None):
+    async def whois(self, ctx: Context, member: discord.Member = None):
         """Check a users information.
 
         `[p]whois` - will check info for yourself
@@ -97,7 +104,7 @@ class Personal(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["sava", "spfp", "serveravatar", "savatar"])
-    async def serverpfp(self, ctx):
+    async def serverpfp(self, ctx: Context):
         """Get the server icon"""
         if 'gif' in str(ctx.guild.icon_url).split('.')[-1]:
             desc = f"[Gif link]({ctx.guild.icon_url})"
@@ -113,7 +120,7 @@ class Personal(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command()
-    async def banner(self, ctx):
+    async def banner(self, ctx: Context):
         """Display current server's banner."""
         if hasattr(ctx.guild, 'banner_url') and ctx.guild.banner_url:
             em = Embed(color=self.bot.config['BOT_DEFAULT_EMBED_COLOR'])
@@ -123,7 +130,7 @@ class Personal(commands.Cog):
             await ctx.send("No banner found.")
 
     @commands.command()
-    async def roles(self, ctx):
+    async def roles(self, ctx: Context):
         """See how many users are in each hoisted role."""
         roles_dict = {}
         for role in ctx.guild.roles:
@@ -144,7 +151,7 @@ class Personal(commands.Cog):
 
     @commands.check(checks.manage_emojis_check)
     @commands.command(aliases=["emojis"])
-    async def emotes(self, ctx):
+    async def emotes(self, ctx: Context):
         """Display all emotes on the server"""
         normal = [str(e) for e in ctx.guild.emojis if not e.animated]
         animated = [str(e) for e in ctx.guild.emojis if e.animated]
@@ -173,7 +180,7 @@ class Personal(commands.Cog):
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Personal(bot)
     await bot.add_cog(ext)

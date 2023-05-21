@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import glob
 import io
 import math
@@ -15,6 +18,11 @@ from discord.ext import commands
 
 import utils.discordUtils as dutils
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
+
 '''Module for the python interpreter as well as saving, loading, viewing, etc. the cmds/_scripts ran with the 
 interpreter. '''
 
@@ -27,7 +35,7 @@ class Debugger(commands.Cog):
 
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.channel = None
@@ -43,7 +51,7 @@ class Debugger(commands.Cog):
         return content.strip('` \n')
 
     # Executes/evaluates code.Pretty much the same as Rapptz implementation for RoboDanny with slight variations.
-    async def interpreter(self, env, code, ctx):
+    async def interpreter(self, env, code, ctx: Context):
         body = self.cleanup_code(code)
         stdout = io.StringIO()
 
@@ -111,7 +119,7 @@ class Debugger(commands.Cog):
 
     @commands.check(owner_check)
     @commands.group(pass_context=True, invoke_without_command=True)
-    async def py(self, ctx, *, msg=""):
+    async def py(self, ctx: Context, *, msg=""):
         """Python interpreter. [Bot owner only]"""
 
         env = {
@@ -139,7 +147,7 @@ class Debugger(commands.Cog):
     # Save last [p]py cmd/script.
     @commands.check(owner_check)
     @py.command(pass_context=True)
-    async def save(self, ctx, *, msg):
+    async def save(self, ctx: Context, *, msg):
         """Save the code you last ran. Ex: [p]py save stuff"""
         msg = msg.strip()[:-4] if msg.strip().endswith('.txt') else msg.strip()
         os.chdir(os.getcwd())
@@ -165,7 +173,7 @@ class Debugger(commands.Cog):
     # Load a cmd/script saved with the [p]save cmd
     @commands.check(owner_check)
     @py.command(aliases=['start'], pass_context=True)
-    async def run(self, ctx, *, msg):
+    async def run(self, ctx: Context, *, msg):
         """Run code that you saved with the save commmand. Ex: [p]py run stuff parameter1 parameter2"""
         # Like in unix, the first parameter is the script name
         parameters = msg.split()
@@ -199,7 +207,7 @@ class Debugger(commands.Cog):
     # List saved cmd/_scripts
     @commands.check(owner_check)
     @py.command(aliases=['ls'], pass_context=True)
-    async def list(self, ctx, page: str = None):
+    async def list(self, ctx: Context, page: str = None):
         """List all saved _scripts. Ex: [p]py list or [p]py ls"""
         try:
             if page:
@@ -234,7 +242,7 @@ class Debugger(commands.Cog):
     # View a saved cmd/script
     @commands.check(owner_check)
     @py.group(aliases=['vi', 'vim', 'cat'], pass_context=True)
-    async def view(self, ctx, *, msg: str):
+    async def view(self, ctx: Context, *, msg: str):
         """View a saved script's contents. Ex: [p]py view stuff"""
         msg = msg.strip()[:-4] if msg.strip().endswith('.txt') else msg.strip()
         try:
@@ -250,7 +258,7 @@ class Debugger(commands.Cog):
     # Delete a saved cmd/script
     @commands.check(owner_check)
     @py.group(aliases=['rm'], pass_context=True)
-    async def delete(self, ctx, *, msg: str):
+    async def delete(self, ctx: Context, *, msg: str):
         """Delete a saved script. Ex: [p]py delete stuff"""
         msg = msg.strip()[:-4] if msg.strip().endswith('.txt') else msg.strip()
         try:
@@ -264,7 +272,7 @@ class Debugger(commands.Cog):
 
     @commands.check(owner_check)
     @commands.command()
-    async def tail(self, ctx, lines: int, directory: str, log_group: str = None):
+    async def tail(self, ctx: Context, lines: int, directory: str, log_group: str = None):
         """Do tail on a log file
 
         lines = how much last lines
@@ -307,6 +315,8 @@ class Debugger(commands.Cog):
             return await ctx.send(f"Incorrect folder specified. Options are: `{directories}`")
 
 
-async def setup(bot):
+async def setup(
+        bot: KanaIsTheBest
+):
     debug_cog = Debugger(bot)
     await bot.add_cog(debug_cog)

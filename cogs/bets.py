@@ -1,10 +1,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from discord.ext import commands
+import logging
 
 if TYPE_CHECKING:
     from bot import KanaIsTheBest
     from utils.context import Context
+
+logger = logging.getLogger("info")
+error_logger = logging.getLogger("error")
 
 
 class Bets(commands.Cog):
@@ -14,6 +18,8 @@ class Bets(commands.Cog):
     ):
         self.bot = bot
 
+    # ctx can still work alone but with
+    # ctx: Context, it will make use of the react to delete
     @commands.command()
     async def ASDFfsdfds(self, ctx: Context, *args):
         """Desc here"""

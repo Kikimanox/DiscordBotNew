@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import asyncio
 
 from discord import Embed
@@ -8,11 +11,15 @@ import utils.discordUtils as dutils
 from models.cmds import (Command, CommandsToGuild, CmdsManager)
 from utils.SimplePaginator import SimplePaginator
 
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
+
 
 class Cmds(commands.Cog):
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.set_commands()
@@ -22,7 +29,7 @@ class Cmds(commands.Cog):
 
     @commands.check(checks.moderator_check)
     @commands.group()
-    async def add(self, ctx, *, args):
+    async def add(self, ctx: Context, *, args):
         """Add a custom embedded command
 
         There are mulitple ways to add commands:
@@ -47,7 +54,7 @@ class Cmds(commands.Cog):
 
     @commands.check(checks.admin_check)
     @add.command()
-    async def raw(self, ctx, args):
+    async def raw(self, ctx: Context, args):
         """
         Raw version of `add` (See help for add)
         """
@@ -57,7 +64,7 @@ class Cmds(commands.Cog):
 
     @commands.check(checks.admin_check)
     @commands.command()
-    async def remove(self, ctx, *, cmdName):
+    async def remove(self, ctx: Context, *, cmdName):
         """Remove a custom command"""
         try:
             cmd = CmdsManager.get_cmd_based_on_guld(ctx.guild.id, cmdName)
@@ -70,7 +77,7 @@ class Cmds(commands.Cog):
             await ctx.send("The command with that name doens't exist on this server")
         self.set_commands()
 
-    async def add_cmd_fun(self, ctx, args, raw=False):
+    async def add_cmd_fun(self, ctx: Context, args, raw=False):
         db_guild = CmdsManager.get_or_create_and_get_guild(ctx.guild.id, ctx.guild.name)
         args = str(args).replace('\n', ' \n').split(' ')
         if raw: args = args[1:]
@@ -103,7 +110,7 @@ class Cmds(commands.Cog):
 
             def check(m):
                 return (m.content.lower() == 'y' or m.content.lower() == 'n') and \
-                       m.author == ctx.author and m.channel == ctx.channel
+                    m.author == ctx.author and m.channel == ctx.channel
 
             try:
                 reply = await self.bot.wait_for("message", check=check, timeout=20)
@@ -192,7 +199,7 @@ class Cmds(commands.Cog):
 
     @commands.check(checks.admin_check)
     @commands.command(aliases=["icmds"])
-    async def inheritcmds(self, ctx, *, servers):
+    async def inheritcmds(self, ctx: Context, *, servers):
         """Inherits custom commands from another server.
 
         `[p]inheritcmd serverID`
@@ -223,17 +230,17 @@ class Cmds(commands.Cog):
         return await ctx.send("Done.")
 
     @commands.group(aliases=["lscmds", "lscmd", "listcmd", "listcommands", "commands", "cmds"])
-    async def listcmds(self, ctx):
+    async def listcmds(self, ctx: Context):
         """List all available commands"""
         if ctx.invoked_subcommand is None:
             await self.list_cmds_fnc(ctx)
 
     @listcmds.command()
-    async def compact(self, ctx):
+    async def compact(self, ctx: Context):
         """Very compact view"""
         await self.list_cmds_fnc(ctx, compact=True)
 
-    async def list_cmds_fnc(self, ctx, compact=False):
+    async def list_cmds_fnc(self, ctx: Context, compact=False):
         if ctx.guild.id not in self.bot.all_cmds: return await ctx.send("This server has no custom commands added")
         cmds = [
             k if compact else f'**{k}** (raw)' if v['raw'] else f'**{k}** (image)' if v['image'] else f'**{k}** (txt)'
@@ -294,7 +301,7 @@ class Cmds(commands.Cog):
 
 
 async def setup(
-    bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     ext = Cmds(bot)
     await bot.add_cog(ext)

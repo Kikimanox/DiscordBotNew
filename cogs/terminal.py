@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from getpass import getuser
 from os import devnull, getcwd, chdir, popen as ospopen
 from os.path import abspath, dirname
@@ -9,6 +11,10 @@ from sys import argv
 import utils.discordUtils as dutils
 from utils.checks import owner_check
 from utils.dataIOa import dataIOa as dataIO
+
+if TYPE_CHECKING:
+    from bot import KanaIsTheBest
+    from utils.context import Context
 
 try:
     from subprocess import DEVNULL  # Python 3
@@ -26,7 +32,7 @@ class Terminal(commands.Cog):
 
     def __init__(
             self,
-            bot: commands.Bot
+            bot: KanaIsTheBest
     ):
         self.bot = bot
         self.settings = dataIO.load_json(abspath(dirname(argv[0])) +
@@ -40,7 +46,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @commands.command()
-    async def cmddebug(self, ctx):
+    async def cmddebug(self, ctx: Context):
         """This command is for debugging only"""
         try:
             commithash = ospopen('git rev-parse --verify HEAD').read()[:7]
@@ -88,7 +94,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @commands.group()
-    async def system(self, ctx):
+    async def system(self, ctx: Context):
         """Returns system infromation"""
         await ctx.send('{} is running on {} {} using {}'
                        ''.format(ctx.message.guild.me.display_name,
@@ -96,7 +102,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @commands.command()
-    async def cmd(self, ctx):
+    async def cmd(self, ctx: Context):
         """Starts up the prompt"""
         if ctx.message.channel.id in self.sessions:
             await ctx.send('Already running a Terminal session '
@@ -123,7 +129,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @commands.group()
-    async def cmdsettings(self, ctx):
+    async def cmdsettings(self, ctx: Context):
         """Settings for BetterTerminal"""
         if ctx.invoked_subcommand is None:
             formatter = self.bot.help_command
@@ -133,7 +139,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @cmdsettings.group(name="alias")
-    async def _alias(self, ctx, add_or_remove, alias, text: str = None):
+    async def _alias(self, ctx: Context, add_or_remove, alias, text: str = None):
         """Custom aliases for BetterTerminal"""
         if self.cos == "default":
             os = uname()[0].lower()
@@ -163,7 +169,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @cmdsettings.command(name="os")
-    async def _os(self, ctx, os: str = None):
+    async def _os(self, ctx: Context, os: str = None):
         """Set the prompt type of BetterTerminal to emulate another Operatingsystem.
         these 'emulations' arent 100% accurate on other Operating systems"""
 
@@ -194,7 +200,7 @@ class Terminal(commands.Cog):
 
     @commands.check(owner_check)
     @cmdsettings.command(name="prefix")
-    async def _prefix(self, ctx, prefix: str = None):
+    async def _prefix(self, ctx: Context, prefix: str = None):
         """Set the prefix for the Terminal"""
 
         if prefix is None:
@@ -379,7 +385,7 @@ def check_file():
 
 
 async def setup(
-        bot: commands.Bot
+        bot: KanaIsTheBest
 ):
     check_file()
     await bot.add_cog(Terminal(bot))
