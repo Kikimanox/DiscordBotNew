@@ -7,7 +7,7 @@ from discord.ext import commands, tasks
 from pathlib import Path
 from typing import List, Optional
 
-from models.club_data import ClubData
+from utils.club_data import ClubData
 
 from discord import Embed, app_commands, Interaction
 from datetime import datetime
