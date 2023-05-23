@@ -31,18 +31,6 @@ img_regex = r'<!--[\s\S]*?-->|(?P<url>(http(s?):)?\/?\/?[^,;" \n\t>]+?\.(jpg|gif
 url_regex = r"(?:https://)?\w+\.\S*[^.\s]"
 
 
-class CooldownModified:
-    def __init__(self, rate: float = 1, per: float = 30):
-        self.rate = rate
-        self.per = per
-
-    def __call__(self, message: Message) -> Optional[commands.Cooldown]:
-        if message.author.id == 123456789:  # ID
-            return commands.Cooldown(self.rate, self.per)
-        else:
-            return None
-
-
 class ClubsCommand(commands.Cog):
     club_data: List[ClubData] = []
 
@@ -61,7 +49,7 @@ class ClubsCommand(commands.Cog):
         if not self.club_data_path.exists():
             # If it doesn't exist, create the file
             async with aiofiles.open(
-                self.club_data_path, mode="w+", encoding="utf-8"
+                    self.club_data_path, mode="w+", encoding="utf-8"
             ) as file:
                 await file.write(json.dumps({}))
             return
@@ -71,7 +59,7 @@ class ClubsCommand(commands.Cog):
     @tasks.loop(hours=24, reconnect=True)
     async def refresh_club_data_to_cache(self):
         async with aiofiles.open(
-            self.club_data_path, mode="r+", encoding="utf-8"
+                self.club_data_path, mode="r+", encoding="utf-8"
         ) as file:
             content = await file.read()
             data: dict = json.loads(content)
@@ -92,12 +80,25 @@ class ClubsCommand(commands.Cog):
             temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name)
         )
 
+    class CooldownModified:
+        def __init__(self, rate: float = 1, per: float = 30):
+            self.rate = rate
+            self.per = per
+
+        def __call__(self, ctx: commands.Context) -> Optional[commands.Cooldown]:
+            message = ctx.message
+            if message.author.id == 123456789:  # ID
+                return commands.Cooldown(self.rate, self.per)
+            else:
+                return None
+
     @commands.dynamic_cooldown(
-        type=commands.BucketType.user, cooldown=CooldownModified()
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user
     )
     @commands.command(name="pingclub", aliases=["ping"], description="ping a club")
     async def ping_a_club_normal(
-        self, ctx: Context, club_name: str, *, link: Optional[str] = None
+            self, ctx: Context, club_name: str, *, link: Optional[str] = None
     ):
         await self.pinging_the_club(ctx, club_name, link)
 
@@ -127,17 +128,17 @@ class ClubsCommand(commands.Cog):
     @get_the_clubs.command(name="ping", description="ping a club")
     @app_commands.describe(club_name="Name of the club", link="Link to share")
     async def ping_a_club_v2(
-        self, ctx: Context, club_name: str, link: Optional[str] = None
+            self, ctx: Context, club_name: str, link: Optional[str] = None
     ):
         await self.pinging_the_club(ctx, club_name, link)
 
     async def pinging_the_club(
-        self, ctx: Context, club_name: str, link: Optional[str] = None
+            self, ctx: Context, club_name: str, link: Optional[str] = None
     ):
         async def send_message_via_normal_or_channel(
-            searched_for_related_club: bool,
-            message_content: str,
-            delete_after: Optional[float] = None,
+                searched_for_related_club: bool,
+                message_content: str,
+                delete_after: Optional[float] = None,
         ) -> Message:
             if searched_for_related_club:
                 return_message = await ctx.channel_send(
@@ -221,7 +222,7 @@ class ClubsCommand(commands.Cog):
             last_channel = ctx.guild.get_channel_or_thread(last_entry.channel_id)
             ping_again = await ctx.prompt(
                 content=f"`{club_name}` have already been pinged last {last_entry.time_stamp} at"
-                f" {last_channel.mention}. Would you like to ping again?",
+                        f" {last_channel.mention}. Would you like to ping again?",
                 timeout=30,
             )
             if not ping_again:
@@ -282,7 +283,7 @@ class ClubsCommand(commands.Cog):
             return clubs[0]
 
     async def fetch_similar_clubs(
-        self, ctx: Context, club_name: str
+            self, ctx: Context, club_name: str
     ) -> Optional[ClubData]:
         similar_clubs = await self.find_similar_clubs(club_name=club_name)
 
@@ -296,7 +297,7 @@ class ClubsCommand(commands.Cog):
         return club
 
     async def find_similar_clubs(
-        self, club_name: str, number_of_similar_clubs: int = 5
+            self, club_name: str, number_of_similar_clubs: int = 5
     ) -> List[str]:
         similarity = []
         for club in self.club_data:
@@ -323,8 +324,8 @@ class ClubsCommand(commands.Cog):
                 club_list.append(item)
             else:
                 if (
-                    current.lower() in club.club_name.lower()
-                    or current.lower() in club.description.lower()
+                        current.lower() in club.club_name.lower()
+                        or current.lower() in club.description.lower()
                 ):
                     item = app_commands.Choice(
                         name=club.club_name, value=club.club_name
