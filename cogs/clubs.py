@@ -84,15 +84,16 @@ class ClubsCommand(commands.Cog):
         def __call__(self, ctx: commands.Context) -> Optional[commands.Cooldown]:
             message = ctx.message
             if message.author.id == 123456789:  # ID
-                return commands.Cooldown(self.rate, self.per)
-            else:
                 return None
+            else:
+                return commands.Cooldown(self.rate, self.per)
 
     @commands.dynamic_cooldown(
         cooldown=CooldownModified(),
         type=commands.BucketType.user
     )
     @commands.command(name="pingclub", aliases=["ping"], description="ping a club")
+    @commands.guild_only()
     async def ping_a_club_normal(
             self, ctx: Context, club_name: str, *, link: Optional[str] = None
     ):
@@ -185,6 +186,7 @@ class ClubsCommand(commands.Cog):
                 message_content=content,
                 delete_after=10,
             )
+            ctx.command.reset_cooldown(ctx)
             return
 
         check_blacklisted = club.check_if_author_is_blacklisted(author_id=ctx.author.id)
@@ -209,6 +211,7 @@ class ClubsCommand(commands.Cog):
                 message_content=content,
                 delete_after=10,
             )
+            ctx.command.reset_cooldown(ctx)
             return
 
         last_entry = club.get_the_last_ping_from_history(guild_id=ctx.guild.id)
@@ -221,6 +224,7 @@ class ClubsCommand(commands.Cog):
                 timeout=30,
             )
             if not ping_again:
+                ctx.command.reset_cooldown(ctx)
                 return
 
         await club.update_ping(file_path=self.club_data_path)
