@@ -166,8 +166,9 @@ class ClubsCommand(commands.Cog):
         if club is None:
             # If there is no club based from name, search for the closest club
             # based from name
-            similar_club = await self.fetch_similar_clubs(ctx=ctx, club_name=club_name)
+            similar_club = await self.fetch_similar_club_or_none_view(ctx=ctx, club_name=club_name)
             if similar_club is None:
+                ctx.command.reset_cooldown(ctx)
                 return
 
             club = similar_club
@@ -275,7 +276,7 @@ class ClubsCommand(commands.Cog):
         else:
             return clubs[0]
 
-    async def fetch_similar_clubs(
+    async def fetch_similar_club_or_none_view(
             self, ctx: Context, club_name: str
     ) -> Optional[ClubData]:
         similar_clubs = await self.find_similar_clubs(club_name=club_name)
