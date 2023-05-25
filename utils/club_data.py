@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Union
+from models.club_moderation import ClubPingHistory, get_the_last_entry_from_club_name_from_guild
 
 import aiofiles
 from discord import Member, Interaction
@@ -43,6 +44,28 @@ class ClubData:
         self.blacklist = data.get("blacklist", [])
 
         self.image_url = data.get("image_url", "")
+
+    def save_ping_history(
+            self,
+            ctx: commands.Context,
+            message_id: int
+    ):
+        # Ping History
+        new_entry = ClubPingHistory(
+            author_id=ctx.author.id,
+            author_name=ctx.author.display_name,
+            guild_id=ctx.guild.id,
+            channel_id=ctx.channel.id,
+            message_id=message_id,
+            club_name=self.club_name,
+        )
+        new_entry.save()
+
+    def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubPingHistory]:
+        return get_the_last_entry_from_club_name_from_guild(
+            club_name=self.club_name,
+            guild_id=guild_id
+        )
 
     def check_if_author_is_in_the_club(
             self,

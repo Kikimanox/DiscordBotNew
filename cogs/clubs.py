@@ -11,10 +11,6 @@ from typing import List, Optional
 from datetime import datetime, timezone
 
 from utils.club_data import ClubData
-from models.club_moderation import (
-    ClubPingHistory,
-    get_the_last_entry_from_club_name_from_guild,
-)
 
 from discord import Embed, app_commands, Interaction, Message
 
@@ -100,6 +96,7 @@ class ClubsCommand(commands.Cog):
     async def ping_a_club_normal(
             self, ctx: Context, club_name: str, *, link: Optional[str] = None
     ):
+        
         await self.pinging_the_club(ctx, club_name, link)
 
     @commands.hybrid_group(
@@ -214,9 +211,7 @@ class ClubsCommand(commands.Cog):
             )
             return
 
-        last_entry = get_the_last_entry_from_club_name_from_guild(
-            club_name=club_name, guild_id=ctx.guild.id
-        )
+        last_entry = club.get_the_last_ping_from_history(guild_id=ctx.guild.id)
 
         if last_entry is not None and last_entry.check_if_within_24_hours:
             last_channel = ctx.guild.get_channel_or_thread(last_entry.channel_id)
@@ -243,16 +238,10 @@ class ClubsCommand(commands.Cog):
                 message = await ctx.channel_send(content=msg)
             message_list.append(message)
 
-        # Ping History
-        new_entry = ClubPingHistory(
-            author_id=ctx.author.id,
-            author_name=ctx.author.display_name,
-            guild_id=ctx.guild.id,
-            channel_id=ctx.channel.id,
-            message_id=message_list[0].id,
-            club_name=club_name,
+        club.save_ping_history(
+            ctx=ctx,
+            message_id=message_list[0].id
         )
-        new_entry.save()
 
         if len(message_list) > 0 and link is None:
             # If there is no link, wait for 15 seconds and wait for the link
