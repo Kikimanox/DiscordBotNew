@@ -258,8 +258,13 @@ class ClubData:
             await f.write(json.dumps(data))
 
     async def _read_json_data(self, file_path: Path) -> dict:
-        content = await self._read_file(file_path)
-        return json.loads(content)
+        try:
+            content = await self._read_file(file_path)
+            return json.loads(content)
+        except FileNotFoundError:
+            return {}
+        except IsADirectoryError:
+            return {}
 
     @staticmethod
     async def _read_file(file_path: Path):
