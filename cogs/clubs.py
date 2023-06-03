@@ -160,13 +160,13 @@ class ClubsCommand(commands.Cog):
             link = reply_message_link
 
         # Search for the club with its name
-        club = await self.search_the_club_for(club_name=club_name)
+        club = await self._search_the_club_for(club_name=club_name)
 
         search_for_related_club = False
         if club is None:
             # If there is no club based from name, search for the closest club
             # based from name
-            similar_club = await self.fetch_similar_club_or_none_view(ctx=ctx, club_name=club_name)
+            similar_club = await self._fetch_similar_club_or_none_view(ctx=ctx, club_name=club_name)
             if similar_club is None:
                 ctx.command.reset_cooldown(ctx)
                 return
@@ -265,7 +265,7 @@ class ClubsCommand(commands.Cog):
                     content += f"\n{result_link}"
                     await message.edit(content=content)
 
-    async def search_the_club_for(self, club_name: str) -> Optional[ClubData]:
+    async def _search_the_club_for(self, club_name: str) -> Optional[ClubData]:
         clubs = [
             club
             for club in self.club_data
@@ -276,10 +276,10 @@ class ClubsCommand(commands.Cog):
         else:
             return clubs[0]
 
-    async def fetch_similar_club_or_none_view(
+    async def _fetch_similar_club_or_none_view(
             self, ctx: Context, club_name: str
     ) -> Optional[ClubData]:
-        similar_clubs = await self.find_similar_clubs(club_name=club_name)
+        similar_clubs = await self._find_similar_clubs(club_name=club_name)
 
         result = await ctx.choose_value_with_button(
             content=f"Club `{club_name}` not found\n" f"Is this the club?",
@@ -287,10 +287,10 @@ class ClubsCommand(commands.Cog):
             timeout=30,
         )
 
-        club = await self.search_the_club_for(club_name=f"{result}")
+        club = await self._search_the_club_for(club_name=f"{result}")
         return club
 
-    async def find_similar_clubs(
+    async def _find_similar_clubs(
             self, club_name: str, number_of_similar_clubs: int = 5
     ) -> List[str]:
         similarity = []
