@@ -86,11 +86,18 @@ db.create_tables([ClubPingHistory])
 
 def save_ping_history(
         ctx: Context,
-        message: Message
+        message: Message,
+        club_name: str
 ):
     new_value = ClubPingHistory(
-
+        guild_id=ctx.guild.id,
+        channel_id=ctx.channel.id,
+        message_id=message.id,
+        author_id=ctx.author.id,
+        author_name=ctx.author.name,
+        club_name=club_name,
     )
+    new_value.save()
 
 
 def get_the_last_entry_from_club_name_from_guild(

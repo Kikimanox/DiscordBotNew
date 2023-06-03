@@ -46,14 +46,15 @@ class ClubData:
 
         self.image_url = data.get("image_url", "")
 
-    @staticmethod
     def save_ping_history(
+            self,
             ctx: commands.Context,
             message: Message
     ):
         club_moderation.save_ping_history(
             ctx,
-            message
+            message,
+            self.club_name
         )
 
     def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubPingHistory]:
