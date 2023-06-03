@@ -135,8 +135,7 @@ class ClubData:
             club_data.update(
                 {'pings': pings}
             )
-        async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
-            await f.write(json.dumps(data))
+        await self._write_json_data(file_path, data)
 
     async def update_club_information_from_json(
             self,
@@ -153,8 +152,7 @@ class ClubData:
                     'image_url': image_url
                 }
             )
-        async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
-            await f.write(json.dumps(data))
+        await self._write_json_data(file_path, data)
 
     async def create_club(
             self,
@@ -167,8 +165,7 @@ class ClubData:
         data.update(
             new_club
         )
-        async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
-            await f.write(json.dumps(data))
+        await self._write_json_data(file_path, data)
 
     async def delete_club(
             self,
@@ -176,8 +173,7 @@ class ClubData:
     ):
         data = await self._read_json_data(file_path)
         data.pop(self.club_name)
-        async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
-            await f.write(json.dumps(data))
+        await self._write_json_data(file_path, data)
 
     async def set_club_member_status(
             self,
@@ -206,8 +202,7 @@ class ClubData:
             club_data.update(
                 {"members": self.members}
             )
-        async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
-            await f.write(json.dumps(data))
+        await self._write_json_data(file_path, data)
 
     async def set_club_moderator_status(
             self,
@@ -227,8 +222,7 @@ class ClubData:
             club_data.update(
                 {"moderator": self.moderators}
             )
-        async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
-            await f.write(json.dumps(data))
+        await self._write_json_data(file_path, data)
 
     async def set_club_blacklist_member_status(
             self,
@@ -248,6 +242,10 @@ class ClubData:
             club_data.update(
                 {"blacklist": self.blacklist}
             )
+        await self._write_json_data(file_path, data)
+
+    @staticmethod
+    async def _write_json_data(file_path: Path, data):
         async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
             await f.write(json.dumps(data))
 
