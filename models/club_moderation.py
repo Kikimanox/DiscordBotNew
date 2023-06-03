@@ -1,11 +1,21 @@
+from __future__ import annotations
 from peewee import (SqliteDatabase, Model, IntegerField, CharField, DoesNotExist,
                     IntegrityError, DatabaseError, Field)
 from datetime import datetime, timezone
-from discord import utils
-from typing import Optional
-from enum import StrEnum, auto
+from discord import utils, Message
+from typing import Optional, TYPE_CHECKING
 import logging
 import traceback
+import sys
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum, auto
+else:
+    from backports.strenum import StrEnum
+    from enum import auto
+    
+if TYPE_CHECKING:
+    from utils.context import Context
 
 logger = logging.getLogger("info")
 error_logger = logging.getLogger("error")
@@ -42,6 +52,13 @@ class ClubModeration(BaseModel):
     id = IntegerField(primary_key=True)
 
 
+class ClubHistory(BaseModel):
+    id = IntegerField(primary_key=True)
+    actions = CharField(
+        choices=[(activities, activities) for activities in ClubActivities]
+    )
+
+
 class ClubPingHistory(BaseModel):
     id = IntegerField(primary_key=True)
     guild_id = IntegerField()
@@ -65,6 +82,15 @@ class ClubPingHistory(BaseModel):
 
 
 db.create_tables([ClubPingHistory])
+
+
+def save_ping_history(
+        ctx: Context,
+        message: Message
+):
+    new_value = ClubPingHistory(
+
+    )
 
 
 def get_the_last_entry_from_club_name_from_guild(

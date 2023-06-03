@@ -6,7 +6,7 @@ from models.club_moderation import ClubPingHistory
 from models import club_moderation
 
 import aiofiles
-from discord import Member, Interaction
+from discord import Member, Interaction, Message
 from discord.ext import commands
 
 import logging
@@ -46,21 +46,15 @@ class ClubData:
 
         self.image_url = data.get("image_url", "")
 
+    @staticmethod
     def save_ping_history(
-            self,
             ctx: commands.Context,
-            message_id: int
+            message: Message
     ):
-        # Ping History
-        new_entry = ClubPingHistory(
-            author_id=ctx.author.id,
-            author_name=ctx.author.display_name,
-            guild_id=ctx.guild.id,
-            channel_id=ctx.channel.id,
-            message_id=message_id,
-            club_name=self.club_name,
+        club_moderation.save_ping_history(
+            ctx,
+            message
         )
-        new_entry.save()
 
     def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubPingHistory]:
         return club_moderation.get_the_last_entry_from_club_name_from_guild(

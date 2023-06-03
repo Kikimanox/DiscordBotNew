@@ -245,7 +245,7 @@ class ClubsCommand(commands.Cog):
 
         club.save_ping_history(
             ctx=ctx,
-            message_id=message_list[0].id
+            message=message_list[0]
         )
 
         if len(message_list) > 0 and link is None:
