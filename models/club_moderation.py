@@ -3,6 +3,7 @@ from peewee import (SqliteDatabase, Model, IntegerField, CharField, DoesNotExist
 from datetime import datetime, timezone
 from discord import utils
 from typing import Optional
+from enum import StrEnum, auto
 import logging
 import traceback
 
@@ -11,6 +12,13 @@ error_logger = logging.getLogger("error")
 
 DB = "data/club_moderation"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
+
+
+class ClubActivities(StrEnum):
+    CREATE = auto()
+    PING = auto()
+    JOIN = auto()
+    LEAVE = auto()
 
 
 class TimestampTzField(Field):

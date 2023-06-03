@@ -2,7 +2,8 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Union
-from models.club_moderation import ClubPingHistory, get_the_last_entry_from_club_name_from_guild
+from models.club_moderation import ClubPingHistory
+from models import club_moderation
 
 import aiofiles
 from discord import Member, Interaction
@@ -62,7 +63,7 @@ class ClubData:
         new_entry.save()
 
     def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubPingHistory]:
-        return get_the_last_entry_from_club_name_from_guild(
+        return club_moderation.get_the_last_entry_from_club_name_from_guild(
             club_name=self.club_name,
             guild_id=guild_id
         )
@@ -131,9 +132,7 @@ class ClubData:
             self.pings += 1
 
     async def update_pings_from_json(self, file_path: Path):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
         club_data: dict = data.get(self.club_name, None)
         if club_data is not None:
             pings = self.pings
@@ -151,9 +150,7 @@ class ClubData:
             description: str,
             image_url: str
     ):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
         club_data: dict = data.get(self.club_name, None)
         if club_data is not None:
             club_data.update(
@@ -169,9 +166,7 @@ class ClubData:
             self,
             file_path: Path,
     ):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
         new_club = {
             self.club_name: self.club_data
         }
@@ -185,9 +180,7 @@ class ClubData:
             self,
             file_path: Path,
     ):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
         data.pop(self.club_name)
         async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
             await f.write(json.dumps(data))
@@ -198,10 +191,7 @@ class ClubData:
             author_id: int,
             join: bool
     ):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
 
         if join:
             self.members.append(author_id)
@@ -231,10 +221,7 @@ class ClubData:
             author_id: int,
             join: bool
     ):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
 
         if join:
             self.moderators.append(author_id)
@@ -255,10 +242,7 @@ class ClubData:
             author_id: int,
             join: bool
     ):
-        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
-            content = await file.read()
-
-        data: dict = json.loads(content)
+        data = await self._read_json_data(file_path)
 
         if join:
             self.blacklist.append(author_id)
@@ -272,3 +256,13 @@ class ClubData:
             )
         async with aiofiles.open(file_path, "w+", encoding="utf-8") as f:
             await f.write(json.dumps(data))
+
+    async def _read_json_data(self, file_path: Path) -> dict:
+        content = await self._read_file(file_path)
+        return json.loads(content)
+
+    @staticmethod
+    async def _read_file(file_path: Path):
+        async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
+            content = await file.read()
+        return content
