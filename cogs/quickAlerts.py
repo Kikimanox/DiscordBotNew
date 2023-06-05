@@ -14,7 +14,7 @@ import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 
 from models.quickAlerts import QuickAlerts
-from models.views import AlertSelectMenuView
+from utils.views import AlertSelectMenuView
 
 if TYPE_CHECKING:
     from bot import KanaIsTheBest
