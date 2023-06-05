@@ -1,16 +1,21 @@
+from __future__ import annotations
+
 import json
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional, List, Union
-from models.club_moderation import ClubHistory
-from models import club_moderation
-
-import aiofiles
-from discord import Member, Interaction, Message
-from discord.ext import commands
-
 import logging
 import traceback
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Union
+
+import aiofiles
+from discord import Interaction, Member, Message
+from discord.ext import commands
+
+from models import club_moderation
+from models.club_moderation import ClubHistory
+
+if TYPE_CHECKING:
+    from utils.context import Context
 
 logger = logging.getLogger("info")
 error_logger = logging.getLogger("error")
@@ -68,9 +73,6 @@ class ClubData:
             author_id: int,
             ctx: Optional[commands.Context] = None
     ) -> bool:
-        if ctx is not None:
-            if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator:
-                return True
         if author_id in self.members:
             return True
         else:
@@ -178,12 +180,12 @@ class ClubData:
 
     async def set_club_member_status(
             self,
+            ctx: Context,
             file_path: Path,
-            author_id: int,
             join: bool
     ):
         data = await self._read_json_data(file_path)
-
+        author_id = ctx.author.id
         if join:
             self.members.append(author_id)
         else:
@@ -193,7 +195,8 @@ class ClubData:
                 try:
                     self.moderators.remove(author_id)
                 except Exception as ex:
-                    error_message = ''.join(traceback.format_exception(None, ex, ex.__traceback__))
+                    error_message = ''.join(
+                        traceback.format_exception(None, ex, ex.__traceback__))
                     error_logger.error(error_message)
                     pass
 
@@ -204,6 +207,12 @@ class ClubData:
                 {"members": self.members}
             )
         await self._write_json_data(file_path, data)
+
+        club_moderation.save_join_or_leave_history(
+            ctx=ctx,
+            club_name=self.club_name,
+            join=join
+        )
 
     async def set_club_moderator_status(
             self,

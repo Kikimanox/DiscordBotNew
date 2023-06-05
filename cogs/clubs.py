@@ -320,8 +320,8 @@ class ClubsCommand(commands.Cog):
             return
         
         await club.set_club_member_status(
+            ctx=ctx,
             file_path=self.club_data_path,
-            author_id=ctx.author.id,
             join=True
         )
         await self.add_club_data_to_cache()
