@@ -1,6 +1,6 @@
 from __future__ import annotations
 from peewee import (SqliteDatabase, Model, IntegerField, CharField, DoesNotExist,
-                    IntegrityError, DatabaseError, Field)
+                    IntegrityError, DatabaseError, Field, ForeignKeyField)
 from datetime import datetime, timezone
 from discord import utils, Message
 from typing import Optional, TYPE_CHECKING
@@ -13,7 +13,7 @@ if sys.version_info >= (3, 11):
 else:
     from backports.strenum import StrEnum
     from enum import auto
-    
+
 if TYPE_CHECKING:
     from utils.context import Context
 
@@ -59,14 +59,18 @@ class ClubHistory(BaseModel):
     )
 
 
-class ClubPingHistory(BaseModel):
-    id = IntegerField(primary_key=True)
+class DiscordLink(BaseModel):
     guild_id = IntegerField()
     channel_id = IntegerField()
     message_id = IntegerField()
+
+
+class ClubPingHistory(BaseModel):
+    id = IntegerField(primary_key=True)
     author_id = IntegerField()
     author_name = CharField()
     club_name = CharField()
+    discord_link = ForeignKeyField(DiscordLink, backref="link")
     ping_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
     @property
@@ -81,7 +85,7 @@ class ClubPingHistory(BaseModel):
         return ts
 
 
-db.create_tables([ClubPingHistory])
+db.create_tables([ClubPingHistory, DiscordLink])
 
 
 def save_ping_history(
@@ -89,13 +93,17 @@ def save_ping_history(
         message: Message,
         club_name: str
 ):
-    new_value = ClubPingHistory(
+    link = DiscordLink(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=message.id,
+    )
+    link.save()
+    new_value = ClubPingHistory(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
+        discord_link=link,
     )
     new_value.save()
 
@@ -105,9 +113,9 @@ def get_the_last_entry_from_club_name_from_guild(
         guild_id: int
 ) -> Optional[ClubPingHistory]:
     try:
-        last_entry = ClubPingHistory.select().where(
+        last_entry = ClubPingHistory.select().join(DiscordLink).where(
             ClubPingHistory.club_name == club_name and
-            ClubPingHistory.guild_id == guild_id
+            DiscordLink.guild_id == guild_id
         ).order_by(
             ClubPingHistory.id.desc()
         ).get()
