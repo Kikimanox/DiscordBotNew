@@ -83,7 +83,7 @@ class ClubsCommand(commands.Cog):
 
         def __call__(self, ctx: Context) -> Optional[commands.Cooldown]:
             if isinstance(ctx.author, Member) and \
-                ctx.author.guild_permissions.administrator:
+                    ctx.author.guild_permissions.administrator:
                 return None
 
             # underground idol
@@ -96,10 +96,7 @@ class ClubsCommand(commands.Cog):
 
             return commands.Cooldown(self.rate, self.per)
 
-    @commands.dynamic_cooldown(
-        cooldown=CooldownModified(),
-        type=commands.BucketType.user
-    )
+    @commands.dynamic_cooldown(cooldown=CooldownModified(), type=commands.BucketType.user)
     @commands.command(name="pingclub", aliases=["ping"], description="ping a club")
     @commands.guild_only()
     async def ping_a_club_normal(
@@ -138,6 +135,7 @@ class ClubsCommand(commands.Cog):
     )
     @get_the_clubs.command(name="ping", description="ping a club")
     @app_commands.describe(club_name="Name of the club", link="Link to share")
+    @commands.guild_only()
     async def ping_a_club_v2(
             self, ctx: Context, club_name: str, link: Optional[str] = None
     ):
@@ -255,7 +253,38 @@ class ClubsCommand(commands.Cog):
                     content = message.content
                     content += f"\n{result_link}"
                     await message.edit(content=content)
-        
+
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user
+    )
+    @commands.command(name="joinclub", aliases=["join"], description="join a club")
+    @commands.guild_only()
+    async def join_a_club_normal(
+            self, ctx: Context, club_name: str
+    ):
+        await self._invoke_new_command_version(
+            ctx=ctx,
+            new_command_name="join",
+            club_name=club_name,
+        )
+
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user,
+    )
+    @get_the_clubs.command(name="join", description="join a club")
+    @app_commands.describe(club_name="Name of the club")
+    @commands.guild_only()
+    async def join_a_club_v2(self, ctx: Context, club_name: str,):
+        club, search_for_related_club, exit_command = await self._fetch_club_or_exit(
+            ctx=ctx, club_name=club_name
+        )
+        if exit_command:
+            return
+
+        club_name = club.club_name
+        await ctx.send(f"{ctx.author.mention} have joined `{club_name}`")
 
     async def _fetch_club_or_exit(
             self,
@@ -339,6 +368,7 @@ class ClubsCommand(commands.Cog):
         await ctx.send(f"Cannot find `{command_name}` command", delete_after=10)
 
     @ping_a_club_v2.autocomplete(name="club_name")
+    @join_a_club_v2.autocomplete(name="club_name")
     async def autocomplete_club_names(self, interaction: Interaction, current: str):
         club_list: List[app_commands.Choice] = []
         author_id = interaction.user.id
@@ -349,6 +379,8 @@ class ClubsCommand(commands.Cog):
                 author_id=author_id)
 
             if command_name == "ping" and not user_check:
+                continue
+            if command_name == "join" and user_check:
                 continue
 
             if len(current) == 0:
