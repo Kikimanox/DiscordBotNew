@@ -93,19 +93,17 @@ def save_ping_history(
         message: Message,
         club_name: str
 ):
-    link = DiscordLink(
+    link = DiscordLink.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=message.id,
     )
-    link.save()
-    new_value = ClubPingHistory(
+    ClubPingHistory.create(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
         discord_link=link,
     )
-    new_value.save()
 
 
 def get_the_last_entry_from_club_name_from_guild(
