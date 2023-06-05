@@ -57,7 +57,9 @@ async def manage_emojis_check(
             isinstance(ctx.author, Member) and ctx.author.guild_permissions.manage_emojis)
 
 
-async def moderator_or_underground_idols_check(ctx):
+async def moderator_or_underground_idols_check(
+        ctx: commands.Context
+):
     return await moderator_check(ctx) or await moderator_check_custom(ctx, 1099400199920693248)
 
 
@@ -68,7 +70,8 @@ async def moderator_check(
         return True
     if not ctx.guild:
         return False
-    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator: return True
+    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator:
+        return True
     if ctx.bot.from_serversetup:
         if ctx.guild.id in ctx.bot.from_serversetup:
             if 'modrole' in ctx.bot.from_serversetup[ctx.guild.id]:
@@ -86,7 +89,8 @@ async def moderator_check_custom(
         return True
     if not ctx.guild:
         return False
-    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator: return True
+    if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator:
+        return True
     if ctx.bot.from_serversetup:
         if ctx.guild.id in ctx.bot.from_serversetup:
             if 'modrole' in ctx.bot.from_serversetup[ctx.guild.id]:

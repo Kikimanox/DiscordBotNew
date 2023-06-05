@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 from utils.club_data import ClubData
 
-from discord import Embed, app_commands, Interaction, Message
+from discord import Embed, app_commands, Interaction, Message, Member
 
 import logging
 
@@ -77,16 +77,24 @@ class ClubsCommand(commands.Cog):
         )
 
     class CooldownModified:
-        def __init__(self, rate: float = 1, per: float = 30):
+        def __init__(self, rate: float = 1, per: float = 10):
             self.rate = rate
             self.per = per
 
-        def __call__(self, ctx: commands.Context) -> Optional[commands.Cooldown]:
-            message = ctx.message
-            if message.author.id == 123456789:  # ID
+        def __call__(self, ctx: Context) -> Optional[commands.Cooldown]:
+            if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator:
                 return None
-            else:
-                return commands.Cooldown(self.rate, self.per)
+
+            # underground idol
+            role_id = 1099400199920693248
+            if ctx.guild.id in ctx.bot.from_serversetup:
+                if 'modrole' in ctx.bot.from_serversetup[ctx.guild.id]:
+                    modrole_id = role_id
+                    if modrole_id in [r.id for r in ctx.author.roles]:
+                        return None
+
+            return commands.Cooldown(self.rate, self.per)
+
 
     @commands.dynamic_cooldown(
         cooldown=CooldownModified(),
