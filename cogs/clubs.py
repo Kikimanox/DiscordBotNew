@@ -54,6 +54,9 @@ class ClubsCommand(commands.Cog):
 
     @tasks.loop(hours=24, reconnect=True)
     async def refresh_club_data_to_cache(self):
+        await self.add_club_data_to_cache()
+    
+    async def add_club_data_to_cache(self):
         async with aiofiles.open(
                 self.club_data_path, mode="r+", encoding="utf-8"
         ) as file:
@@ -284,6 +287,45 @@ class ClubsCommand(commands.Cog):
             return
 
         club_name = club.club_name
+        
+        check_author = club.check_if_author_is_in_the_club(
+            author_id=ctx.author.id, ctx=ctx
+        )
+
+        if check_author:
+            content = f"User is already on the club {club_name}"
+            await send_message_via_normal_or_channel(
+                ctx=ctx,
+                searched_for_related_club=search_for_related_club,
+                message_content=content,
+                delete_after=10,
+            )
+            ctx.command.reset_cooldown(ctx)
+            return
+
+        check_blacklisted = club.check_if_author_is_blacklisted(
+            author_id=ctx.author.id)
+        if check_blacklisted:
+            content = (
+                f"`{ctx.author.name}#{ctx.author.discriminator}` "
+                "can't join "
+                f"club `{club_name}`"
+            )
+            await send_message_via_normal_or_channel(
+                ctx=ctx,
+                searched_for_related_club=search_for_related_club,
+                message_content=content,
+                delete_after=15,
+            )
+            return
+        
+        await club.set_club_member_status(
+            file_path=self.club_data_path,
+            author_id=ctx.author.id,
+            join=True
+        )
+        await self.add_club_data_to_cache()
+
         await ctx.send(f"{ctx.author.mention} have joined `{club_name}`")
 
     async def _fetch_club_or_exit(
