@@ -73,6 +73,10 @@ class ClubHistory(BaseModel):
     actions = CharField(
         choices=[(activities, activities) for activities in ClubActivities]
     )
+    author_id = IntegerField()
+    author_name = CharField()
+    club_name = CharField()
+    history_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
 
 class DiscordLink(BaseModel):
@@ -84,9 +88,7 @@ class DiscordLink(BaseModel):
 
 class ClubPingHistory(BaseModel):
     id = IntegerField(primary_key=True)
-    author_id = IntegerField()
-    author_name = CharField()
-    club_name = CharField()
+    club_history = ForeignKeyField(ClubHistory, backref="history")
     discord_link = ForeignKeyField(DiscordLink, backref="link")
     ping_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
@@ -102,7 +104,7 @@ class ClubPingHistory(BaseModel):
         return ts
 
 
-db.create_tables([ClubPingHistory, DiscordLink])
+db.create_tables([ClubPingHistory, ClubHistory, DiscordLink])
 
 
 def save_ping_history(
@@ -115,10 +117,14 @@ def save_ping_history(
         channel_id=ctx.channel.id,
         message_id=message.id,
     )
-    ClubPingHistory.create(
+    history = ClubHistory.create(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
+        actions=ClubActivities.PING
+    )
+    ClubPingHistory.create(
+        club_history=history,
         discord_link=link,
     )
 
@@ -128,10 +134,11 @@ def get_the_last_entry_from_club_name_from_guild(
         guild_id: int
 ) -> Optional[ClubPingHistory]:
     try:
-        last_entry = ClubPingHistory.select().join(DiscordLink).where(
-            ClubPingHistory.club_name == club_name and
-            DiscordLink.guild_id == guild_id
-        ).order_by(
+        last_entry = ClubPingHistory.select().join(DiscordLink).\
+            switch(ClubPingHistory).join(ClubHistory).\
+            where(ClubHistory.club_name == club_name and
+                  DiscordLink.guild_id == guild_id
+                  ).order_by(
             ClubPingHistory.id.desc()
         ).get()
 
