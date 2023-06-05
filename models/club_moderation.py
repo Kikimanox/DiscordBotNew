@@ -41,6 +41,7 @@ class ClubActivities(StrEnum):
     PING = auto()
     JOIN = auto()
     LEAVE = auto()
+    DELETE = auto()
 
 
 class TimestampTzField(Field):
@@ -133,6 +134,40 @@ def save_leave_history(
         author_name=ctx.author.name,
         club_name=club_name,
         actions=ClubActivities.LEAVE,
+        discord_link=link,
+    )
+
+def save_create_history(
+        ctx: Context,
+        club_name: str
+):
+    link = DiscordLink.create(
+        guild_id=ctx.guild.id,
+        channel_id=ctx.channel.id,
+        message_id=ctx.message.id
+    )
+    ClubHistory.create(
+        author_id=ctx.author.id,
+        author_name=ctx.author.name,
+        club_name=club_name,
+        actions=ClubActivities.CREATE,
+        discord_link=link,
+    )
+
+def save_delete_history(
+        ctx: Context,
+        club_name: str
+):
+    link = DiscordLink.create(
+        guild_id=ctx.guild.id,
+        channel_id=ctx.channel.id,
+        message_id=ctx.message.id
+    )
+    ClubHistory.create(
+        author_id=ctx.author.id,
+        author_name=ctx.author.name,
+        club_name=club_name,
+        actions=ClubActivities.DELETE,
         discord_link=link,
     )
 
