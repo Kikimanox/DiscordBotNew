@@ -63,6 +63,7 @@ class DiscordLink(BaseModel):
     guild_id = IntegerField()
     channel_id = IntegerField()
     message_id = IntegerField()
+    link_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
 
 class ClubPingHistory(BaseModel):
