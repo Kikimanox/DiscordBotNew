@@ -82,7 +82,8 @@ class ClubsCommand(commands.Cog):
             self.per = per
 
         def __call__(self, ctx: Context) -> Optional[commands.Cooldown]:
-            if isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator:
+            if isinstance(ctx.author, Member) and \
+                ctx.author.guild_permissions.administrator:
                 return None
 
             # underground idol
@@ -214,8 +215,9 @@ class ClubsCommand(commands.Cog):
             last_channel = ctx.guild.get_channel_or_thread(
                 last_entry_channel_id)
             ping_again = await ctx.prompt(
-                content=f"`{club_name}` have already been pinged last {last_entry.time_stamp} at"
-                        f" {last_channel.mention}. Would you like to ping again?",
+                content=f"`{club_name}` have already been pinged last "
+                        f"{last_entry.time_stamp} at "
+                        f"{last_channel.mention}. Would you like to ping again?",
                 timeout=30,
             )
             if not ping_again:
@@ -274,7 +276,8 @@ class ClubsCommand(commands.Cog):
         if club is None:
             # If there is no club based from name, search for the closest club
             # based from name
-            similar_club = await self._fetch_similar_club_or_none_view(ctx=ctx, club_name=club_name)
+            similar_club = await self._fetch_similar_club_or_none_view(ctx=ctx,
+                                                                       club_name=club_name)
             if similar_club is None:
                 ctx.command.reset_cooldown(ctx)
                 return club, search_for_related_club, True
