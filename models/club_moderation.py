@@ -1,18 +1,30 @@
 from __future__ import annotations
-from peewee import (SqliteDatabase, Model, IntegerField, CharField, DoesNotExist,
-                    IntegrityError, DatabaseError, Field, ForeignKeyField)
-from datetime import datetime, timezone
-from discord import utils, Message
-from typing import Optional, TYPE_CHECKING
+
 import logging
-import traceback
 import sys
+import traceback
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Optional
+
+from discord import Message, utils
+from peewee import (
+    CharField,
+    DatabaseError,
+    DoesNotExist,
+    Field,
+    ForeignKeyField,
+    IntegerField,
+    IntegrityError,
+    Model,
+    SqliteDatabase,
+)
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum, auto
 else:
-    from backports.strenum import StrEnum
     from enum import auto
+
+    from backports.strenum import StrEnum
 
 if TYPE_CHECKING:
     from utils.context import Context
@@ -37,10 +49,14 @@ class TimestampTzField(Field):
     def db_value(self, value: datetime) -> str:
         if value:
             return value.isoformat()
+        else:
+            return ''
 
-    def python_value(self, value: str) -> datetime:
+    def python_value(self, value: str) -> Optional[datetime]:
         if value:
             return datetime.fromisoformat(value)
+        else:
+            return None
 
 
 class BaseModel(Model):
@@ -76,7 +92,7 @@ class ClubPingHistory(BaseModel):
 
     @property
     def check_if_within_24_hours(self) -> bool:
-        now = utils.utcnow()
+        now = datetime.now(timezone.utc)
         old: datetime = self.ping_datetime
         return now.day - old.day < 1
 
