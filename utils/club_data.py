@@ -2,7 +2,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, List, Union
-from models.club_moderation import ClubPingHistory
+from models.club_moderation import ClubHistory
 from models import club_moderation
 
 import aiofiles
@@ -57,7 +57,7 @@ class ClubData:
             self.club_name
         )
 
-    def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubPingHistory]:
+    def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubHistory]:
         return club_moderation.get_the_last_entry_from_club_name_from_guild(
             club_name=self.club_name,
             guild_id=guild_id

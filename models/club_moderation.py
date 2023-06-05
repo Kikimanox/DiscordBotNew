@@ -86,25 +86,19 @@ class ClubHistory(BaseModel):
     discord_link = ForeignKeyField(DiscordLink, backref="link")
     history_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
-
-class ClubPingHistory(BaseModel):
-    id = IntegerField(primary_key=True)
-    club_history = ForeignKeyField(ClubHistory, backref="history")
-    ping_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
-
     @property
     def check_if_within_24_hours(self) -> bool:
         now = datetime.now(timezone.utc)
-        old: datetime = self.ping_datetime
+        old: datetime = self.history_datetime
         return now.day - old.day < 1
 
     @property
     def time_stamp(self):
-        ts = utils.format_dt(self.ping_datetime, style='R')
+        ts = utils.format_dt(self.history_datetime, style='R')
         return ts
 
 
-db.create_tables([ClubPingHistory, ClubHistory, DiscordLink])
+db.create_tables([ClubHistory, DiscordLink])
 
 
 def save_join_history(
@@ -153,29 +147,26 @@ def save_ping_history(
         channel_id=ctx.channel.id,
         message_id=message.id,
     )
-    history = ClubHistory.create(
+    ClubHistory.create(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
         actions=ClubActivities.PING,
         discord_link=link,
     )
-    ClubPingHistory.create(
-        club_history=history,
-    )
 
 
 def get_the_last_entry_from_club_name_from_guild(
         club_name: str,
         guild_id: int
-) -> Optional[ClubPingHistory]:
+) -> Optional[ClubHistory]:
     try:
-        last_entry = ClubPingHistory.select().join(ClubHistory).join(DiscordLink).\
-            where(
-            ClubHistory.club_name == club_name and
-            DiscordLink.guild_id == guild_id
-        ).order_by(
-            ClubPingHistory.id.desc()
+        last_entry = ClubHistory.select().join(DiscordLink).\
+            where(ClubHistory.club_name == club_name and
+                  DiscordLink.guild_id == guild_id and
+                  ClubHistory.actions == ClubActivities.PING
+                  ).order_by(
+                ClubHistory.id.desc()
         ).get()
 
         return last_entry

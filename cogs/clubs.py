@@ -116,7 +116,8 @@ class ClubsCommand(commands.Cog):
     )
     @commands.guild_only()
     async def get_the_clubs(self, ctx: Context):
-        em = Embed(title="Club commands", timestamp=datetime.now(tz=timezone.utc))
+        em = Embed(title="Club commands",
+                   timestamp=datetime.now(tz=timezone.utc))
 
         command = ctx.command
         if isinstance(command, commands.Group):
@@ -201,7 +202,8 @@ class ClubsCommand(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
 
-        check_blacklisted = club.check_if_author_is_blacklisted(author_id=ctx.author.id)
+        check_blacklisted = club.check_if_author_is_blacklisted(
+            author_id=ctx.author.id)
         if check_blacklisted:
             content = (
                 f"`{ctx.author.name}#{ctx.author.discriminator}` "
@@ -229,8 +231,9 @@ class ClubsCommand(commands.Cog):
         last_entry = club.get_the_last_ping_from_history(guild_id=ctx.guild.id)
 
         if last_entry is not None and last_entry.check_if_within_24_hours:
-            discord_link = last_entry.club_history.discord_link
-            last_channel = ctx.guild.get_channel_or_thread(discord_link.channel_id)
+            last_entry_channel_id = last_entry.discord_link.channel_id
+            last_channel = ctx.guild.get_channel_or_thread(
+                last_entry_channel_id)
             ping_again = await ctx.prompt(
                 content=f"`{club_name}` have already been pinged last {last_entry.time_stamp} at"
                         f" {last_channel.mention}. Would you like to ping again?",
@@ -341,13 +344,15 @@ class ClubsCommand(commands.Cog):
         command_name = interaction.command.name
 
         for club in self.club_data:
-            user_check = club.check_if_author_is_in_the_club(author_id=author_id)
+            user_check = club.check_if_author_is_in_the_club(
+                author_id=author_id)
 
             if command_name == "ping" and not user_check:
                 continue
 
             if len(current) == 0:
-                item = app_commands.Choice(name=club.club_name, value=club.club_name)
+                item = app_commands.Choice(
+                    name=club.club_name, value=club.club_name)
                 club_list.append(item)
             else:
                 if (
