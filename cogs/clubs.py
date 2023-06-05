@@ -229,7 +229,8 @@ class ClubsCommand(commands.Cog):
         last_entry = club.get_the_last_ping_from_history(guild_id=ctx.guild.id)
 
         if last_entry is not None and last_entry.check_if_within_24_hours:
-            last_channel = ctx.guild.get_channel_or_thread(last_entry.discord_link.channel_id)
+            discord_link = last_entry.club_history.discord_link
+            last_channel = ctx.guild.get_channel_or_thread(discord_link.channel_id)
             ping_again = await ctx.prompt(
                 content=f"`{club_name}` have already been pinged last {last_entry.time_stamp} at"
                         f" {last_channel.mention}. Would you like to ping again?",

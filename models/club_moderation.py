@@ -68,6 +68,13 @@ class ClubModeration(BaseModel):
     id = IntegerField(primary_key=True)
 
 
+class DiscordLink(BaseModel):
+    guild_id = IntegerField()
+    channel_id = IntegerField()
+    message_id = IntegerField()
+    link_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
+
+
 class ClubHistory(BaseModel):
     id = IntegerField(primary_key=True)
     actions = CharField(
@@ -76,20 +83,13 @@ class ClubHistory(BaseModel):
     author_id = IntegerField()
     author_name = CharField()
     club_name = CharField()
+    discord_link = ForeignKeyField(DiscordLink, backref="link")
     history_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
-
-
-class DiscordLink(BaseModel):
-    guild_id = IntegerField()
-    channel_id = IntegerField()
-    message_id = IntegerField()
-    link_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
 
 class ClubPingHistory(BaseModel):
     id = IntegerField(primary_key=True)
     club_history = ForeignKeyField(ClubHistory, backref="history")
-    discord_link = ForeignKeyField(DiscordLink, backref="link")
     ping_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
     @property
@@ -121,11 +121,11 @@ def save_ping_history(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
-        actions=ClubActivities.PING
+        actions=ClubActivities.PING,
+        discord_link=link,
     )
     ClubPingHistory.create(
         club_history=history,
-        discord_link=link,
     )
 
 
@@ -134,11 +134,11 @@ def get_the_last_entry_from_club_name_from_guild(
         guild_id: int
 ) -> Optional[ClubPingHistory]:
     try:
-        last_entry = ClubPingHistory.select().join(DiscordLink).\
-            switch(ClubPingHistory).join(ClubHistory).\
-            where(ClubHistory.club_name == club_name and
-                  DiscordLink.guild_id == guild_id
-                  ).order_by(
+        last_entry = ClubPingHistory.select().join(ClubHistory).join(DiscordLink).\
+            where(
+            ClubHistory.club_name == club_name and
+            DiscordLink.guild_id == guild_id
+        ).order_by(
             ClubPingHistory.id.desc()
         ).get()
 
