@@ -145,22 +145,6 @@ class ClubsCommand(commands.Cog):
     async def pinging_the_club(
             self, ctx: Context, club_name: str, link: Optional[str] = None
     ):
-        async def send_message_via_normal_or_channel(
-                searched_for_related_club: bool,
-                message_content: str,
-                delete_after: Optional[float] = None,
-        ) -> Message:
-            if searched_for_related_club:
-                return_message = await ctx.channel_send(
-                    content=message_content, delete_after=delete_after
-                )
-            else:
-                return_message = await ctx.send(
-                    content=message_content, delete_after=delete_after
-                )
-
-            return return_message
-
         # Check if it is a normal command and if it has replied message
         # If there is replied message, get the link from there
         if link is None:
@@ -187,6 +171,7 @@ class ClubsCommand(commands.Cog):
             content = f"{ctx.author.mention} is not part of {club_name}. "
             "Please join the club {club_name}"
             await send_message_via_normal_or_channel(
+                ctx=ctx,
                 searched_for_related_club=search_for_related_club,
                 message_content=content,
                 delete_after=10,
@@ -203,6 +188,7 @@ class ClubsCommand(commands.Cog):
                 f"club `{club_name}`"
             )
             await send_message_via_normal_or_channel(
+                ctx=ctx,
                 searched_for_related_club=search_for_related_club,
                 message_content=content,
                 delete_after=15,
@@ -213,6 +199,7 @@ class ClubsCommand(commands.Cog):
         if member_mentions is None:
             content = "Error in the number of members"
             await send_message_via_normal_or_channel(
+                ctx=ctx,
                 searched_for_related_club=search_for_related_club,
                 message_content=content,
                 delete_after=10,
@@ -382,6 +369,24 @@ class ClubsCommand(commands.Cog):
                 break
 
         return club_list
+
+
+async def send_message_via_normal_or_channel(
+    ctx: Context,
+    searched_for_related_club: bool,
+    message_content: str,
+    delete_after: Optional[float] = None,
+) -> Message:
+    if searched_for_related_club:
+        return_message = await ctx.channel_send(
+            content=message_content, delete_after=delete_after
+        )
+    else:
+        return_message = await ctx.send(
+            content=message_content, delete_after=delete_after
+        )
+
+    return return_message
 
 
 async def setup(bot: KanaIsTheBest):
