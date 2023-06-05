@@ -95,7 +95,6 @@ class ClubsCommand(commands.Cog):
 
             return commands.Cooldown(self.rate, self.per)
 
-
     @commands.dynamic_cooldown(
         cooldown=CooldownModified(),
         type=commands.BucketType.user
@@ -105,8 +104,12 @@ class ClubsCommand(commands.Cog):
     async def ping_a_club_normal(
             self, ctx: Context, club_name: str, *, link: Optional[str] = None
     ):
-        
-        await self.pinging_the_club(ctx, club_name, link)
+        await self._invoke_new_command_version(
+            ctx=ctx,
+            new_command_name="ping",
+            club_name=club_name,
+            link=link
+        )
 
     @commands.hybrid_group(
         name="club", fallback="get", description="Check all Club related commands"
@@ -308,6 +311,27 @@ class ClubsCommand(commands.Cog):
         similarity = sorted(similarity, reverse=True)
         tmp = [name for ratio, name in similarity]
         return tmp[0:number_of_similar_clubs]
+
+    async def _invoke_new_command_version(
+            self,
+            ctx: Context,
+            new_command_name: str,
+            *args,
+            **kwargs
+    ):
+        club_command_group = self.bot.get_command('club')
+        if isinstance(club_command_group, commands.Group):
+            alt_command = club_command_group.get_command(new_command_name)
+            if alt_command is not None:
+                await ctx.invoke(
+                    alt_command,
+                    *args,
+                    **kwargs
+                )
+                return
+        command_name = ctx.command.name
+        error_logger.error(f"command `{command_name}` not found")
+        await ctx.send(f"Cannot find `{command_name}` command", delete_after=10)
 
     @ping_a_club_v2.autocomplete(name="club_name")
     async def autocomplete_club_names(self, interaction: Interaction, current: str):
