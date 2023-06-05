@@ -141,11 +141,6 @@ class ClubsCommand(commands.Cog):
     async def ping_a_club_v2(
             self, ctx: Context, club_name: str, link: Optional[str] = None
     ):
-        await self.pinging_the_club(ctx, club_name, link)
-
-    async def pinging_the_club(
-            self, ctx: Context, club_name: str, link: Optional[str] = None
-    ):
         # Check if it is a normal command and if it has replied message
         # If there is replied message, get the link from there
         if link is None:
@@ -260,6 +255,7 @@ class ClubsCommand(commands.Cog):
                     content = message.content
                     content += f"\n{result_link}"
                     await message.edit(content=content)
+        
 
     async def _fetch_club_or_exit(
             self,
