@@ -7,7 +7,7 @@ import re
 from discord.ext import commands, tasks
 from pathlib import Path
 from difflib import SequenceMatcher
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from datetime import datetime, timezone
 
 from utils.club_data import ClubData
@@ -171,21 +171,13 @@ class ClubsCommand(commands.Cog):
                 reply_message_link = result[0] if len(result) > 0 else None
             link = reply_message_link
 
-        # Search for the club with its name
-        club = await self._search_the_club_for(club_name=club_name)
+        club, search_for_related_club, exit_command = await self._fetch_club_or_exit(
+            ctx=ctx, club_name=club_name
+        )
+        if exit_command:
+            return
 
-        search_for_related_club = False
-        if club is None:
-            # If there is no club based from name, search for the closest club
-            # based from name
-            similar_club = await self._fetch_similar_club_or_none_view(ctx=ctx, club_name=club_name)
-            if similar_club is None:
-                ctx.command.reset_cooldown(ctx)
-                return
-
-            club = similar_club
-            club_name = similar_club.club_name
-            search_for_related_club = True
+        club_name = club.club_name
 
         check_author = club.check_if_author_is_in_the_club(
             author_id=ctx.author.id, ctx=ctx
@@ -279,6 +271,29 @@ class ClubsCommand(commands.Cog):
                     content = message.content
                     content += f"\n{result_link}"
                     await message.edit(content=content)
+
+    async def _fetch_club_or_exit(
+            self,
+            ctx: Context,
+            club_name: str
+    ) -> Tuple[Optional[ClubData], bool, bool]:
+        """
+        :returns    Optional[ClubData]
+                    if it search_for_similar_clubs
+                    if it exit
+        """
+        club = await self._search_the_club_for(club_name=club_name)
+        search_for_related_club = False
+        if club is None:
+            # If there is no club based from name, search for the closest club
+            # based from name
+            similar_club = await self._fetch_similar_club_or_none_view(ctx=ctx, club_name=club_name)
+            if similar_club is None:
+                ctx.command.reset_cooldown(ctx)
+                return club, search_for_related_club, True
+            club = similar_club
+            search_for_related_club = True
+        return club, search_for_related_club, False
 
     async def _search_the_club_for(self, club_name: str) -> Optional[ClubData]:
         clubs = [
