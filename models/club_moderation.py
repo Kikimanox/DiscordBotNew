@@ -102,10 +102,12 @@ class ClubHistory(BaseModel):
 db.create_tables([ClubHistory, DiscordLink])
 
 
-def save_join_history(
+def save_join_or_leave_history(
         ctx: Context,
-        club_name: str
+        club_name: str,
+        join: bool
 ):
+    club_action = ClubActivities.JOIN if join else ClubActivities.LEAVE
     link = DiscordLink.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
@@ -115,27 +117,10 @@ def save_join_history(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
-        actions=ClubActivities.JOIN,
+        actions=club_action,
         discord_link=link,
     )
 
-
-def save_leave_history(
-        ctx: Context,
-        club_name: str
-):
-    link = DiscordLink.create(
-        guild_id=ctx.guild.id,
-        channel_id=ctx.channel.id,
-        message_id=ctx.message.id
-    )
-    ClubHistory.create(
-        author_id=ctx.author.id,
-        author_name=ctx.author.name,
-        club_name=club_name,
-        actions=ClubActivities.LEAVE,
-        discord_link=link,
-    )
 
 def save_create_history(
         ctx: Context,
@@ -153,6 +138,7 @@ def save_create_history(
         actions=ClubActivities.CREATE,
         discord_link=link,
     )
+
 
 def save_delete_history(
         ctx: Context,
