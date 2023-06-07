@@ -114,7 +114,7 @@ class ClubsCommand(commands.Cog):
         )
 
     @commands.hybrid_group(
-        name="club", fallback="get", description="Check all Club related commands"
+        name="club", fallback="commands", description="Check all Club related commands"
     )
     @commands.guild_only()
     async def get_the_clubs(self, ctx: Context):
