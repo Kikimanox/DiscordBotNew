@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 from datetime import datetime, timezone
 
 from utils.club_data import ClubData
+from utils import checks
 
 from discord import Embed, app_commands, Interaction, Message, Member
 
@@ -55,7 +56,7 @@ class ClubsCommand(commands.Cog):
     @tasks.loop(hours=24, reconnect=True)
     async def refresh_club_data_to_cache(self):
         await self.add_club_data_to_cache()
-    
+
     async def add_club_data_to_cache(self):
         async with aiofiles.open(
                 self.club_data_path, mode="r+", encoding="utf-8"
@@ -287,7 +288,7 @@ class ClubsCommand(commands.Cog):
             return
 
         club_name = club.club_name
-        
+
         check_author = club.check_if_author_is_in_the_club(
             author_id=ctx.author.id, ctx=ctx
         )
@@ -318,7 +319,7 @@ class ClubsCommand(commands.Cog):
                 delete_after=15,
             )
             return
-        
+
         await club.set_club_member_status(
             ctx=ctx,
             file_path=self.club_data_path,
@@ -382,6 +383,32 @@ class ClubsCommand(commands.Cog):
         await self.add_club_data_to_cache()
 
         await ctx.send(f"{ctx.author.mention} have left `{club_name}`")
+
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user
+    )
+    @commands.command(name="deleteclub", description="delete a club")
+    @commands.guild_only()
+    async def delete_a_club_normal(
+            self, ctx: Context, club_name: str
+    ):
+        await self._invoke_new_command_version(
+            ctx=ctx,
+            new_command_name="delete",
+            club_name=club_name,
+        )
+
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user,
+    )
+    @commands.check(checks.moderator_or_underground_idols_check)
+    @get_the_clubs.command(name="delete", description="delete a club")
+    @app_commands.describe(club_name="Name of the club")
+    @commands.guild_only()
+    async def delete_a_club_v2(self, ctx: Context, club_name: str,):
+        await ctx.send(club_name)
 
     async def _fetch_club_or_exit(
             self,
@@ -467,10 +494,15 @@ class ClubsCommand(commands.Cog):
     @ping_a_club_v2.autocomplete(name="club_name")
     @join_a_club_v2.autocomplete(name="club_name")
     @leave_a_club_v2.autocomplete(name="club_name")
+    @delete_a_club_v2.autocomplete(name="club_name")
     async def autocomplete_club_names(self, interaction: Interaction, current: str):
         club_list: List[app_commands.Choice] = []
         author_id = interaction.user.id
         command_name = interaction.command.name
+
+        if command_name == "delete" and not \
+                interaction.user.guild_permissions.administrator:
+            return club_list
 
         for club in self.club_data:
             user_check = club.check_if_author_is_in_the_club(
