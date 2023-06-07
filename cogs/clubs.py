@@ -350,7 +350,7 @@ class ClubsCommand(commands.Cog):
     @get_the_clubs.command(name="leave", description="leave a club")
     @app_commands.describe(club_name="Name of the club")
     @commands.guild_only()
-    async def join_a_club_v2(self, ctx: Context, club_name: str,):
+    async def leave_a_club_v2(self, ctx: Context, club_name: str,):
         club, search_for_related_club, exit_command = await self._fetch_club_or_exit(
             ctx=ctx, club_name=club_name
         )
@@ -466,6 +466,7 @@ class ClubsCommand(commands.Cog):
 
     @ping_a_club_v2.autocomplete(name="club_name")
     @join_a_club_v2.autocomplete(name="club_name")
+    @leave_a_club_v2.autocomplete(name="club_name")
     async def autocomplete_club_names(self, interaction: Interaction, current: str):
         club_list: List[app_commands.Choice] = []
         author_id = interaction.user.id
