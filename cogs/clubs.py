@@ -480,6 +480,8 @@ class ClubsCommand(commands.Cog):
                 continue
             if command_name == "join" and user_check:
                 continue
+            if command_name == "leave" and not user_check:
+                continue
 
             if len(current) == 0:
                 item = app_commands.Choice(
