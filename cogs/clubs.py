@@ -328,6 +328,61 @@ class ClubsCommand(commands.Cog):
 
         await ctx.send(f"{ctx.author.mention} have joined `{club_name}`")
 
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user
+    )
+    @commands.command(name="leaveclub", aliases=["leave"], description="leave a club")
+    @commands.guild_only()
+    async def leave_a_club_normal(
+            self, ctx: Context, club_name: str
+    ):
+        await self._invoke_new_command_version(
+            ctx=ctx,
+            new_command_name="leave",
+            club_name=club_name,
+        )
+
+    @commands.dynamic_cooldown(
+        cooldown=CooldownModified(),
+        type=commands.BucketType.user,
+    )
+    @get_the_clubs.command(name="leave", description="leave a club")
+    @app_commands.describe(club_name="Name of the club")
+    @commands.guild_only()
+    async def join_a_club_v2(self, ctx: Context, club_name: str,):
+        club, search_for_related_club, exit_command = await self._fetch_club_or_exit(
+            ctx=ctx, club_name=club_name
+        )
+        if exit_command:
+            return
+
+        club_name = club.club_name
+
+        check_author = club.check_if_author_is_in_the_club(
+            author_id=ctx.author.id, ctx=ctx
+        )
+
+        if not check_author:
+            content = f"User have already left the club {club_name}"
+            await send_message_via_normal_or_channel(
+                ctx=ctx,
+                searched_for_related_club=search_for_related_club,
+                message_content=content,
+                delete_after=10,
+            )
+            ctx.command.reset_cooldown(ctx)
+            return
+
+        await club.set_club_member_status(
+            ctx=ctx,
+            file_path=self.club_data_path,
+            join=False
+        )
+        await self.add_club_data_to_cache()
+
+        await ctx.send(f"{ctx.author.mention} have left `{club_name}`")
+
     async def _fetch_club_or_exit(
             self,
             ctx: Context,
