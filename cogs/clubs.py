@@ -408,7 +408,24 @@ class ClubsCommand(commands.Cog):
     @app_commands.describe(club_name="Name of the club")
     @commands.guild_only()
     async def delete_a_club_v2(self, ctx: Context, club_name: str,):
-        await ctx.send(club_name)
+        club, search_for_related_club, exit_command = await self._fetch_club_or_exit(
+            ctx=ctx, club_name=club_name
+        )
+        if exit_command:
+            return
+
+        club_name = club.club_name
+        content = f"Are you really sure you want to delete `{club_name}`?"
+        delete_response, _ = await ctx.prompt_with_author_response(
+            channel=ctx.channel if search_for_related_club else None,
+            content=content
+        )
+        if delete_response:
+            moderator_author = ctx.author.mention
+            await ctx.channel_send(
+                content=f"Club {club_name} is deleted by {moderator_author}"
+            )
+            await self.add_club_data_to_cache()
 
     async def _fetch_club_or_exit(
             self,
