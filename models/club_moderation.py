@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger("info")
 error_logger = logging.getLogger("error")
 
-DB = "data/club_moderation"
+DB = "data/club_moderation.db"
 db = SqliteDatabase(DB, pragmas={'foreign_keys': 1})
 
 
