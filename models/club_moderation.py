@@ -11,13 +11,13 @@ from peewee import (
     CharField,
     DatabaseError,
     DoesNotExist,
-    Field,
     ForeignKeyField,
     IntegerField,
     IntegrityError,
     Model,
     SqliteDatabase,
 )
+from models.database_field import DiscordLink, TimestampTzField
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum, auto
@@ -44,22 +44,6 @@ class ClubActivities(StrEnum):
     DELETE = auto()
 
 
-class TimestampTzField(Field):
-    field_type = 'TEXT'
-
-    def db_value(self, value: datetime) -> str:
-        if value:
-            return value.isoformat()
-        else:
-            return ''
-
-    def python_value(self, value: str) -> Optional[datetime]:
-        if value:
-            return datetime.fromisoformat(value)
-        else:
-            return None
-
-
 class BaseModel(Model):
     class Meta:
         database = db
@@ -69,11 +53,8 @@ class ClubModeration(BaseModel):
     id = IntegerField(primary_key=True)
 
 
-class DiscordLink(BaseModel):
-    guild_id = IntegerField()
-    channel_id = IntegerField()
-    message_id = IntegerField()
-    link_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
+class DiscordLinkModel(BaseModel, DiscordLink):
+    pass
 
 
 class ClubHistory(BaseModel):
@@ -84,7 +65,7 @@ class ClubHistory(BaseModel):
     author_id = IntegerField()
     author_name = CharField()
     club_name = CharField()
-    discord_link = ForeignKeyField(DiscordLink, backref="link")
+    discord_link = ForeignKeyField(DiscordLinkModel, backref="link")
     history_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
 
     @property
@@ -99,7 +80,7 @@ class ClubHistory(BaseModel):
         return ts
 
 
-db.create_tables([ClubHistory, DiscordLink])
+db.create_tables([ClubHistory, DiscordLinkModel])
 
 
 def save_join_or_leave_history(
@@ -108,7 +89,7 @@ def save_join_or_leave_history(
         join: bool
 ):
     club_action = ClubActivities.JOIN if join else ClubActivities.LEAVE
-    link = DiscordLink.create(
+    link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=ctx.message.id
@@ -126,7 +107,7 @@ def save_create_history(
         ctx: Context,
         club_name: str
 ):
-    link = DiscordLink.create(
+    link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=ctx.message.id
@@ -144,7 +125,7 @@ def save_delete_history(
         ctx: Context,
         club_name: str
 ):
-    link = DiscordLink.create(
+    link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=ctx.message.id
@@ -163,7 +144,7 @@ def save_ping_history(
         message: Message,
         club_name: str
 ):
-    link = DiscordLink.create(
+    link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=message.id,
@@ -182,12 +163,12 @@ def get_the_last_entry_from_club_name_from_guild(
         guild_id: int
 ) -> Optional[ClubHistory]:
     try:
-        last_entry = ClubHistory.select().join(DiscordLink).\
+        last_entry = ClubHistory.select().join(DiscordLinkModel). \
             where(ClubHistory.club_name == club_name and
-                  DiscordLink.guild_id == guild_id and
+                  DiscordLinkModel.guild_id == guild_id and
                   ClubHistory.actions == ClubActivities.PING
                   ).order_by(
-                ClubHistory.id.desc()
+            ClubHistory.id.desc()
         ).get()
 
         return last_entry
