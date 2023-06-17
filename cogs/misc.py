@@ -251,6 +251,8 @@ class Misc(commands.Cog):
         if message.guild and message.guild.id in self.bot.currently_afk \
                 and message.author.id in self.bot.currently_afk[message.guild.id]:
             try:
+                if isinstance(message.channel, discord.Thread):
+                    return
                 msg = self.bot.currently_afk[message.guild.id][message.author.id][0]
                 AfkManager.remove_from_afk(self.bot, message.author.id, message.guild.id)
                 pp = re.findall(r'<a?:(.*?):(\d+)>', msg)
