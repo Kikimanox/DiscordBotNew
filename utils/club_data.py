@@ -13,6 +13,7 @@ from discord.ext import commands
 
 from models import club_moderation
 from models.club_moderation import ClubHistory
+from models.club_model import ClubDataModel
 
 if TYPE_CHECKING:
     from utils.context import Context
@@ -273,3 +274,11 @@ class ClubData:
         async with aiofiles.open(file_path, "r+", encoding="utf-8") as file:
             content = await file.read()
         return content
+
+
+
+def migrate_from_json_club_data_to_database(
+        club_data: List[ClubData]
+):
+    for club_datum in club_data:
+        pass

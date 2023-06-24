@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from utils.club_data import ClubData
 from utils import checks
 
-from discord import Embed, app_commands, Interaction, Message, Member
+from discord import Embed,  app_commands, Interaction, Message, Member
 
 import logging
 

@@ -18,6 +18,7 @@ from peewee import (
     SqliteDatabase,
 )
 from models.database_field import DiscordLink, TimestampTzField
+from models.club_name import Club
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum, auto
@@ -64,9 +65,15 @@ class ClubHistory(BaseModel):
     )
     author_id = IntegerField()
     author_name = CharField()
-    club_name = CharField()
+
+    # from models.club_name import Club
+    club_name = IntegerField()
     discord_link = ForeignKeyField(DiscordLinkModel, backref="link")
     history_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
+
+    @property
+    def get_club_name(self) -> Club:
+        return Club.get(id == self.club_name)
 
     @property
     def check_if_within_24_hours(self) -> bool:
@@ -80,15 +87,16 @@ class ClubHistory(BaseModel):
         return ts
 
 
-db.create_tables([ClubHistory, DiscordLinkModel])
+db.create_tables([DiscordLinkModel, ClubHistory])
 
 
 def save_join_or_leave_history(
         ctx: Context,
-        club_name: str,
+        name: str,
         join: bool
 ):
     club_action = ClubActivities.JOIN if join else ClubActivities.LEAVE
+    club_name = Club.fetch_or_create(club_name=name)
     link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
@@ -105,13 +113,14 @@ def save_join_or_leave_history(
 
 def save_create_history(
         ctx: Context,
-        club_name: str
+        name: str
 ):
     link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=ctx.message.id
     )
+    club_name = Club.fetch_or_create(club_name=name)
     ClubHistory.create(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
@@ -123,13 +132,14 @@ def save_create_history(
 
 def save_delete_history(
         ctx: Context,
-        club_name: str
+        name: str
 ):
     link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=ctx.message.id
     )
+    club_name = Club.fetch_or_create(club_name=name)
     ClubHistory.create(
         author_id=ctx.author.id,
         author_name=ctx.author.name,
@@ -142,18 +152,19 @@ def save_delete_history(
 def save_ping_history(
         ctx: Context,
         message: Message,
-        club_name: str
+        name: str
 ):
     link = DiscordLinkModel.create(
         guild_id=ctx.guild.id,
         channel_id=ctx.channel.id,
         message_id=message.id,
     )
+    club_name = Club.fetch_or_create(club_name=name)
     ClubHistory.create(
+        actions=ClubActivities.PING,
         author_id=ctx.author.id,
         author_name=ctx.author.name,
         club_name=club_name,
-        actions=ClubActivities.PING,
         discord_link=link,
     )
 
@@ -164,7 +175,8 @@ def get_the_last_entry_from_club_name_from_guild(
 ) -> Optional[ClubHistory]:
     try:
         last_entry = ClubHistory.select().join(DiscordLinkModel). \
-            where(ClubHistory.club_name == club_name and
+            switch(ClubHistory).join(Club).\
+            where(Club.club_name == club_name and
                   DiscordLinkModel.guild_id == guild_id and
                   ClubHistory.actions == ClubActivities.PING
                   ).order_by(
