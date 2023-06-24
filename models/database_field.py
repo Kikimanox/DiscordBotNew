@@ -21,7 +21,8 @@ class TimestampTzField(Field):
             return None
 
 class DiscordLink(Model):
-    guild_id = IntegerField()
-    channel_id = IntegerField()
-    message_id = IntegerField()
+    id = IntegerField(primary_key=True)
+    guild_id = IntegerField(null=True)
+    channel_id = IntegerField(null=True)
+    message_id = IntegerField(null=True)
     link_datetime = TimestampTzField(default=datetime.now(tz=timezone.utc))
