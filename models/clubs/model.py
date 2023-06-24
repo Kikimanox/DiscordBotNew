@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
 from models.database_field import TimestampTzField
-from models.club_moderation import ClubHistory
-from models.club_name import Club
+from models.clubs.moderation import ClubHistory
+from models.clubs.name import Club
 
 from peewee import (
     CharField,

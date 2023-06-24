@@ -10,7 +10,7 @@ from difflib import SequenceMatcher
 from typing import List, Optional, Tuple
 from datetime import datetime, timezone
 
-from utils.club_data import ClubData
+from utils.club_data import ClubData, migrate_from_json_club_data_to_database
 from utils import checks
 
 from discord import Embed,  app_commands, Interaction, Message, Member
@@ -79,6 +79,10 @@ class ClubsCommand(commands.Cog):
         self.club_data = sorted(
             temp_data, key=lambda x: (-x.member_count, -x.pings, x.club_name)
         )
+
+        await migrate_from_json_club_data_to_database(data)
+
+
 
     class CooldownModified:
         def __init__(self, rate: float = 1, per: float = 10):

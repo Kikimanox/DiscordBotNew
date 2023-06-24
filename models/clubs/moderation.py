@@ -18,7 +18,7 @@ from peewee import (
     SqliteDatabase,
 )
 from models.database_field import DiscordLink, TimestampTzField
-from models.club_name import Club
+from models.clubs.name import Club
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum, auto

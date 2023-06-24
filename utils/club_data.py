@@ -11,9 +11,10 @@ import aiofiles
 from discord import Interaction, Member, Message
 from discord.ext import commands
 
-from models import club_moderation
-from models.club_moderation import ClubHistory
-from models.club_model import ClubDataModel
+from models.clubs import moderation
+from models.clubs.moderation import ClubHistory
+from models.clubs.model import ClubDataModel
+from models.clubs.name import Club
 
 if TYPE_CHECKING:
     from utils.context import Context
@@ -57,14 +58,14 @@ class ClubData:
             ctx: commands.Context,
             message: Message
     ):
-        club_moderation.save_ping_history(
+        moderation.save_ping_history(
             ctx,
             message,
             self.club_name
         )
 
     def get_the_last_ping_from_history(self, guild_id: int) -> Optional[ClubHistory]:
-        return club_moderation.get_the_last_entry_from_club_name_from_guild(
+        return moderation.get_the_last_entry_from_club_name_from_guild(
             club_name=self.club_name,
             guild_id=guild_id
         )
@@ -209,7 +210,7 @@ class ClubData:
             )
         await self._write_json_data(file_path, data)
 
-        club_moderation.save_join_or_leave_history(
+        moderation.save_join_or_leave_history(
             ctx=ctx,
             club_name=self.club_name,
             join=join
@@ -277,8 +278,9 @@ class ClubData:
 
 
 
-def migrate_from_json_club_data_to_database(
-        club_data: List[ClubData]
+async def migrate_from_json_club_data_to_database(
+        data: dict
 ):
-    for club_datum in club_data:
-        pass
+    for key, value in data.items():
+        club = Club.fetch_or_create(club_name=key)
+
