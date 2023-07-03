@@ -2,7 +2,9 @@ import logging
 import os
 import traceback
 from datetime import datetime
-from typing import Union, List
+from typing import Optional, Union, List
+from aiohttp import ClientSession
+from click import Option
 
 from discord import Message, Interaction, app_commands, utils, Reaction, Member, User
 from discord.ext import commands
@@ -21,9 +23,9 @@ error_logger = logging.getLogger("error")
 
 class KanaIsTheBest(commands.Bot):
     def __init__(
-        self,
-        *args,
-        **kwargs,
+            self,
+            *args,
+            **kwargs,
     ) -> None:
         super().__init__(
             *args,
@@ -66,8 +68,13 @@ class KanaIsTheBest(commands.Bot):
         self.emote_servers_perm = [777943294353080380]
         self.uptime = datetime.utcnow()
 
+        self.session: Optional[ClientSession] = None
+
     async def setup_hook(self) -> None:
         await self.load_all_cogs_except(["_newCogTemplate", "manga", "bets"])
+
+
+        self.session = ClientSession()
         # if os.name != "nt":
         #     os.setpgrp()
 
@@ -150,14 +157,14 @@ class KanaIsTheBest(commands.Bot):
                         error_logger.error(error_message)
 
     async def get_context(
-        self, origin: Union[Message, Interaction], /, *, cls=Context
+            self, origin: Union[Message, Interaction], /, *, cls=Context
     ) -> Context:
         return await super().get_context(origin, cls=cls)
 
     async def on_command_error(
-        self,
-        ctx: Context,
-        exception: errors.CommandError,
+            self,
+            ctx: Context,
+            exception: errors.CommandError,
     ) -> None:
         if not self.is_ready():
             await self.wait_until_ready()
