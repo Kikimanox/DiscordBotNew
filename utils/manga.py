@@ -129,7 +129,8 @@ class MangaPaginationView(View):
     def _update_labels(self, page_number: int):
         self.go_to_first_page.disabled = self.chapter_number == 1 and page_number == 0
         # self.go_to_first_page.disabled = page_number == 1
-        self.go_to_first_page.label = "<<"
+        self.go_to_first_page.label = "1"
+        # self.go_to_first_page.label = "<<"
 
         max_pages = len(self.embeds)
 
@@ -143,7 +144,8 @@ class MangaPaginationView(View):
         # self.go_to_last_page.disabled = (page_number + 1) >= max_pages
         self.go_to_last_page.disabled = self.last_chapter_number <= self.chapter_number \
             and (page_number + 1) >= max_pages
-        self.go_to_last_page.label = ">>"
+        self.go_to_last_page.label = f"{max_pages}"
+        # self.go_to_last_page.label = ">>"
 
         self.go_to_previous_page.disabled = False
         self.go_to_next_page.disabled = False
@@ -215,10 +217,12 @@ class MangaPaginationView(View):
 
     @ui.button(label="❌", style=ButtonStyle.grey)
     async def cancel_pages(self, interaction: Interaction, button: Button):
+        await interaction.response.defer()
+        await interaction.delete_original_response()
 
-        await interaction.response.edit_message(
-            embed=self.embeds[self.current_page],
-            view=None
-        )
+        # await interaction.response.edit_message(
+        #     embed=self.embeds[self.current_page],
+        #     view=None
+        # )
 
         self.stop()
