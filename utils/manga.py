@@ -89,7 +89,7 @@ class MangaPaginationView(View):
         if use_last_and_first:
             self.add_item(self.go_to_last_page)
 
-        self.add_item(self.cancel_pages)
+        # self.add_item(self.cancel_pages)
 
     async def go_to_chapter(self, interaction: Interaction, chapter_number: int):
         self.chapter_number = chapter_number
