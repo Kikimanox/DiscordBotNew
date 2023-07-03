@@ -19,6 +19,7 @@ class MangaPaginationView(View):
             self,
             ctx: Context,
             chapters: dict,
+            last_chapter_number: int,
             chapter_number: int = 1,
             timeout: Union[float, None] = 300,
             page: int = 0,
@@ -33,6 +34,7 @@ class MangaPaginationView(View):
         self.clear_items()
         self.current_page = page
         self.chapters: dict = chapters
+        self.last_chapter_number = last_chapter_number
 
         self.embeds: List[Embed] = self.create_embeds()
 
@@ -125,7 +127,7 @@ class MangaPaginationView(View):
             )
 
     def _update_labels(self, page_number: int):
-        self.go_to_first_page.disabled = self.chapter_number == 1
+        self.go_to_first_page.disabled = self.chapter_number == 1 and page_number == 0
         # self.go_to_first_page.disabled = page_number == 1
         self.go_to_first_page.label = "<<"
 
@@ -139,6 +141,8 @@ class MangaPaginationView(View):
         self.go_to_next_page.label = f"{page_number+2}"
 
         # self.go_to_last_page.disabled = (page_number + 1) >= max_pages
+        self.go_to_last_page.disabled = self.last_chapter_number <= self.chapter_number \
+            and (page_number + 1) >= max_pages
         self.go_to_last_page.label = ">>"
 
         self.go_to_previous_page.disabled = False
@@ -150,6 +154,7 @@ class MangaPaginationView(View):
             if self.chapter_number != 1:
                 self.go_to_first_page.label = f"Ch: {self.chapter_number - 1}"
             
+
         if (page_number + 1) >= max_pages:
             self.go_to_next_page.disabled = True
             self.go_to_next_page.label = "..."
@@ -183,7 +188,7 @@ class MangaPaginationView(View):
     async def go_to_first_page(self, interaction: Interaction, button: Button):
         if self.current_page == 0:
             if self.chapter_number != 1:
-                self.go_to_chapter(interaction=interaction,
+                await self.go_to_chapter(interaction=interaction,
                                    chapter_number=self.chapter_number-1)
         else:
             await self.go_to_page(interaction, 0)

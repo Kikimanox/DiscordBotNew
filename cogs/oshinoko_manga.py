@@ -33,22 +33,31 @@ class OshiNoKoManga(commands.Cog):
 
         self.chapters_json = Path(__file__).cwd() / "data" / "oshi-no-ko.json"
 
+        self.last_chapter_number = 1
+
     async def cog_load(self):
         with open(self.chapters_json) as file:
             self.chapters = json.load(file)
-    
+
+        for key, _ in self.chapters.items():
+            try:
+                chapter_number = int(key)
+                if chapter_number >= self.last_chapter_number:
+                    self.last_chapter_number = chapter_number
+            except ValueError:
+                continue
+
     @commands.Cog.listener()
     async def on_ready(self):
         session = self.bot.session
         if session is not None:
             logger.info("Session initialized")
-            
-
+            # await self.get_updates_from_sources()
 
     @commands.command(name="update_manga")
     async def update_manga_source(self, ctx: Context):
         await ctx.typing()
-        
+
         await self.get_updates_from_sources()
 
         await ctx.send("done")
@@ -68,6 +77,8 @@ class OshiNoKoManga(commands.Cog):
                 chapter_key = int(key)
             except ValueError:
                 continue
+            if chapter_key >= self.last_chapter_number:
+                self.last_chapter_number = chapter_key
             if chapter_key >= 95:
                 chapter_link_group: dict = value.get("groups", None)
                 if chapter_link_group is None:
@@ -84,14 +95,13 @@ class OshiNoKoManga(commands.Cog):
                     key: chapter_pages
                 })
                 await asyncio.sleep(0.1)
-        
+
         cubari_url = "https://guya.moe/api/series/Oshi-no-Ko"
         await self.get_cubari_chapter_pages(
             session=session,
             series_link=cubari_url
         )
-                
-        
+
         with open(self.chapters_json, "w") as file:
             file.write(json.dumps(self.chapters))
 
@@ -117,7 +127,7 @@ class OshiNoKoManga(commands.Cog):
             if groups is None:
                 error_logger.error("groups is missing")
                 continue
-            
+
             first_group = next(iter(groups))
             pages = groups.get(first_group, None)
             if pages is None:
@@ -126,7 +136,7 @@ class OshiNoKoManga(commands.Cog):
             for page in pages:
                 page_url = f"https://guya.moe/media/manga/Oshi-no-Ko/chapters/{folder}/{first_group}/{page}"
                 new_pages_link.append(page_url)
-            
+
             self.chapters.update({
                 key: new_pages_link
             })
@@ -181,7 +191,8 @@ class OshiNoKoManga(commands.Cog):
             chapters=self.chapters,
             ctx=ctx,
             page=page-1,
-            chapter_number=chapter
+            chapter_number=chapter,
+            last_chapter_number=self.last_chapter_number
         )
         await view.start()
 
