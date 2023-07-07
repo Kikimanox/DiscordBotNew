@@ -81,15 +81,15 @@ class MangaPaginationView(View):
         use_last_and_first = max_pages is not None and max_pages >= 2
 
         if use_last_and_first:
-            self.add_item(self.go_to_first_page)
+            self.add_item(self.go_to_first_chapter)
         self.add_item(self.go_to_previous_page)
-        self.add_item(self.go_to_current_page)
+        # self.add_item(self.go_to_current_page)
         self.add_item(self.go_to_next_page)
 
         if use_last_and_first:
-            self.add_item(self.go_to_last_page)
+            self.add_item(self.go_to_next_chapter)
 
-        # self.add_item(self.cancel_pages)
+        self.add_item(self.cancel_pages)
 
     async def go_to_chapter(self, interaction: Interaction, chapter_number: int):
         self.chapter_number = chapter_number
@@ -127,10 +127,9 @@ class MangaPaginationView(View):
             )
 
     def _update_labels(self, page_number: int):
-        self.go_to_first_page.disabled = self.chapter_number == 1 and page_number == 0
-        # self.go_to_first_page.disabled = page_number == 1
-        self.go_to_first_page.label = "1"
-        # self.go_to_first_page.label = "<<"
+        self.go_to_first_chapter.disabled = self.chapter_number == 1
+        self.go_to_first_chapter.label = f"Ch: {self.chapter_number - 1}" if \
+            self.chapter_number != 1 else "..."
 
         max_pages = len(self.embeds)
 
@@ -138,14 +137,11 @@ class MangaPaginationView(View):
         # self.go_to_next_page.label = ">"
 
         self.go_to_previous_page.label = f"{page_number}"
-        self.go_to_current_page.label = f"{page_number + 1}"
         self.go_to_next_page.label = f"{page_number+2}"
 
-        # self.go_to_last_page.disabled = (page_number + 1) >= max_pages
-        self.go_to_last_page.disabled = self.last_chapter_number <= self.chapter_number \
-            and (page_number + 1) >= max_pages
-        self.go_to_last_page.label = f"{max_pages}"
-        # self.go_to_last_page.label = ">>"
+        self.go_to_next_chapter.disabled = self.last_chapter_number <= \
+            self.chapter_number
+        self.go_to_next_chapter.label = f"Ch: {self.chapter_number + 1}"
 
         self.go_to_previous_page.disabled = False
         self.go_to_next_page.disabled = False
@@ -153,14 +149,10 @@ class MangaPaginationView(View):
         if page_number == 0:
             self.go_to_previous_page.disabled = True
             self.go_to_previous_page.label = "..."
-            if self.chapter_number != 1:
-                self.go_to_first_page.label = f"Ch: {self.chapter_number - 1}"
-            
 
         if (page_number + 1) >= max_pages:
             self.go_to_next_page.disabled = True
             self.go_to_next_page.label = "..."
-            self.go_to_last_page.label = f"Ch: {self.chapter_number + 1}"
 
     async def interaction_check(self, interaction: Interaction, /) -> bool:
         if self.author.id != interaction.user.id:
@@ -187,13 +179,10 @@ class MangaPaginationView(View):
                                                     ephemeral=True)
 
     @ui.button(label="<<", style=ButtonStyle.grey)
-    async def go_to_first_page(self, interaction: Interaction, button: Button):
-        if self.current_page == 0:
-            if self.chapter_number != 1:
-                await self.go_to_chapter(interaction=interaction,
-                                   chapter_number=self.chapter_number-1)
-        else:
-            await self.go_to_page(interaction, 0)
+    async def go_to_first_chapter(self, interaction: Interaction, button: Button):
+        if self.chapter_number != 1:
+            await self.go_to_chapter(interaction=interaction,
+                                     chapter_number=self.chapter_number-1)
 
     @ui.button(label="<", style=ButtonStyle.grey)
     async def go_to_previous_page(self, interaction: Interaction, button: Button):
@@ -208,12 +197,8 @@ class MangaPaginationView(View):
         await self.go_to_page(interaction, self.current_page + 1)
 
     @ui.button(label=">>", style=ButtonStyle.grey)
-    async def go_to_last_page(self, interaction: Interaction, button: Button):
-        max_pages = len(self.embeds)
-        if self.current_page == (max_pages - 1):
-            await self.go_to_chapter(interaction, chapter_number=self.chapter_number + 1)
-        else:
-            await self.go_to_page(interaction, max_pages - 1)
+    async def go_to_next_chapter(self, interaction: Interaction, button: Button):
+        await self.go_to_chapter(interaction, chapter_number=self.chapter_number + 1)
 
     @ui.button(label="❌", style=ButtonStyle.grey)
     async def cancel_pages(self, interaction: Interaction, button: Button):
