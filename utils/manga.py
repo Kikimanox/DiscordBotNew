@@ -135,8 +135,6 @@ class MangaPaginationView(View):
         except IndexError:
             return
 
-        self.go_to_first_chapter.disabled = index == 0
-
         if index != 0:
             previous_chapter_number = f"Ch. {self.chapter_number_list[index-1]}"
         else:
@@ -150,14 +148,15 @@ class MangaPaginationView(View):
             next_chapter_number = f"Ch. {self.chapter_number+1}"
 
         self.go_to_first_chapter.label = previous_chapter_number
+        self.go_to_first_chapter.disabled = index == 0
+
         self.go_to_next_chapter.label = next_chapter_number
+        self.go_to_next_chapter.disabled = (index + 1) == max_chapters
 
         max_pages = len(self.embeds)
 
         self.go_to_previous_page.label = f"{page_number}"
         self.go_to_next_page.label = f"{page_number+2}"
-
-        self.go_to_next_chapter.disabled = (index + 1) == max_chapters
 
         self.go_to_previous_page.disabled = False
         self.go_to_next_page.disabled = False
