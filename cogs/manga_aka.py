@@ -211,8 +211,9 @@ class OshiNoKoManga(commands.Cog):
         await view.start()
     
     @manga.command(
-        name="renai",
+        name="renai-daikou",
         description="Read Renai Daikou manga",
+        aliases=["renai"],
     )
     async def get_renai_manga(self, ctx: Context, chapter: int = 1, page: int = 1 ):
         await ctx.typing()
