@@ -19,7 +19,6 @@ class MangaPaginationView(View):
             self,
             ctx: Context,
             chapters: dict,
-            last_chapter_number: Union[int, float],
             chapter_number: Union[int, float] = 1,
             timeout: Union[float, None] = 300,
             page: int = 0,
@@ -36,8 +35,6 @@ class MangaPaginationView(View):
         self.chapters: dict = chapters
         self.chapter_number_list = sorted([key for key, _ in chapters.items()],
                                           key=lambda x: float(x))
-
-        self.last_chapter_number = last_chapter_number
 
         self.embeds: List[Embed] = self.create_embeds()
 
@@ -133,11 +130,14 @@ class MangaPaginationView(View):
             self,
             page_number: int,
     ):
-        index = self.chapter_number_list.index(f"{self.chapter_number}")
+        try:
+            index = self.chapter_number_list.index(f"{self.chapter_number}")
+        except IndexError:
+            return
 
         self.go_to_first_chapter.disabled = index == 0
 
-        if (index + 1) > 0:
+        if index != 0:
             previous_chapter_number = f"Ch. {self.chapter_number_list[index-1]}"
         else:
             previous_chapter_number = "..."
