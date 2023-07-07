@@ -6,6 +6,7 @@ from typing import List, TYPE_CHECKING, Optional, Union
 from discord.ui.item import Item
 
 import logging
+import traceback
 
 if TYPE_CHECKING:
     from utils.context import Context
@@ -145,7 +146,7 @@ class MangaPaginationView(View):
         if (index + 1) < max_chapters:
             next_chapter_number = f"Ch. {self.chapter_number_list[index+1]}"
         else:
-            next_chapter_number = f"Ch. {self.chapter_number+1}"
+            next_chapter_number = f"Ch. {int(self.chapter_number) + 1}"
 
         self.go_to_first_chapter.label = previous_chapter_number
         self.go_to_first_chapter.disabled = index == 0
@@ -186,6 +187,10 @@ class MangaPaginationView(View):
             await self.message.edit(view=None)
 
     async def on_error(self, interaction: Interaction, ex: Exception, item: Item):
+        error_message = "".join(
+            traceback.format_exception(None, ex, ex.__traceback__)
+        )
+        error_logger.error(error_message)
 
         if interaction.response.is_done():
             await interaction.followup.send('An unknown error occurred, sorry',
