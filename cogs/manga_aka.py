@@ -6,6 +6,7 @@ from pathlib import Path
 from discord import app_commands, Member
 from discord.ext import commands
 from aiohttp import ClientSession
+from datetime import datetime, timezone
 
 import logging
 import json
@@ -36,6 +37,10 @@ class OshiNoKoManga(commands.Cog):
         self.last_chapter_number = 1
 
     async def cog_load(self):
+        release_day = self.check_if_today_is_release_day()
+        if release_day:
+            await self.get_updates_from_sources()
+
         with open(self.chapters_json) as file:
             self.chapters = json.load(file)
 
@@ -46,6 +51,14 @@ class OshiNoKoManga(commands.Cog):
                     self.last_chapter_number = chapter_number
             except ValueError:
                 continue
+    
+    @staticmethod
+    def check_if_today_is_release_day():
+        now = datetime.now(timezone.utc)
+
+        # Release day is UTC 15:00 but will add all the way to 23:59
+        # for checking
+        return now.weekday == 2 and now.hour >= 15
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -63,7 +76,7 @@ class OshiNoKoManga(commands.Cog):
         await ctx.send("done")
 
     async def get_updates_from_sources(self):
-        session = self.bot.session
+        session = ClientSession()
         async with session.get(self.mangasee_source) as resp:
             data: dict = await resp.json()
 
