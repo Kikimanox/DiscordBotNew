@@ -187,10 +187,11 @@ class OshiNoKoManga(commands.Cog):
 
     @commands.dynamic_cooldown(cooldown=CooldownModified(),
                                type=commands.BucketType.user)
-    @commands.hybrid_command(
+    @commands.hybrid_group(
         name="manga",
         description="Read Oshi no ko manga",
-        aliases=["chapter", "chap"]
+        aliases=["chapter", "chap"],
+        fallback="oshi-no-ko"
     )
     @app_commands.describe(
         chapter="Chapter to read: Defaults to 1",
@@ -208,6 +209,15 @@ class OshiNoKoManga(commands.Cog):
             last_chapter_number=self.last_chapter_number
         )
         await view.start()
+    
+    @manga.command(
+        name="renai",
+        description="Read Renai Daikou manga",
+    )
+    async def get_renai_manga(self, ctx: Context, chapter: int = 1, page: int = 1 ):
+        await ctx.typing()
+
+        await ctx.send("done")
 
 
 async def setup(
