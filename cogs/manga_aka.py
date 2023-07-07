@@ -1,6 +1,6 @@
 from __future__ import annotations
 import asyncio
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional, List, Union
 
 from pathlib import Path
 from discord import app_commands, Member
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 import logging
 import json
+import re
 
 from utils.manga import MangaPaginationView
 
@@ -28,7 +29,7 @@ class OshiNoKoManga(commands.Cog):
     ):
         self.bot = bot
 
-        self.mangasee_source = "https://cubari.moe/read/api/mangasee/series/Oshi-no-Ko/"
+        self.oshi_no_ko_mangasee_source = "https://cubari.moe/read/api/mangasee/series/Oshi-no-Ko/"
 
         self.chapters = {}
 
@@ -41,8 +42,12 @@ class OshiNoKoManga(commands.Cog):
         if release_day:
             await self.get_updates_from_sources()
 
-        with open(self.chapters_json) as file:
-            self.chapters = json.load(file)
+        try:
+            with open(self.chapters_json) as file:
+                self.chapters = json.load(file)
+        except FileNotFoundError:
+            with open(self.chapters_json, "w") as file:
+                file.write(json.dumps({}))
 
         for key, _ in self.chapters.items():
             try:
@@ -51,7 +56,7 @@ class OshiNoKoManga(commands.Cog):
                     self.last_chapter_number = chapter_number
             except ValueError:
                 continue
-    
+
     @staticmethod
     def check_if_today_is_release_day():
         now = datetime.now(timezone.utc)
@@ -59,13 +64,6 @@ class OshiNoKoManga(commands.Cog):
         # Release day is UTC 15:00 but will add all the way to 23:59
         # for checking
         return now.weekday == 2 and now.hour >= 15
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        session = self.bot.session
-        if session is not None:
-            logger.info("Session initialized")
-            # await self.get_updates_from_sources()
 
     @commands.command(name="update_manga")
     async def update_manga_source(self, ctx: Context):
@@ -76,22 +74,63 @@ class OshiNoKoManga(commands.Cog):
         await ctx.send("done")
 
     async def get_updates_from_sources(self):
-        session = ClientSession()
-        async with session.get(self.mangasee_source) as resp:
+        async with ClientSession() as session:
+            mangasee_chapters = await self.get_mangasee_chapters(
+                session=session,
+                url=self.oshi_no_ko_mangasee_source,
+                upper_chapter_limit=95
+            )
+            self.chapters.update(mangasee_chapters)
+
+            cubari_url = "https://guya.moe/api/series/Oshi-no-Ko"
+            await self.get_cubari_chapter_pages(
+                session=session,
+                series_link=cubari_url
+            )
+
+        with open(self.chapters_json, "w") as file:
+            file.write(json.dumps(self.chapters))
+
+    async def get_mangasee_chapters(
+            self,
+            session: ClientSession,
+            url: str,
+            upper_chapter_limit: Optional[Union[float, int]] = None,
+            lower_chapter_limit: Optional[Union[float, int]] = None
+    ) -> dict:
+        async with session.get(url) as resp:
             data: dict = await resp.json()
 
         mangasee_chapters: Optional[dict] = data.get("chapters", None)
         if mangasee_chapters is None:
             return
         value: dict
+
+        fetch_chapters = {}
         for key, value in mangasee_chapters.items():
-            logger.info(f"Current Chapter {key}")
             try:
-                chapter_key = int(key)
+                if "." in key:
+                    chapter_key = float(key)
+                else:
+                    chapter_key = int(key)
             except ValueError:
                 continue
             if chapter_key >= self.last_chapter_number:
                 self.last_chapter_number = chapter_key
+
+            if upper_chapter_limit is not None and \
+                    upper_chapter_limit <= chapter_key \
+                    and lower_chapter_limit is None:
+                pass
+            if upper_chapter_limit is None and \
+                    lower_chapter_limit >= chapter_key \
+                    and lower_chapter_limit is not None:
+                pass
+            if lower_chapter_limit is not None and \
+                    upper_chapter_limit is not None and \
+                    upper_chapter_limit <= chapter_key < lower_chapter_limit:
+                pass
+
             if chapter_key >= 95:
                 chapter_link_group: dict = value.get("groups", None)
                 if chapter_link_group is None:
@@ -104,19 +143,12 @@ class OshiNoKoManga(commands.Cog):
                     session=session,
                     chapter_link=full_chapter_link
                 )
-                self.chapters.update({
+                fetch_chapters.update({
                     key: chapter_pages
                 })
                 await asyncio.sleep(0.1)
 
-        cubari_url = "https://guya.moe/api/series/Oshi-no-Ko"
-        await self.get_cubari_chapter_pages(
-            session=session,
-            series_link=cubari_url
-        )
-
-        with open(self.chapters_json, "w") as file:
-            file.write(json.dumps(self.chapters))
+        return fetch_chapters
 
     async def get_cubari_chapter_pages(self,
                                        session: ClientSession,
@@ -197,7 +229,16 @@ class OshiNoKoManga(commands.Cog):
         chapter="Chapter to read: Defaults to 1",
         page="Page to read: Defaults to 1",
     )
-    async def manga(self, ctx: Context, chapter: int = 1, page: int = 1):
+    async def manga(self, ctx: Context, chapter: float = 1.0, page: int = 1):
+        try:
+            if re.match(r'^\d+\.0$', str(chapter)):
+                chapter_number = int(chapter)
+            elif re.match(r'^\d+\.\d+$', str(chapter)):
+                chapter_number = float(chapter)
+            else:
+                chapter_number = int(chapter)
+        except ValueError:
+            chapter_number = 1
 
         await ctx.typing()
 
@@ -205,17 +246,17 @@ class OshiNoKoManga(commands.Cog):
             chapters=self.chapters,
             ctx=ctx,
             page=page-1,
-            chapter_number=chapter,
+            chapter_number=chapter_number,
             last_chapter_number=self.last_chapter_number
         )
         await view.start()
-    
+
     @manga.command(
         name="renai-daikou",
         description="Read Renai Daikou manga",
         aliases=["renai"],
     )
-    async def get_renai_manga(self, ctx: Context, chapter: int = 1, page: int = 1 ):
+    async def get_renai_manga(self, ctx: Context, chapter: int = 1, page: int = 1):
         await ctx.typing()
 
         await ctx.send("done")

@@ -19,8 +19,8 @@ class MangaPaginationView(View):
             self,
             ctx: Context,
             chapters: dict,
-            last_chapter_number: int,
-            chapter_number: int = 1,
+            last_chapter_number: Union[int, float],
+            chapter_number: Union[int, float] = 1,
             timeout: Union[float, None] = 300,
             page: int = 0,
     ):
@@ -34,6 +34,9 @@ class MangaPaginationView(View):
         self.clear_items()
         self.current_page = page
         self.chapters: dict = chapters
+        self.chapter_number_list = sorted([key for key, _ in chapters.items()],
+                                          key=lambda x: float(x))
+
         self.last_chapter_number = last_chapter_number
 
         self.embeds: List[Embed] = self.create_embeds()
@@ -126,22 +129,35 @@ class MangaPaginationView(View):
                 view=self
             )
 
-    def _update_labels(self, page_number: int):
-        self.go_to_first_chapter.disabled = self.chapter_number == 1
-        self.go_to_first_chapter.label = f"Ch: {self.chapter_number - 1}" if \
-            self.chapter_number != 1 else "..."
+    def _update_labels(
+            self,
+            page_number: int,
+    ):
+        index = self.chapter_number_list.index(f"{self.chapter_number}")
+
+        self.go_to_first_chapter.disabled = index == 0
+
+        if (index + 1) > 0:
+            previous_chapter_number = f"Ch. {self.chapter_number_list[index-1]}"
+        else:
+            previous_chapter_number = "..."
+
+        max_chapters = len(self.chapter_number_list)
+
+        if (index + 1) < max_chapters:
+            next_chapter_number = f"Ch. {self.chapter_number_list[index+1]}"
+        else:
+            next_chapter_number = f"Ch. {self.chapter_number+1}"
+
+        self.go_to_first_chapter.label = previous_chapter_number
+        self.go_to_next_chapter.label = next_chapter_number
 
         max_pages = len(self.embeds)
-
-        # self.go_to_previous_page.label = "<"
-        # self.go_to_next_page.label = ">"
 
         self.go_to_previous_page.label = f"{page_number}"
         self.go_to_next_page.label = f"{page_number+2}"
 
-        self.go_to_next_chapter.disabled = self.last_chapter_number <= \
-            self.chapter_number
-        self.go_to_next_chapter.label = f"Ch: {self.chapter_number + 1}"
+        self.go_to_next_chapter.disabled = (index + 1) == max_chapters
 
         self.go_to_previous_page.disabled = False
         self.go_to_next_page.disabled = False
@@ -170,7 +186,8 @@ class MangaPaginationView(View):
         if self.message:
             await self.message.edit(view=None)
 
-    async def on_error(self, interaction: Interaction, error: Exception, item: Item):
+    async def on_error(self, interaction: Interaction, ex: Exception, item: Item):
+
         if interaction.response.is_done():
             await interaction.followup.send('An unknown error occurred, sorry',
                                             ephemeral=True)
@@ -180,9 +197,14 @@ class MangaPaginationView(View):
 
     @ui.button(label="<<", style=ButtonStyle.grey)
     async def go_to_first_chapter(self, interaction: Interaction, button: Button):
-        if self.chapter_number != 1:
+        index = self.chapter_number_list.index(f"{self.chapter_number}")
+
+        if (index + 1) > 0:
+            previous_chapter_number = self.chapter_number_list[index-1]
             await self.go_to_chapter(interaction=interaction,
-                                     chapter_number=self.chapter_number-1)
+                                     chapter_number=previous_chapter_number)
+        else:
+            await interaction.followup.send("Reached the first chapter")
 
     @ui.button(label="<", style=ButtonStyle.grey)
     async def go_to_previous_page(self, interaction: Interaction, button: Button):
@@ -198,7 +220,13 @@ class MangaPaginationView(View):
 
     @ui.button(label=">>", style=ButtonStyle.grey)
     async def go_to_next_chapter(self, interaction: Interaction, button: Button):
-        await self.go_to_chapter(interaction, chapter_number=self.chapter_number + 1)
+        index = self.chapter_number_list.index(f"{self.chapter_number}")
+        if (index + 1) < len(self.chapter_number_list):
+            next_chapter_number = self.chapter_number_list[index+1]
+
+            await self.go_to_chapter(interaction, chapter_number=next_chapter_number)
+        else:
+            await interaction.followup.send("Reached the latest chapter")
 
     @ui.button(label="❌", style=ButtonStyle.grey)
     async def cancel_pages(self, interaction: Interaction, button: Button):
