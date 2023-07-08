@@ -94,6 +94,7 @@ class Highlights(commands.Cog):
     @commands.check(manage_roles_check)
     @commands.command(aliases=["initialize_smuglights"])
     async def initialize_highlights(self, ctx):
+        """First-time initialization command. Run once to initialize highlights settings and configurations on the global bot scope."""
         if self.spoiler_settings == {}:
             self.spoiler_settings = {
                 str(ctx.guild.id): {MANGA_CATEGORY_ID: None, MANGA_SPOILER_CHANNELS: [], RAW_CHANNELS: []}
@@ -157,6 +158,7 @@ class Highlights(commands.Cog):
     @commands.check(manage_roles_check)
     @commands.command(aliases=["highlightsthreshold"])
     async def smugthreshold(self, ctx, *channels: discord.TextChannel):
+        """View the current threshold for number of unique users needing to react to a message in order to hit the highlights channel."""
         txt = ""
         for channel in channels:
             last_message = (await channel.history(limit=1).flatten())[0]
