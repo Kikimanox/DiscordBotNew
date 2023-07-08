@@ -34,7 +34,7 @@ class MangaPaginationView(View):
         self.clear_items()
         self.current_page = page
         self.chapters: dict = chapters
-        self.chapter_number_list = sorted([key for key, _ in chapters.items()],
+        self.chapter_number_list = sorted(list(chapters.keys()),
                                           key=lambda x: float(x))
 
         self.embeds: List[Embed] = self.create_embeds()
