@@ -20,7 +20,7 @@ class Quoting(commands.Cog):
     @commands.command(aliases=["q"])
     async def quote(self, ctx, *args):
         """Quote a message.
-
+        I should really rewrite this horribly written command already ...
         `[p]q` (will quote the last message)
         `[p]q Message_id` (will find the message with this id in this channel)
         `[p]q Message content` here (will find the message with this content in this channel (last 2k messages max))

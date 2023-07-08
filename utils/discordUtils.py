@@ -66,11 +66,20 @@ async def getChannel(ctx, arg, silent=False):
                 if chan.permissions_for(ctx.author).read_messages:
                     channels.append(chan)
                     break
+    NOT_FOUND = "The specified channel could not be found."
     if not channels:
         if not silent:
-            await ctx.send("The specified channel could not be found.")
+            await ctx.send(NOT_FOUND)
         return None
-    return channels[0]
+
+    chan = channels[0]
+
+    permissions = chan.permissions_for(ctx.author)
+    if not permissions.read_messages:
+        await ctx.send(NOT_FOUND)
+        return None
+
+    return chan
 
 
 def getEmbedFromMsg(msg):
