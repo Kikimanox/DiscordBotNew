@@ -71,7 +71,7 @@ class OshiNoKoManga(commands.Cog):
 
         # Release day is UTC 15:00 but will add all the way to 23:59
         # for checking
-        return now.weekday == 2 and now.hour >= 15
+        return now.weekday() == 2 and now.hour >= 15
 
     async def get_renai_daikou_updates_from_sources(self):
         async with ClientSession() as session:
