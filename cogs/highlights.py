@@ -161,7 +161,10 @@ class Highlights(commands.Cog):
         """View the current threshold for number of unique users needing to react to a message in order to hit the highlights channel."""
         txt = ""
         for channel in channels:
-            last_message = (await channel.history(limit=1).flatten())[0]
+            last_message = None
+            async for msg in channel.history(limit=1):
+                last_message = msg
+                break
             required_stars, formula = await self.get_highlight_threshold(last_message)
             txt += f"\n{channel.mention}: {required_stars} | {formula}"
         await ctx.send(f"Required stars for:{txt}")
@@ -312,7 +315,10 @@ class Highlights(commands.Cog):
     async def get_highlight_threshold(self, message):
         chnl_history = self.channel_history.get(message.channel.id, [])
         if len(chnl_history) == 0:
-            last_msg = (await message.channel.history(limit=1).flatten())[0]
+            last_msg = None
+            async for msg in message.channel.history(limit=1):
+                last_msg = msg
+                break
             chnl_history.append((last_msg.author.id, last_msg.created_at.timestamp()))
             self.channel_history[message.channel.id] = chnl_history
         guild_highlights_settings = self.highlights_settings[str(message.guild.id)]
