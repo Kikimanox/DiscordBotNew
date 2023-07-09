@@ -42,6 +42,9 @@ HIGHLIGHT_BLACKLIST = "highlight_blacklist"
 
 
 class Highlights(commands.Cog):
+    """
+    Credits to this cog's content and logic goes to: Appu (prev. known as "appu#4444")
+    """
     def __init__(self, bot):
         self.bot = bot
 
