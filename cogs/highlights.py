@@ -34,7 +34,7 @@ MAX_THRESHOLD = "max_threshold"
 MIN_THRESHOLD = "min_threshold"
 SOFT_MAX_THRESHOLD = "soft_max_threshold"
 THRESHOLD_EXPONENTIAL_UPSCALE = "threshold_exponential_upscale"
-THRESHOLD_UPSCALE_DURATIO = "threshold_upscale_duRATIO"
+THRESHOLD_UPSCALE_DURATION = "threshold_upscale_duratio"
 THRESHOLD_UPSCALE_MAX_TIMES = "threshold_upscale_max_times"
 USERS_TO_THRESHOLD_RATIO = "users_to_threshold_ratio"
 HIGHLIGHT_CHANNEL = "highlight_channel"
@@ -98,7 +98,7 @@ class Highlights(commands.Cog):
     @commands.check(manage_roles_check)
     @commands.command(aliases=["initialize_smuglights"])
     async def initialize_highlights(self, ctx):
-        """First-time initialization command. Run once to initialize highlights settings and configuRATIOs on the global bot scope."""
+        """First-time initialization command. Run once to initialize highlights settings and configurations on the global bot scope."""
         if self.spoiler_settings == {}:
             self.spoiler_settings = {
                 str(ctx.guild.id): {MANGA_CATEGORY_ID: None, MANGA_SPOILER_CHANNELS: [], RAW_CHANNELS: []}
@@ -118,7 +118,7 @@ class Highlights(commands.Cog):
                     MIN_THRESHOLD: 6.0,
                     SOFT_MAX_THRESHOLD: 20.0,
                     THRESHOLD_EXPONENTIAL_UPSCALE: 1.1,
-                    THRESHOLD_UPSCALE_DURATIO: 3600.0,
+                    THRESHOLD_UPSCALE_DURATION: 3600.0,
                     THRESHOLD_UPSCALE_MAX_TIMES: 8.0,
                     USERS_TO_THRESHOLD_RATIO: 5.0,
                     HIGHLIGHT_CHANNEL: None,
@@ -222,14 +222,14 @@ class Highlights(commands.Cog):
         Defining "threshold": The # of reacts a message needs to aquire in order for a message to be added to the highlights channel. Thresholds can differ per channel and per message.
         All highlights settings:
         - highlight_channel - Main highlights channel where highlights are posted.
-        - spoiler_highlight_channel - Optional second highlights channel for spoilery content. E.g. A highglights channel for manga channels. This will check settings/spoiler_settings.json configuRATIOs to determine what are spoiler channels.
+        - spoiler_highlight_channel - Optional second highlights channel for spoilery content. E.g. A highglights channel for manga channels. This will check settings/spoiler_settings.json configurations to determine what are spoiler channels.
         - min_threshold - Absolute minimum number of reacts necessary for a message to be a highlight.
         - soft_max_threshold - Maximum a threshold can be, based off of channel activity alone. Threshold can still pass this in the case of threshold upscale due to frequent highlights from this channel.
         - max_threshold - Absolute maximum that the threshold can be regardless of channel or message.
         - users_to_threshold_ratio - Calculating reactions threshold based on active unique users in channel message history active cache. Used to determine channel activity based threshold in high-activity periods.
         - history_cache_size - Size in # of messages of message history being held in-memory cache per channel in order to calculate channel activity.
         - threshold_exponential_upscale - Upon a message from a channel entering highlights, that channel's threshold will increase exponentially with respect to this number. (Ideally between 1-3)
-        - threshold_upscale_duRATIO - DuRATIO in seconds before a channel's threshold upscale is reverted (decrement based on exponential upscale value).
+        - threshold_upscale_duratio - Duration in seconds before a channel's threshold upscale is reverted (decrement based on exponential upscale value).
         - threshold_upscale_max_times - Number of times threshold can upscale for a channel before upscaling is capped. Note, max_threshold will limit this if not configured properly.
         - low_activity_seconds - Age of the oldest message in channel history cache before the channel is considered low activity. Usually want to configure this for detecting "dead" chats which may have a disproportionate amount of reactions on latest messages.
         - high_activity_seconds - Highest age of oldest message in channel cache before the channel is considered high activity. Once high activity, threshold for highlights gets a bump.
@@ -272,7 +272,7 @@ class Highlights(commands.Cog):
     async def upscale(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel], value: int):
         """Temporarily upscale the threshold for an unusually active channel. Downscaling can also be done by giving a negative number.
 
-        Upscale effects will erode according to the set value for threshold_upscale_duRATIO.
+        Upscale effects will erode according to the set value for threshold_upscale_duratio.
         """
         self.update_channel_upscale_count(channel.guild.id, channel.id, value)
         if channel.id in self.channel_highlights_threshold:
@@ -405,7 +405,7 @@ class Highlights(commands.Cog):
             if (
                 self.channel_highlights_threshold.get(sub_channel.id, None)
                 and int(datetime.now().timestamp()) - self.channel_highlights_threshold[sub_channel.id][1]
-                > guild_highlights_settings[THRESHOLD_UPSCALE_DURATIO]
+                > guild_highlights_settings[THRESHOLD_UPSCALE_DURATION]
             ):
                 self.update_channel_upscale_count(sub_channel.guild.id, sub_channel.id, -1)
 
