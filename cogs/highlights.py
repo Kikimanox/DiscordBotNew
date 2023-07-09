@@ -377,8 +377,8 @@ class Highlights(commands.Cog):
             sub_channel, parent_channel = await self.get_text_channel(self.bot, event.channel_id)
             if parent_channel and parent_channel.id in guild_highlights_settings[HIGHLIGHT_BLACKLIST]:
                 return
-            if not isinstance(parent_channel, discord.TextChannel):
-                return
+            # if not isinstance(parent_channel, discord.TextChannel):
+            #     return
 
             # Filter out ineligible messages
             if parent_channel.overwrites_for(parent_channel.guild.default_role).send_messages is False:
@@ -481,7 +481,7 @@ class Highlights(commands.Cog):
 
                 highlight_channel = parent_channel.guild.get_channel(highlight_channel_id)
                 highlight = await highlight_channel.send(content=None, embed=em)
-                smug_emoji = discord.utils.get(parent_channel.guild.emojis, name="KanaSmug")
+                smug_emoji = discord.utils.get(parent_channel.guild.emojis, name="BunnySmug")
                 await highlight.add_reaction(smug_emoji if smug_emoji else "😏")
 
     @commands.Cog.listener()
