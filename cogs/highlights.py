@@ -3,6 +3,7 @@ import json
 import re
 from collections import defaultdict
 from datetime import datetime
+from typing import Union
 
 import aiohttp
 import discord
@@ -133,7 +134,7 @@ class Highlights(commands.Cog):
 
     @commands.check(manage_roles_check)
     @commands.command(aliases=["togglesmuglights"])
-    async def togglehighlights(self, ctx, channel: discord.TextChannel = None):
+    async def togglehighlights(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel] = None):
         """Toggle highlights on or off for the entire server or specific channels."""
         if channel and channel.guild.id != ctx.guild.id:
             return await ctx.send("Error, channel must belong to this server.")
@@ -160,7 +161,7 @@ class Highlights(commands.Cog):
 
     @commands.check(manage_roles_check)
     @commands.command(aliases=["highlightsthreshold"])
-    async def smugthreshold(self, ctx, *channels: discord.TextChannel):
+    async def smugthreshold(self, ctx, *channels: Union[discord.Thread, discord.abc.GuildChannel]):
         """View the current threshold for number of unique users needing to react to a message in order to hit the highlights channel."""
         txt = ""
         for channel in channels:
@@ -174,7 +175,7 @@ class Highlights(commands.Cog):
 
     @commands.check(manage_roles_check)
     @commands.command(aliases=["smuglights_channel"])
-    async def highlights_channel(self, ctx, channel: discord.TextChannel = None):
+    async def highlights_channel(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel] = None):
         """Set the highlights channel where highlights get posted. Provide no channel to remove (same as disabling highlights across the entire server with `.togglehiglights`)."""
         if str(ctx.guild.id) not in self.highlights_settings:
             return await ctx.send("Highlights have not been configured for this server.")
@@ -191,7 +192,7 @@ class Highlights(commands.Cog):
 
     @commands.check(manage_roles_check)
     @commands.command(aliases=["spoiler_smuglights_channel"])
-    async def spoiler_highlights_channel(self, ctx, channel: discord.TextChannel = None):
+    async def spoiler_highlights_channel(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel] = None):
         """Set the spoiler highlights channel where highlights from spoiler channels get posted. NOTE: `.highlights_channel` must be configured as well in order to function. Provide no channel to remove (will default to regular highlights)."""
         if str(ctx.guild.id) not in self.highlights_settings:
             return await ctx.send("Highlights have not been configured for this server.")
@@ -268,7 +269,7 @@ class Highlights(commands.Cog):
 
     @commands.check(manage_roles_check)
     @smugsettings.group()
-    async def upscale(self, ctx, channel: discord.TextChannel, value: int):
+    async def upscale(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel], value: int):
         """Temporarily upscale the threshold for an unusually active channel. Downscaling can also be done by giving a negative number.
 
         Upscale effects will erode according to the set value for threshold_upscale_duration.
