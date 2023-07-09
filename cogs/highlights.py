@@ -442,7 +442,7 @@ class Highlights(commands.Cog):
                 is_nsfw = parent_channel.is_nsfw()
                 em = discord.Embed(timestamp=starred_msg.created_at)
                 em.set_author(
-                    name=str(starred_msg.author),
+                    name=starred_msg.author.display_name,
                     icon_url=self.get_user_avatar_url(starred_msg.author),
                 )
                 description = starred_msg.content
