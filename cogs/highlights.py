@@ -34,7 +34,7 @@ MAX_THRESHOLD = "max_threshold"
 MIN_THRESHOLD = "min_threshold"
 SOFT_MAX_THRESHOLD = "soft_max_threshold"
 THRESHOLD_EXPONENTIAL_UPSCALE = "threshold_exponential_upscale"
-THRESHOLD_UPSCALE_DURATION = "threshold_upscale_duratio"
+THRESHOLD_UPSCALE_DURATION = "threshold_upscale_duration"
 THRESHOLD_UPSCALE_MAX_TIMES = "threshold_upscale_max_times"
 USERS_TO_THRESHOLD_RATIO = "users_to_threshold_ratio"
 HIGHLIGHT_CHANNEL = "highlight_channel"
@@ -229,7 +229,7 @@ class Highlights(commands.Cog):
         - users_to_threshold_ratio - Calculating reactions threshold based on active unique users in channel message history active cache. Used to determine channel activity based threshold in high-activity periods.
         - history_cache_size - Size in # of messages of message history being held in-memory cache per channel in order to calculate channel activity.
         - threshold_exponential_upscale - Upon a message from a channel entering highlights, that channel's threshold will increase exponentially with respect to this number. (Ideally between 1-3)
-        - threshold_upscale_duratio - Duration in seconds before a channel's threshold upscale is reverted (decrement based on exponential upscale value).
+        - threshold_upscale_duration - Duration in seconds before a channel's threshold upscale is reverted (decrement based on exponential upscale value).
         - threshold_upscale_max_times - Number of times threshold can upscale for a channel before upscaling is capped. Note, max_threshold will limit this if not configured properly.
         - low_activity_seconds - Age of the oldest message in channel history cache before the channel is considered low activity. Usually want to configure this for detecting "dead" chats which may have a disproportionate amount of reactions on latest messages.
         - high_activity_seconds - Highest age of oldest message in channel cache before the channel is considered high activity. Once high activity, threshold for highlights gets a bump.
@@ -272,7 +272,7 @@ class Highlights(commands.Cog):
     async def upscale(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel], value: int):
         """Temporarily upscale the threshold for an unusually active channel. Downscaling can also be done by giving a negative number.
 
-        Upscale effects will erode according to the set value for threshold_upscale_duratio.
+        Upscale effects will erode according to the set value for threshold_upscale_duration.
         """
         self.update_channel_upscale_count(channel.guild.id, channel.id, value)
         if channel.id in self.channel_highlights_threshold:
