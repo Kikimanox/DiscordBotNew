@@ -11,7 +11,7 @@ from contextlib import redirect_stdout
 
 import aiohttp
 import discord
-from utils import dataIOa
+from utils.dataIOa import dataIOa
 import asyncio
 from discord.ext import commands
 
