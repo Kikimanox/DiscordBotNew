@@ -36,7 +36,7 @@ SOFT_MAX_THRESHOLD = "soft_max_threshold"
 THRESHOLD_EXPONENTIAL_UPSCALE = "threshold_exponential_upscale"
 THRESHOLD_UPSCALE_DURATION = "threshold_upscale_duration"
 THRESHOLD_UPSCALE_MAX_TIMES = "threshold_upscale_max_times"
-USERS_TO_THRESHOLD_RATION = "users_to_threshold_ratio"
+USERS_TO_THRESHOLD_RATIO = "users_to_threshold_ratio"
 HIGHLIGHT_CHANNEL = "highlight_channel"
 SPOILER_HIGHLIGHT_CHANNEL = "spoiler_highlight_channel"
 HIGHLIGHT_BLACKLIST = "highlight_blacklist"
@@ -120,7 +120,7 @@ class Highlights(commands.Cog):
                     THRESHOLD_EXPONENTIAL_UPSCALE: 1.1,
                     THRESHOLD_UPSCALE_DURATION: 3600.0,
                     THRESHOLD_UPSCALE_MAX_TIMES: 8.0,
-                    USERS_TO_THRESHOLD_RATION: 5.0,
+                    USERS_TO_THRESHOLD_RATIO: 5.0,
                     HIGHLIGHT_CHANNEL: None,
                     SPOILER_HIGHLIGHT_CHANNEL: None,
                     HIGHLIGHT_BLACKLIST: [],
@@ -291,7 +291,7 @@ class Highlights(commands.Cog):
 
     def update_channel_upscale_count(self, guild_id, channel_id, value, update_time=None):
         if not update_time:
-            update_time = int(datetime.utcnow().timestamp())
+            update_time = int(datetime.now().timestamp())
         if channel_id not in self.channel_highlights_threshold:
             self.channel_highlights_threshold[channel_id] = [value, update_time]
         else:
@@ -328,7 +328,7 @@ class Highlights(commands.Cog):
         guild_highlights_settings = self.highlights_settings[str(message.guild.id)]
 
         if (
-            datetime.utcnow().timestamp() - chnl_history[0][1] > guild_highlights_settings[LOW_ACTIVITY_SECONDS]
+            datetime.now().timestamp() - chnl_history[0][1] > guild_highlights_settings[LOW_ACTIVITY_SECONDS]
         ):  # dead chat
             required_stars = int(
                 guild_highlights_settings[MIN_THRESHOLD] * guild_highlights_settings[LOW_ACTIVITY_UPSCALE]
@@ -338,11 +338,11 @@ class Highlights(commands.Cog):
             guild_highlights_settings[HISTORY_CACHE_SIZE]
         ):  # calculate rate based on unique users in cache
             total_users = len(set([x[0] for x in chnl_history]))
-            user_based_upscale = int(total_users / guild_highlights_settings[USERS_TO_THRESHOLD_RATION])
+            user_based_upscale = int(total_users / guild_highlights_settings[USERS_TO_THRESHOLD_RATIO])
             required_stars = user_based_upscale + guild_highlights_settings[MIN_THRESHOLD]
             formula = f"user based activity (upscale: {user_based_upscale} total users: {total_users})"
             if (
-                datetime.utcnow().timestamp() - chnl_history[0][1] < guild_highlights_settings[HIGH_ACTIVITY_SECONDS]
+                datetime.now().timestamp() - chnl_history[0][1] < guild_highlights_settings[HIGH_ACTIVITY_SECONDS]
             ):  # high activity
                 required_stars = int(required_stars * guild_highlights_settings[HIGH_ACTIVITY_UPSCALE])
                 formula += ", high activity"
@@ -394,7 +394,7 @@ class Highlights(commands.Cog):
                 self.bot.logger.error(f"highlight msg not found: {event.message_id}")
                 return
             if (
-                datetime.utcnow().timestamp() - guild_highlights_settings[HIGHLIGHT_ELIGIBLE_EXPIRY_SECONDS]
+                datetime.now().timestamp() - guild_highlights_settings[HIGHLIGHT_ELIGIBLE_EXPIRY_SECONDS]
                 > starred_msg.created_at.timestamp()
             ):
                 return
@@ -404,7 +404,7 @@ class Highlights(commands.Cog):
             # Threshold upscale has timed out, decrement upscale by configured exponential factor.
             if (
                 self.channel_highlights_threshold.get(sub_channel.id, None)
-                and int(datetime.utcnow().timestamp()) - self.channel_highlights_threshold[sub_channel.id][1]
+                and int(datetime.now().timestamp()) - self.channel_highlights_threshold[sub_channel.id][1]
                 > guild_highlights_settings[THRESHOLD_UPSCALE_DURATION]
             ):
                 self.update_channel_upscale_count(sub_channel.guild.id, sub_channel.id, -1)
