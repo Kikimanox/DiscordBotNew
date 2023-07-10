@@ -385,7 +385,7 @@ class Highlights(commands.Cog):
             #     return
 
             # Filter out ineligible messages
-            if parent_channel.overwrites_for(parent_channel.guild.default_role).send_messages is False:
+            if not isinstance(parent_channel, discord.ForumChannel) and parent_channel.overwrites_for(parent_channel.guild.default_role).send_messages is False:
                 return
             starred_msg = None
             try:
