@@ -3,7 +3,6 @@ import os
 import subprocess
 
 from discord.ext import commands
-from main_d3 import exit_bot
 
 from utils.checks import dev_check
 from utils.dataIOa import dataIOa
@@ -45,7 +44,12 @@ class ARestart(commands.Cog):
         await ctx.send("Restarting...")
         restarT = {"guild": ctx.guild.id, "channel": ctx.channel.id}
         dataIOa.save_json("restart.json", restarT)
-        exit_bot(0)
+        for t in self.bot.running_tasks:
+            try:
+                t.cancel()
+            except:
+                pass
+        os._exit(0)
 
 
 async def setup(bot: commands.Bot):
