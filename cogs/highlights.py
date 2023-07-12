@@ -494,9 +494,13 @@ class Highlights(commands.Cog):
                 highlight = await highlight_channel.send(content=None, embed=em)
                 smug_emoji = discord.utils.get(parent_channel.guild.emojis, name="BunnySmug")
                 await highlight.add_reaction(smug_emoji if smug_emoji else "😏")
-                if starred_msg.attachments and not highlight.embeds[0].image:
-                    await highlight_channel.send(content=None, attachments=starred_msg.attachments)
-                elif starred_msg.embeds and not highlight.embeds[0].image and starred_msg.embeds[0].url:
+
+                # delay to ensure embed had time to load before checking height 0
+                await asyncio.sleep(2)
+                highlight = await highlight_channel.fetch_message(highlight.id)
+                if starred_msg.attachments and highlight.embeds[0].image.height == 0:
+                    await highlight_channel.send(content="\n".join([a.proxy_url for a in starred_msg.attachments]))
+                if starred_msg.embeds and not highlight.embeds[0].image and starred_msg.embeds[0].url:
                     await highlight_channel.send(content=starred_msg.embeds[0].url)
 
     @commands.Cog.listener()
