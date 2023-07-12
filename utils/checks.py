@@ -11,7 +11,7 @@ async def owner_check(
 async def dev_check(
         ctx: commands.Context
 ):
-    return owner_check(ctx) or ctx.author.id == 124910128582361092
+    return ctx.author.id in [ctx.bot.config['OWNER_ID'], 124910128582361092]
 
 
 async def manage_roles_check(
