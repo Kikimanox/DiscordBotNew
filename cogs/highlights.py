@@ -37,6 +37,7 @@ THRESHOLD_EXPONENTIAL_UPSCALE = "threshold_exponential_upscale"
 THRESHOLD_UPSCALE_DURATION = "threshold_upscale_duration"
 THRESHOLD_UPSCALE_MAX_TIMES = "threshold_upscale_max_times"
 USERS_TO_THRESHOLD_RATIO = "users_to_threshold_ratio"
+EMBED_OR_ATTACHMENT_UPSCALE = "embed_or_attachment_upscale"
 HIGHLIGHT_CHANNEL = "highlight_channel"
 SPOILER_HIGHLIGHT_CHANNEL = "spoiler_highlight_channel"
 HIGHLIGHT_BLACKLIST = "highlight_blacklist"
@@ -327,19 +328,22 @@ class Highlights(commands.Cog):
             self.channel_history[message.channel.id] = chnl_history
         guild_highlights_settings = self.highlights_settings[str(message.guild.id)]
 
+        required_stars = guild_highlights_settings[MIN_THRESHOLD]
+
+        if message.embeds or message.attachments:
+            required_stars = int(required_stars * guild_highlights_settings[EMBED_OR_ATTACHMENT_UPSCALE])
+
         if (
             datetime.now().timestamp() - chnl_history[0][1] > guild_highlights_settings[LOW_ACTIVITY_SECONDS]
         ):  # dead chat
-            required_stars = int(
-                guild_highlights_settings[MIN_THRESHOLD] * guild_highlights_settings[LOW_ACTIVITY_UPSCALE]
-            )
+            required_stars = int(required_stars * guild_highlights_settings[LOW_ACTIVITY_UPSCALE])
             formula = "low activity"
         elif len(chnl_history) == int(
             guild_highlights_settings[HISTORY_CACHE_SIZE]
         ):  # calculate rate based on unique users in cache
             total_users = len(set([x[0] for x in chnl_history]))
             user_based_upscale = int(total_users / guild_highlights_settings[USERS_TO_THRESHOLD_RATIO])
-            required_stars = user_based_upscale + guild_highlights_settings[MIN_THRESHOLD]
+            required_stars += user_based_upscale
             formula = f"user based activity (upscale: {user_based_upscale} total users: {total_users})"
             if (
                 datetime.now().timestamp() - chnl_history[0][1] < guild_highlights_settings[HIGH_ACTIVITY_SECONDS]
@@ -347,7 +351,6 @@ class Highlights(commands.Cog):
                 required_stars = int(required_stars * guild_highlights_settings[HIGH_ACTIVITY_UPSCALE])
                 formula += ", high activity"
         else:  # not enough messages in cache, default to min threshold
-            required_stars = guild_highlights_settings[MIN_THRESHOLD]
             formula = "min threshold"
 
         if required_stars < guild_highlights_settings[MIN_THRESHOLD]:
@@ -381,8 +384,6 @@ class Highlights(commands.Cog):
             sub_channel, parent_channel = await self.get_text_channel(self.bot, event.channel_id)
             if parent_channel and parent_channel.id in guild_highlights_settings[HIGHLIGHT_BLACKLIST]:
                 return
-            # if not isinstance(parent_channel, discord.TextChannel):
-            #     return
 
             # Filter out ineligible messages
             if not isinstance(parent_channel, discord.ForumChannel) and parent_channel.overwrites_for(parent_channel.guild.default_role).send_messages is False:
@@ -487,6 +488,10 @@ class Highlights(commands.Cog):
                 highlight = await highlight_channel.send(content=None, embed=em)
                 smug_emoji = discord.utils.get(parent_channel.guild.emojis, name="BunnySmug")
                 await highlight.add_reaction(smug_emoji if smug_emoji else "😏")
+                if starred_msg.attachments and not highlight.embeds[0].image:
+                    await highlight_channel.send(content=None, attachments=starred_msg.attachments)
+                elif starred_msg.embeds and not highlight.embeds[0].image and starred_msg.embeds[0].url:
+                    await highlight_channel.send(content=starred_msg.embeds[0].url)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event):
