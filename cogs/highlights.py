@@ -104,29 +104,35 @@ class Highlights(commands.Cog):
             self.spoiler_settings = {
                 str(ctx.guild.id): {MANGA_CATEGORY_ID: None, MANGA_SPOILER_CHANNELS: [], RAW_CHANNELS: []}
             }
-        if self.highlights_settings == {}:
-            self.highlights_settings = {
-                str(ctx.guild.id): {
-                    HIGHLIGHTS_ENABLED: False,
-                    HIGH_ACTIVITY_SECONDS: 300.0,
-                    HIGH_ACTIVITY_UPSCALE: 1.25,
-                    HIGHLIGHT_ELIGIBLE_EXPIRY_SECONDS: 21600,
-                    HIGHLIGHT_MESSAGE_CACHE_SIZE: 500.0,
-                    HISTORY_CACHE_SIZE: 50.0,
-                    LOW_ACTIVITY_SECONDS: 10800.0,
-                    LOW_ACTIVITY_UPSCALE: 1.2,
-                    MAX_THRESHOLD: 30.0,
-                    MIN_THRESHOLD: 6.0,
-                    SOFT_MAX_THRESHOLD: 20.0,
-                    THRESHOLD_EXPONENTIAL_UPSCALE: 1.1,
-                    THRESHOLD_UPSCALE_DURATION: 3600.0,
-                    THRESHOLD_UPSCALE_MAX_TIMES: 8.0,
-                    USERS_TO_THRESHOLD_RATIO: 5.0,
-                    HIGHLIGHT_CHANNEL: None,
-                    SPOILER_HIGHLIGHT_CHANNEL: None,
-                    HIGHLIGHT_BLACKLIST: [],
-                }
-            }
+        default_highlight_settings = {
+            HIGHLIGHTS_ENABLED: False,
+            HIGH_ACTIVITY_SECONDS: 300.0,
+            HIGH_ACTIVITY_UPSCALE: 1.25,
+            HIGHLIGHT_ELIGIBLE_EXPIRY_SECONDS: 21600,
+            HIGHLIGHT_MESSAGE_CACHE_SIZE: 500.0,
+            HISTORY_CACHE_SIZE: 50.0,
+            LOW_ACTIVITY_SECONDS: 10800.0,
+            LOW_ACTIVITY_UPSCALE: 1.2,
+            MAX_THRESHOLD: 30.0,
+            MIN_THRESHOLD: 6.0,
+            SOFT_MAX_THRESHOLD: 20.0,
+            THRESHOLD_EXPONENTIAL_UPSCALE: 1.1,
+            THRESHOLD_UPSCALE_DURATION: 3600.0,
+            THRESHOLD_UPSCALE_MAX_TIMES: 8.0,
+            USERS_TO_THRESHOLD_RATIO: 5.0,
+            EMBED_OR_ATTACHMENT_UPSCALE: 1.5,
+            HIGHLIGHT_CHANNEL: None,
+            SPOILER_HIGHLIGHT_CHANNEL: None,
+            HIGHLIGHT_BLACKLIST: [],
+        }
+        if str(ctx.guild.id) not in self.highlights_settings:
+            self.highlights_settings[str(ctx.guild.id)] = default_highlight_settings
+        
+        else:
+            for setting, value in default_highlight_settings.items():
+                if setting not in self.highlights_settings[str(ctx.guild.id)]:
+                    self.highlights_settings[str(ctx.guild.id)][setting] = value
+        
         dataIOa.save_json(SPOILER_SETTINGS_JSON, self.spoiler_settings)
         dataIOa.save_json(HIGHLIGHTS_THRESHOLD_JSON, self.highlights_settings)
         await ctx.send(
