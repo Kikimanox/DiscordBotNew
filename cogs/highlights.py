@@ -500,7 +500,7 @@ class Highlights(commands.Cog):
                 highlight = await highlight_channel.fetch_message(highlight.id)
                 if starred_msg.attachments and highlight.embeds[0].image.height == 0:
                     await highlight_channel.send(content="\n".join([a.proxy_url for a in starred_msg.attachments]))
-                if starred_msg.embeds and not highlight.embeds[0].image and starred_msg.embeds[0].url:
+                elif starred_msg.embeds and not highlight.embeds[0].image and starred_msg.embeds[0].url:
                     await highlight_channel.send(content=starred_msg.embeds[0].url)
 
     @commands.Cog.listener()
