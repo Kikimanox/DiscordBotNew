@@ -4,7 +4,7 @@ import subprocess
 
 from discord.ext import commands
 
-from utils.checks import dev_check
+import utils.checks as checks
 from utils.dataIOa import dataIOa
 
 
@@ -12,7 +12,7 @@ class ARestart(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.check(dev_check)
+    @commands.check(checks.dev_check)
     @commands.command()
     async def arestart(self, ctx, options: str = ""):
         """Restart the bot and git pull changes.
