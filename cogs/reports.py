@@ -20,7 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.orm.session import Session
 
-from utils.checks import ban_members_check
+from utils.checks import ban_members_check, dev_check
 from utils.dataIOa import dataIOa
 from utils.tools import get_user_avatar_url, result_printer, get_text_channel
 
@@ -177,7 +177,7 @@ class Reports(commands.Cog):
         )
 
     @reportsutils.command()
-    @commands.check(ban_members_check)
+    @commands.check(dev_check)
     async def trusted_users(self, ctx, count: int = 10):
         with self.Session() as session:
             users = (
