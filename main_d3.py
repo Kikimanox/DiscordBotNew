@@ -88,7 +88,7 @@ bot.moderation_blacklist = {-1: 'dummy'}
 bot.reaction_roles = RRManager.return_whole_rr_list()
 ###
 bot.config = dataIOa.load_json('config.json')
-bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
+# bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
 bot.help_command = Help()
 bot.before_run_cmd = 0
 bot.just_banned_by_bot = {}
@@ -126,7 +126,7 @@ async def on_ready():
     if hasattr(bot, 'reaction_roles') and not bot.reaction_roles: bot.reaction_roles = RRManager.return_whole_rr_list()
     ###
     bot.config = dataIOa.load_json('config.json')
-    bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
+    # bot.config['BOT_DEFAULT_EMBED_COLOR'] = int(f"0x{bot.config['BOT_DEFAULT_EMBED_COLOR_STR'][-6:]}", 16)
     bot.uptime = datetime.datetime.utcnow()
     # bot.ranCommands = 0
     bot.help_command = Help()
@@ -407,129 +407,129 @@ async def on_message(message):
                     ctype = 3
                 elif message.content[pfx_len:] in bot.all_cmds[message.guild.id]['inh_cmds_name_list']:
                     ctype = 4
-
+    return await bot.process_commands(message)
     # if it was a command
-    if (is_actually_cmd or ctype > 0) or arl > 1:  # catch messages here for anti spam on arl > 1 regardless of cmd
-        if arl in [0, 1]:  # If not checking for message spamming and user is blacklisted return
-            if message.author.id in bot.banlist:
-                return
+    # if (is_actually_cmd or ctype > 0) or arl > 1:  # catch messages here for anti spam on arl > 1 regardless of cmd
+    #     if arl in [0, 1]:  # If not checking for message spamming and user is blacklisted return
+    #         if message.author.id in bot.banlist:
+    #             return
 
-        if arl in [0, 1]:  # user can unblacklist themselves here
-            if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
-                if possible_cmd and possible_cmd == 'unblacklistme':
-                    if not bot.is_ready():
-                        return await message.channel.send("Bot is still starting up, hold on a few seconds.")
-                    if was_deleted: return
-                    return await bot.process_commands(message)
+    #     if arl in [0, 1]:  # user can unblacklist themselves here
+    #         if (message.author.id in bot.blacklist) and ('unblacklistme' in message.content):
+    #             if possible_cmd and possible_cmd == 'unblacklistme':
+    #                 if not bot.is_ready():
+    #                     return await message.channel.send("Bot is still starting up, hold on a few seconds.")
+    #                 if was_deleted: return
+    #                 return await bot.process_commands(message)
 
-        if arl in [0, 1]:  # the journey for the blacklisted end shere
-            if message.author.id in bot.blacklist:
-                return
+    #     if arl in [0, 1]:  # the journey for the blacklisted end shere
+    #         if message.author.id in bot.blacklist:
+    #             return
 
-        bucket = bot.spam_control[arl].get_bucket(message)
-        current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
-        retry_after = bucket.update_rate_limit(current)
-        author_id = message.author.id
+    #     bucket = bot.spam_control[arl].get_bucket(message)
+    #     current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+    #     retry_after = bucket.update_rate_limit(current)
+    #     author_id = message.author.id
 
-        # spamming has started (but ignore moderators though)
-        if retry_after and not is_mod:
-            bot._auto_spam_count[author_id] += 1
-            d_max = 4  # max number of times they can spam again after bucket triggers
-            if arl > 1: d_max = 2
-            if bot._auto_spam_count[author_id] >= d_max:
+    #     # spamming has started (but ignore moderators though)
+    #     if retry_after and not is_mod:
+    #         bot._auto_spam_count[author_id] += 1
+    #         d_max = 4  # max number of times they can spam again after bucket triggers
+    #         if arl > 1: d_max = 2
+    #         if bot._auto_spam_count[author_id] >= d_max:
 
-                #  SPAMMER DETECTED HERE!
-                if arl > 1:
-                    return await dutils.punish_based_on_arl(arl, message, bot)
+    #             #  SPAMMER DETECTED HERE!
+    #             if arl > 1:
+    #                 return await dutils.punish_based_on_arl(arl, message, bot)
 
-                if possible_cmd != 'unblacklistme' and arl in [0, 1]:
-                    del bot._auto_spam_count[author_id]
-                    # await self.log_spammer(ctx, message, retry_after, autoblock=True)
-                    out = f'[{retry_after} | {message.content}]({message.jump_url})'
-                    # print(out)
-                    gid = 0
-                    if message.guild: gid = message.guild.id
-                    await dutils.blacklist_from_bot(bot, message.author, out, gid,
-                                                    ch_to_reply_at=message.channel, arl=arl)
-                else:
-                    out2 = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
-                           f" source: {message.jump_url}"
-                    out = f'[{author_id} | {retry_after} |' \
-                          f' {message.content}]({message.jump_url})'
-                    if message.author.id not in bot.banlist:
-                        await dutils.ban_from_bot(bot, message.author, out2, message.guild.id, message.channel)
-            else:
-                out = f'almost SPAMMER: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
-            logger.info(out)
-            if bot._auto_spam_count[author_id] == d_max - 1: return
-        else:
-            bot._auto_spam_count.pop(author_id, None)
+    #             if possible_cmd != 'unblacklistme' and arl in [0, 1]:
+    #                 del bot._auto_spam_count[author_id]
+    #                 # await self.log_spammer(ctx, message, retry_after, autoblock=True)
+    #                 out = f'[{retry_after} | {message.content}]({message.jump_url})'
+    #                 # print(out)
+    #                 gid = 0
+    #                 if message.guild: gid = message.guild.id
+    #                 await dutils.blacklist_from_bot(bot, message.author, out, gid,
+    #                                                 ch_to_reply_at=message.channel, arl=arl)
+    #             else:
+    #                 out2 = f"{str(message.author)} {datetime.datetime.utcnow().strftime('%c')}" \
+    #                        f" source: {message.jump_url}"
+    #                 out = f'[{author_id} | {retry_after} |' \
+    #                       f' {message.content}]({message.jump_url})'
+    #                 if message.author.id not in bot.banlist:
+    #                     await dutils.ban_from_bot(bot, message.author, out2, message.guild.id, message.channel)
+    #         else:
+    #             out = f'almost SPAMMER: {author_id} | {retry_after} | {message.content} | {message.jump_url}'
+    #         logger.info(out)
+    #         if bot._auto_spam_count[author_id] == d_max - 1: return
+    #     else:
+    #         bot._auto_spam_count.pop(author_id, None)
 
-        arl1_ret = ("The server has set it's raid protection to level 1.\n"
-                    f"{message.author.mention} stop using/spamming bot commands "
-                    f"for now or else you will get banned from the bot.")
+    #     arl1_ret = ("The server has set it's raid protection to level 1.\n"
+    #                 f"{message.author.mention} stop using/spamming bot commands "
+    #                 f"for now or else you will get banned from the bot.")
 
-        sup = None
-        kk = 'disabled_onlyEnabled_cmds_and_chs'
-        if message.guild and message.guild.id in bot.from_serversetup and bot.from_serversetup[message.guild.id][kk]:
-            sup = bot.from_serversetup[message.guild.id][kk]
+    #     sup = None
+    #     kk = 'disabled_onlyEnabled_cmds_and_chs'
+    #     if message.guild and message.guild.id in bot.from_serversetup and bot.from_serversetup[message.guild.id][kk]:
+    #         sup = bot.from_serversetup[message.guild.id][kk]
 
-        if not is_mod and (is_actually_cmd or ctype > 0) and arl > 1:
-            return  # we don't want non mods triggering commands during a raid
-        if was_deleted:
-            return
-        if is_actually_cmd:
-            if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
-                return await message.channel.send(arl1_ret)
-            if sup and possible_cmd in sup and not is_mod:
-                if message.channel.id in sup[possible_cmd]['dis']:
-                    return await message.channel.send("❌ This command is disabled in the following channels:\n"
-                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['dis'])}")
-                if sup[possible_cmd]['only_e'] and message.channel.id not in sup[possible_cmd]['only_e']:
-                    return await message.channel.send("❌ This command is enabled only in the following channels:\n"
-                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['only_e'])}")
+    #     if not is_mod and (is_actually_cmd or ctype > 0) and arl > 1:
+    #         return  # we don't want non mods triggering commands during a raid
+    #     if was_deleted:
+    #         return
+    #     if is_actually_cmd:
+    #         if arl == 1 and not is_mod:  # well, during a lvl 1 raid, we can warn them
+    #             return await message.channel.send(arl1_ret)
+    #         if sup and possible_cmd in sup and not is_mod:
+    #             if message.channel.id in sup[possible_cmd]['dis']:
+    #                 return await message.channel.send("❌ This command is disabled in the following channels:\n"
+    #                                                   f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['dis'])}")
+    #             if sup[possible_cmd]['only_e'] and message.channel.id not in sup[possible_cmd]['only_e']:
+    #                 return await message.channel.send("❌ This command is enabled only in the following channels:\n"
+    #                                                   f"{', '.join((message.guild.get_channel(c)).mention for c in sup[possible_cmd]['only_e'])}")
 
-            if not bot.is_ready():
-                return await message.channel.send("Bot is still starting up, hold on a few seconds.")
-            return await bot.process_commands(message)
+    #         if not bot.is_ready():
+    #             return await message.channel.send("Bot is still starting up, hold on a few seconds.")
+    #         return await bot.process_commands(message)
 
-        if ctype != -1:
-            if not bot.is_ready():
-                return await message.channel.send("Bot is still starting up, hold on a few seconds.")
-            if arl == 1 and not is_mod:
-                return await message.channel.send(arl1_ret)
+    #     if ctype != -1:
+    #         if not bot.is_ready():
+    #             return await message.channel.send("Bot is still starting up, hold on a few seconds.")
+    #         if arl == 1 and not is_mod:
+    #             return await message.channel.send(arl1_ret)
 
-            pos_c = '"custom cmds"'
-            if sup and pos_c in sup:
-                if message.channel.id in sup[pos_c]['dis'] and not is_mod:
-                    return await message.channel.send("❌ Custom commands are disabled in the following channels:\n"
-                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['dis'])}")
-                if sup[pos_c]['only_e'] and message.channel.id not in sup[pos_c]['only_e']:
-                    return await message.channel.send("❌ Custom commands are enabled only in the following channels:\n"
-                                                      f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['only_e'])}")
+    #         pos_c = '"custom cmds"'
+    #         if sup and pos_c in sup:
+    #             if message.channel.id in sup[pos_c]['dis'] and not is_mod:
+    #                 return await message.channel.send("❌ Custom commands are disabled in the following channels:\n"
+    #                                                   f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['dis'])}")
+    #             if sup[pos_c]['only_e'] and message.channel.id not in sup[pos_c]['only_e']:
+    #                 return await message.channel.send("❌ Custom commands are enabled only in the following channels:\n"
+    #                                                   f"{', '.join((message.guild.get_channel(c)).mention for c in sup[pos_c]['only_e'])}")
 
-            if ctype == 1:
-                c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
-            elif ctype == 2:
-                c = bot.all_cmds[message.guild.id]['cmds'][message.content[pfx_len:]]
-            elif ctype == 3:
-                for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
-                    if possible_cmd in cc: c = cc[possible_cmd]
-            elif ctype == 4:
-                for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
-                    if message.content[pfx_len:] in cc: c = cc[message.content[pfx_len:]]
+    #         if ctype == 1:
+    #             c = bot.all_cmds[message.guild.id]['cmds'][possible_cmd]
+    #         elif ctype == 2:
+    #             c = bot.all_cmds[message.guild.id]['cmds'][message.content[pfx_len:]]
+    #         elif ctype == 3:
+    #             for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
+    #                 if possible_cmd in cc: c = cc[possible_cmd]
+    #         elif ctype == 4:
+    #             for cc in bot.all_cmds[message.guild.id]['inh_cmd_list']:
+    #                 if message.content[pfx_len:] in cc: c = cc[message.content[pfx_len:]]
 
-            if bool(c['raw']): return await message.channel.send(c['content'])
-            if bool(c['image']):
-                em = Embed(color=int(f'0x{c["color"][-6:]}', 16))
-                em.set_image(url=c['content'])
-            else:
-                em = Embed(color=int(f'0x{c["color"][-6:]}', 16), description=c['content'])
-                pic = str(c['content']).find('http')
-                if pic > -1:
-                    urls = re.findall(r'https?:[/.\w\s-]*\.(?:jpg|gif|png|jpeg)', str(c['content']))
-                    if len(urls) > 0: em.set_image(url=urls[0])
-            return await message.channel.send(embed=em)
+    #         if bool(c['raw']): return await message.channel.send(c['content'])
+    #         if bool(c['image']):
+    #             em = Embed(color=int(f'0x{c["color"][-6:]}', 16))
+    #             em.set_image(url=c['content'])
+    #         else:
+    #             em = Embed(color=int(f'0x{c["color"][-6:]}', 16), description=c['content'])
+    #             pic = str(c['content']).find('http')
+    #             if pic > -1:
+    #                 urls = re.findall(r'https?:[/.\w\s-]*\.(?:jpg|gif|png|jpeg)', str(c['content']))
+    #                 if len(urls) > 0: em.set_image(url=urls[0])
+    #         return await message.channel.send(embed=em)
 
 
 @commands.max_concurrency(1)

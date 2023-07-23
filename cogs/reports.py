@@ -683,8 +683,8 @@ class Reports(commands.Cog):
         emoji: Union[discord.Emoji, str],
     ) -> None:
         # Ignore if self-react
-        # if message.author.id == reporter_id:
-        #     return
+        if message.author.id == reporter_id:
+            return
 
         max_age = self.get_reports_setting(
             message.channel.guild.id, VALID_REPORT_MSG_MAX_AGE
