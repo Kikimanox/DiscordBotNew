@@ -44,7 +44,7 @@ class WelcomeMsg(BaseModel):
     desc = CharField(default='')
     images = CharField(default='')
     title = CharField(default='')
-    # color = IntegerField(default=int(f"0x{clr}", 16))
+    color = IntegerField(default=int(f"0x{clr}", 16))
     target_ch = IntegerField()  # target channel
     backup_hook = IntegerField()  # target channel
     display_mem_count = BooleanField(default=True)
