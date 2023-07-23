@@ -513,7 +513,7 @@ class Reports(commands.Cog):
     ) -> None:
         user = self.get_trusted_user(session, guild_id, reporter_id)
         user.report_count += 1
-        user.last_report_timestamp = datetime.utcnow().timestamp()
+        user.last_report_timestamp = datetime.now().timestamp()
 
     async def send_escalated_report_msg(
         self,
@@ -595,7 +595,7 @@ class Reports(commands.Cog):
                 reporters=str(reporter_id),
                 escalated=is_escalated,
                 acknowledged=AcknowledgementLevel.NO_ACK.value,
-                timestamp=datetime.utcnow().timestamp(),
+                timestamp=datetime.now().timestamp(),
             )
             session.add(report)
         else:
@@ -690,7 +690,7 @@ class Reports(commands.Cog):
             message.channel.guild.id, VALID_REPORT_MSG_MAX_AGE
         )
         if max_age == 0 or (
-            datetime.utcnow().timestamp() - max_age <= message.created_at.timestamp()
+            datetime.now().timestamp() - max_age <= message.created_at.timestamp()
         ):
             auto_escalate = False
             try:
