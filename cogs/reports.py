@@ -543,6 +543,7 @@ class Reports(commands.Cog):
         )
         await escalated_report_msg.add_reaction("✅")
         await escalated_report_msg.add_reaction("❌")
+        await escalated_report_msg.add_reaction("❓")
 
     def is_escalated(self, guild_id: int, report_score: int) -> bool:
         return report_score >= self.get_reports_setting(
@@ -748,12 +749,16 @@ class Reports(commands.Cog):
     async def invoke_audit_log(
         self, event: discord.RawReactionActionEvent, message: discord.Message
     ) -> None:
-        if "Mod" in self.bot.cogs and hasattr(self.bot.cogs["Mod"], "get_audit_logs_msg"):
+        if "Moderation" in self.bot.cogs and hasattr(self.bot.cogs["Moderation"], "cases"):
             user = self.bot.get_user(
                 int(message.embeds[0].description.rsplit("User id:")[1].strip())
             )
-            ctx = await self.get_ctx_from_esc_report(event, message)
-            return await self.bot.cogs["Mod"].get_audit_logs_msg(ctx, 50, user, "all")
+            report_ctx = await self.bot.get_context(message)
+            esc_msg = await self.bot.get_channel(event.channel_id).fetch_message(event.message_id)
+            ctx = await self.bot.get_context(esc_msg)
+            ctx.author = self.bot.get_user(event.user_id)
+            esc_ctx = await self.get_ctx_from_esc_report(event, message)
+            return await self.bot.cogs["Moderation"].cases(esc_ctx, report_ctx.author)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event: discord.RawReactionActionEvent) -> None:
@@ -772,7 +777,7 @@ class Reports(commands.Cog):
                 channel, _ = await get_text_channel(self.bot, event.channel_id)
                 message = await channel.fetch_message(event.message_id)
                 await self.handle_report(message, event.user_id, event.emoji)
-            elif event.emoji.name in ["✅", "❌"]:
+            elif event.emoji.name in ["✅", "❌", "❓"]:
                 channel = (await get_text_channel(self.bot, event.channel_id))[1]
                 if not channel.permissions_for(
                     channel.guild.get_member(event.user_id)
@@ -785,7 +790,10 @@ class Reports(commands.Cog):
                     or not message.embeds[0].title.startswith(ESCALATION_REPORT_STR)
                 ):
                     return
-                await self.handle_report_ack(message, event.emoji.name == "✅")
+                if event.emoji.name == "❓":
+                    await self.invoke_audit_log(event, message)
+                else:
+                    await self.handle_report_ack(message, event.emoji.name == "✅")
 
     @commands.Cog.listener()
     async def on_message_delete(self, message: discord.Message):
