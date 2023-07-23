@@ -753,12 +753,9 @@ class Reports(commands.Cog):
             user = self.bot.get_user(
                 int(message.embeds[0].description.rsplit("User id:")[1].strip())
             )
-            report_ctx = await self.bot.get_context(message)
-            esc_msg = await self.bot.get_channel(event.channel_id).fetch_message(event.message_id)
-            ctx = await self.bot.get_context(esc_msg)
-            ctx.author = self.bot.get_user(event.user_id)
             esc_ctx = await self.get_ctx_from_esc_report(event, message)
-            return await self.bot.cogs["Moderation"].cases(esc_ctx, report_ctx.author)
+            esc_ctx.author = self.bot.get_user(event.user_id)
+            return await self.bot.cogs["Moderation"].cases(esc_ctx, user)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event: discord.RawReactionActionEvent) -> None:
