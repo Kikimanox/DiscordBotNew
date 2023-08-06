@@ -17,6 +17,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
     create_engine,
+    text
 )
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy.orm.session import Session
@@ -216,9 +217,11 @@ class Reports(commands.Cog):
         """Execute arbitrary sql on reports db"""
         try:
             with self.Session() as session:
-                output = session.execute(sql_statement.strip('```').strip()).all()
-        except:
-            return await ctx.send(f"Something went wrong while executing the sql statement. Error:\n```\n{traceback.format_exc().replace('```', '')}\n```")
+                output = session.execute(text(sql_statement.strip('```').strip())).all()
+        except Exception as e:
+            traceback.print_exc()
+            return await ctx.send(f"Something went wrong while executing the sql statement. Error:\n```\n{e}\n```")
+
         if type(output) is list:
             output = "\n".join(",".join(str(x) for x in o) for o in output)
         if len(output) <= 2000:
@@ -235,20 +238,19 @@ class Reports(commands.Cog):
     # @commands.check(ban_members_check)
     # async def stats(self, ctx, count: int = 10):
     #     """
-    #     select * from report_table where user_id IN
-    #         (select user_id from user_trust_table where guild_id = :id)
-
-    #     top trusted users = select user_id
+    #     top trusted users = 
+    #     select user_id, count(*)
     #     from user_trust_table
     #     where guild_id = :id
+    #     group by user_id
     #     order by trust_score, report_count
 
     #     select user_id, count(*)
     #     from report_table
     #     where guild_id = :id AND
-    #       user_id IN top trusted users AND
-    #       acknowledged = AcknowledgementLevel.GOOD_ACK.value AND
-    #       timestamp > (datetime.now() - timedelta(days=30)).timestamp()
+    #         user_id IN top trusted users AND
+    #         acknowledged = AcknowledgementLevel.GOOD_ACK.value AND
+    #         timestamp > (datetime.now() - timedelta(days=30)).timestamp()
     #     order by user_id
     #     LIMIT 10
     #     """
