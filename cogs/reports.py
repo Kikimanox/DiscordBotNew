@@ -234,66 +234,66 @@ class Reports(commands.Cog):
                 await ctx.send(content="Uploaded output to file since output was too long.", file=sql_output)
             os.remove("tmp/sql_output.txt")
 
-    # @reportsutils.command()
-    # @commands.check(ban_members_check)
-    # async def stats(self, ctx, count: int = 10):
-    #     """
-    #     top trusted users = 
-    #     select user_id, count(*)
-    #     from user_trust_table
-    #     where guild_id = :id
-    #     group by user_id
-    #     order by trust_score, report_count
+    @reportsutils.command()
+    @commands.check(ban_members_check)
+    async def stats(self, ctx):
+        """Gets recent stats about top trusted users.
 
-    #     select user_id, count(*)
-    #     from report_table
-    #     where guild_id = :id AND
-    #         user_id IN top trusted users AND
-    #         acknowledged = AcknowledgementLevel.GOOD_ACK.value AND
-    #         timestamp > (datetime.now() - timedelta(days=30)).timestamp()
-    #     order by user_id
-    #     LIMIT 10
-    #     """
-    #     with self.Session() as session:
-    #         user_reports = (
-    #             session.query(TrustedUsers)
-    #             .select(TrustedUsers.user_id)
-    #             .filter_by(guild_id=ctx.guild.id)
-    #             .order_by(
-    #                 TrustedUsers.trust_score.desc(), TrustedUsers.report_count.desc()
-    #             )
-    #             .all()
-    #         )
-    #         from collections import defaultdict
-    #         users = defaultdict(int)
-    #         for users in user_reports:
-    #             for user_id in users.split(","):
-    #                 users[int(user_id)]
+        Query being executed:
 
-    #         sorted_users = sorted([(u, c) for u, c in users.items()], key=lambda m: m[1])
-    #         top_recent_trusted_users = (
-    #             session.query(ReportLog)
-    #             .filter(ReportLog.timestamp >= (datetime.now() - timedelta(days=30)).timestamp())
-    #             .where(guild_id=ctx.guild.id)
-    #             .where(user_id.in_([u[0] for u in sorted_users]))
-    #             .all()
-    #         )
-    #         table = PrettyTable()
-    #         table.field_names = ["User", "Score", "Recent Reports (30 days)"]
-    #         for user in users:
-    #             user_obj = self.bot.get_user(user.user_id)
-    #             if not user_obj:
-    #                 user_obj = f"User not in guild (id: {user.user_id})"
-    #             else:
-    #                 user_obj = str(user_obj)
-    #             table.add_row(
-    #                 (
-    #                     user_obj,
-    #                     user.trust_score,
-    #                     user.report_count,
-    #                 )
-    #             )
-    #     return await result_printer(ctx, f"```\n{table}\n```")
+        top trusted users = 
+        SELECT user_id, trust_score
+        FROM user_trust_table
+        WHERE guild_id = <guild id>
+        ORDER BY trust_score DESC, report_count DESC
+        LIMIT 10
+
+        for each trusted user:
+        SELECT count(*)
+        FROM report_table
+        WHERE guild_id = <guild id> AND
+            timestamp > <30 days ago> AND
+            acknowledged = <good ack> AND
+            reporters LIKE "%<user id>%"
+        """
+        with self.Session() as session:
+            trusted_users = (
+                session.query(TrustedUsers.user_id, TrustedUsers.trust_score)
+                .filter_by(guild_id=ctx.guild.id)
+                .order_by(
+                    TrustedUsers.trust_score.desc(), TrustedUsers.report_count.desc(), TrustedUsers.last_report_timestamp.desc()
+                )
+                .limit(10)
+                .all()
+            )
+            
+            trusted_users_stats = {}
+            for user in trusted_users:
+                trusted_user_recent_ack_reports = (
+                    session.query(ReportLog)
+                    .filter_by(guild_id=ctx.guild.id, acknowledged=AcknowledgementLevel.GOOD_ACK.value)
+                    .filter(ReportLog.timestamp >= (datetime.now() - timedelta(days=30)).timestamp())
+                    .filter(ReportLog.user_id.like(f"%{user[0]}%"))
+                    .count()
+                )
+                trusted_users_stats[user[0]] = [user[1], trusted_user_recent_ack_reports]
+
+            table = PrettyTable()
+            table.field_names = ["User", "Score", "Recent Reports (30 days)"]
+            for user, stats in trusted_users_stats.items():
+                user_obj = self.bot.get_user(int(user))
+                if not user_obj:
+                    user_obj = f"User not in guild (id: {user.user_id})"
+                else:
+                    user_obj = str(user_obj)
+                table.add_row(
+                    (
+                        user_obj,
+                        stats[0],
+                        stats[1],
+                    )
+                )
+        return await result_printer(ctx, f"```\n{table}\n```")
 
     @reportsutils.command()
     @commands.check(ban_members_check)
