@@ -236,10 +236,12 @@ class Reports(commands.Cog):
 
     @reportsutils.command()
     @commands.check(ban_members_check)
-    async def stats(self, ctx):
-        """Gets recent stats about top trusted users.
+    async def stats(self, ctx, days: int = 30):
+        """Gets recent stats about top trusted users. Takes optional lookback between 5 and 30 days inclusive. Default 30.
 
-        Query being executed:
+        Data is intentially obfuscated by 1 day to avoid "live" data. That is, reports only count towards the stats if they are at least 1 day old.
+
+        Queries being executed:
 
         top trusted users = 
         SELECT user_id, trust_score
@@ -252,10 +254,13 @@ class Reports(commands.Cog):
         SELECT count(*)
         FROM report_table
         WHERE guild_id = <guild id> AND
-            timestamp > <30 days ago> AND
+            timestamp >= <days + 1 ago> AND
+            timestamp <= <1 day ago> AND
             acknowledged = <good ack> AND
             reporters LIKE "%<user id>%"
         """
+        if not (30 >= days >= 5):
+            return await ctx.send("Invalid days. Recent stats can be queried between 5 and 30 days inclusive.")
         with self.Session() as session:
             trusted_users = (
                 session.query(TrustedUsers.user_id, TrustedUsers.trust_score)
@@ -272,7 +277,8 @@ class Reports(commands.Cog):
                 trusted_user_recent_ack_reports = (
                     session.query(ReportLog)
                     .filter_by(guild_id=ctx.guild.id, acknowledged=AcknowledgementLevel.GOOD_ACK.value)
-                    .filter(ReportLog.timestamp >= int((datetime.now() - timedelta(days=30)).timestamp()))
+                    .filter(ReportLog.timestamp >= int((datetime.now() - timedelta(days=days+1)).timestamp()))
+                    .filter(ReportLog.timestamp <= int((datetime.now() - timedelta(days=1)).timestamp()))
                     .filter(ReportLog.reporters.like(f"%{user[0]}%"))
                     .count()
                 )
