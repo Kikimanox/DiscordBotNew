@@ -272,8 +272,8 @@ class Reports(commands.Cog):
                 trusted_user_recent_ack_reports = (
                     session.query(ReportLog)
                     .filter_by(guild_id=ctx.guild.id, acknowledged=AcknowledgementLevel.GOOD_ACK.value)
-                    .filter(ReportLog.timestamp >= (datetime.now() - timedelta(days=30)).timestamp())
-                    .filter(ReportLog.user_id.like(f"%{user[0]}%"))
+                    .filter(ReportLog.timestamp >= int((datetime.now() - timedelta(days=30)).timestamp()))
+                    .filter(ReportLog.reporters.like(f"%{user[0]}%"))
                     .count()
                 )
                 trusted_users_stats[user[0]] = [user[1], trusted_user_recent_ack_reports]
