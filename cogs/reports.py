@@ -2,7 +2,8 @@ import json
 import logging
 import logging.handlers as handlers
 import os
-from datetime import datetime
+import traceback
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any, Dict, List, Union
 
@@ -208,6 +209,89 @@ class Reports(commands.Cog):
                     )
                 )
         return await result_printer(ctx, f"```\n{table}\n```")
+
+    @reportsutils.command()
+    @commands.check(dev_check)
+    async def sql(self, ctx, *, sql_statement):
+        """Execute arbitrary sql on reports db"""
+        try:
+            with self.Session() as session:
+                output = session.execute(sql_statement.strip('```').strip()).all()
+        except:
+            return await ctx.send(f"Something went wrong while executing the sql statement. Error:\n```\n{traceback.format_exc().replace('```', '')}\n```")
+        if type(output) is list:
+            output = "\n".join(",".join(str(x) for x in o) for o in output)
+        if len(output) <= 2000:
+            await ctx.send(f"```\n{output}\n```")
+        else:
+            with open("tmp/sql_output.txt", "w") as f:
+                f.write(str(output))
+            with open("tmp/sql_output.txt", "rb") as f:
+                sql_output = discord.File(f, "sql_output.txt")
+                await ctx.send(content="Uploaded output to file since output was too long.", file=sql_output)
+            os.remove("tmp/sql_output.txt")
+
+    # @reportsutils.command()
+    # @commands.check(ban_members_check)
+    # async def stats(self, ctx, count: int = 10):
+    #     """
+    #     select * from report_table where user_id IN
+    #         (select user_id from user_trust_table where guild_id = :id)
+
+    #     top trusted users = select user_id
+    #     from user_trust_table
+    #     where guild_id = :id
+    #     order by trust_score, report_count
+
+    #     select user_id, count(*)
+    #     from report_table
+    #     where guild_id = :id AND
+    #       user_id IN top trusted users AND
+    #       acknowledged = AcknowledgementLevel.GOOD_ACK.value AND
+    #       timestamp > (datetime.now() - timedelta(days=30)).timestamp()
+    #     order by user_id
+    #     LIMIT 10
+    #     """
+    #     with self.Session() as session:
+    #         user_reports = (
+    #             session.query(TrustedUsers)
+    #             .select(TrustedUsers.user_id)
+    #             .filter_by(guild_id=ctx.guild.id)
+    #             .order_by(
+    #                 TrustedUsers.trust_score.desc(), TrustedUsers.report_count.desc()
+    #             )
+    #             .all()
+    #         )
+    #         from collections import defaultdict
+    #         users = defaultdict(int)
+    #         for users in user_reports:
+    #             for user_id in users.split(","):
+    #                 users[int(user_id)]
+
+    #         sorted_users = sorted([(u, c) for u, c in users.items()], key=lambda m: m[1])
+    #         top_recent_trusted_users = (
+    #             session.query(ReportLog)
+    #             .filter(ReportLog.timestamp >= (datetime.now() - timedelta(days=30)).timestamp())
+    #             .where(guild_id=ctx.guild.id)
+    #             .where(user_id.in_([u[0] for u in sorted_users]))
+    #             .all()
+    #         )
+    #         table = PrettyTable()
+    #         table.field_names = ["User", "Score", "Recent Reports (30 days)"]
+    #         for user in users:
+    #             user_obj = self.bot.get_user(user.user_id)
+    #             if not user_obj:
+    #                 user_obj = f"User not in guild (id: {user.user_id})"
+    #             else:
+    #                 user_obj = str(user_obj)
+    #             table.add_row(
+    #                 (
+    #                     user_obj,
+    #                     user.trust_score,
+    #                     user.report_count,
+    #                 )
+    #             )
+    #     return await result_printer(ctx, f"```\n{table}\n```")
 
     @reportsutils.command()
     @commands.check(ban_members_check)
