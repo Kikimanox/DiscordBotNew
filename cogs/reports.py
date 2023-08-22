@@ -289,7 +289,7 @@ class Reports(commands.Cog):
             for user, stats in trusted_users_stats.items():
                 user_obj = ctx.guild.get_member(int(user))
                 if not user_obj:
-                    user_obj = f"User not in guild (id: {user.user_id})"
+                    user_obj = f"User not in guild (id: {user})"
                 else:
                     user_obj = str(user_obj)
                 table.add_row(
