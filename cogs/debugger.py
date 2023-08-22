@@ -25,6 +25,10 @@ def owner_check(ctx):
     return ctx.author.id == ctx.bot.config['OWNER_ID']
 
 
+def dev_check(ctx):
+    return ctx.author.id in [ctx.bot.config['OWNER_ID'], 124910128582361092]
+
+
 class Debugger(commands.Cog):
 
     def __init__(
@@ -264,7 +268,7 @@ class Debugger(commands.Cog):
         except Exception as e:
             await ctx.send('Error, something went wrong: ``%s``' % e)
 
-    @commands.check(owner_check)
+    @commands.check(dev_check)
     @commands.command()
     async def tail(self, ctx, lines: int, directory: str, log_group: str = None):
         """Do tail on a log file
