@@ -194,7 +194,7 @@ class Reports(commands.Cog):
             table = PrettyTable()
             table.field_names = ["User", "Score", "Reports", "Last Report"]
             for user in users:
-                user_obj = self.bot.get_user(user.user_id)
+                user_obj = ctx.guild.get_member(user.user_id)
                 if not user_obj:
                     user_obj = f"User not in guild (id: {user.user_id})"
                 else:
@@ -287,7 +287,7 @@ class Reports(commands.Cog):
             table = PrettyTable()
             table.field_names = ["User", "Score", "Recent Reports (30 days)"]
             for user, stats in trusted_users_stats.items():
-                user_obj = self.bot.get_user(int(user))
+                user_obj = ctx.guild.get_member(int(user))
                 if not user_obj:
                     user_obj = f"User not in guild (id: {user.user_id})"
                 else:
@@ -721,7 +721,7 @@ class Reports(commands.Cog):
     ) -> None:
         guild_id = message.channel.guild.id
         mod_channel_id = await self.get_reports_channel(guild_id, message.channel.id)
-        reporter_duser = self.bot.get_user(reporter_id)
+        reporter_duser = message.guild.get_member(reporter_id)
         reports_info_msg = self.get_reports_setting(guild_id, REPORTS_INFO_MSG)
         if reports_info_msg:
             info_msg = f"\n\n[Reporting System Info]({reports_info_msg})"
@@ -789,7 +789,7 @@ class Reports(commands.Cog):
                 await message.add_reaction(emoji)
             except discord.errors.Forbidden:
                 auto_escalate = True
-            await message.remove_reaction(emoji, self.bot.get_user(reporter_id))
+            await message.remove_reaction(emoji, message.guild.get_member(reporter_id))
             await self.report_message(message, reporter_id, auto_escalate=auto_escalate)
 
     async def handle_report_ack(
@@ -829,24 +829,24 @@ class Reports(commands.Cog):
             )
             for reporter_id in reporters_list:
                 await self.send_to_user(
-                    self.bot.get_user(reporter_id), None, good_ack_notif_em
+                    message.guild.get_member(reporter_id), None, good_ack_notif_em
                 )
             await message.add_reaction("👌")
 
     async def get_ctx_from_esc_report(self, event, message):
         ctx = await self.bot.get_context(message)
-        ctx.author = self.bot.get_user(event.user_id)
+        ctx.author = message.guild.get_member(event.user_id)
         return ctx
 
     async def invoke_audit_log(
         self, event: discord.RawReactionActionEvent, message: discord.Message
     ) -> None:
         if "Moderation" in self.bot.cogs and hasattr(self.bot.cogs["Moderation"], "cases"):
-            user = self.bot.get_user(
+            user = message.guild.get_member(
                 int(message.embeds[0].description.rsplit("User id:")[1].strip())
             )
             esc_ctx = await self.get_ctx_from_esc_report(event, message)
-            esc_ctx.author = self.bot.get_user(event.user_id)
+            esc_ctx.author = message.guild.get_member(event.user_id)
             return await self.bot.cogs["Moderation"].cases(esc_ctx, user)
 
     @commands.Cog.listener()
@@ -857,17 +857,17 @@ class Reports(commands.Cog):
         elif str(event.guild_id) in self.reports_json and self.get_reports_setting(
             event.guild_id, REPORTS_ENABLED
         ):
+            guild = self.bot.get_guild(event.guild_id)
+            channel = await guild.fetch_channel(self.bot, event.channel_id)
             guild_reports_emoji = self.get_reports_setting(
                 event.guild_id, REPORTS_EMOJI
             )
             if event.emoji.id == guild_reports_emoji or (
                 not event.emoji.id and event.emoji.name == guild_reports_emoji
             ):
-                channel, _ = await get_text_channel(self.bot, event.channel_id)
                 message = await channel.fetch_message(event.message_id)
                 await self.handle_report(message, event.user_id, event.emoji)
             elif event.emoji.name in ["✅", "❌", "❓"]:
-                channel = (await get_text_channel(self.bot, event.channel_id))[1]
                 if not channel.permissions_for(
                     channel.guild.get_member(event.user_id)
                 ).manage_messages:
