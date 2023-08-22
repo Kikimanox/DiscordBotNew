@@ -858,7 +858,7 @@ class Reports(commands.Cog):
             event.guild_id, REPORTS_ENABLED
         ):
             guild = self.bot.get_guild(event.guild_id)
-            channel = await guild.fetch_channel(self.bot, event.channel_id)
+            channel = await guild.fetch_channel(event.channel_id)
             guild_reports_emoji = self.get_reports_setting(
                 event.guild_id, REPORTS_EMOJI
             )
