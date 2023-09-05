@@ -35,6 +35,8 @@ def get_valid_filename(s):
     s = str(s).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '', s)
 
+KIKIMANOX2 = "kikimanox2"
+KIKIMANOX1 = "kikimanox"
 
 class AmqMod(commands.Cog):
     def __init__(self, bot):
@@ -446,7 +448,7 @@ return ret_7
             d_code = await self.el_catboxpls(ctx, True)
             if not d_code:
                 return await ctx.send("🔸 Skipping final socket command (nothing new to add) (this also means "
-                                      "the list wasn't reverted back to `kikimanox2`)")
+                                      f"the list wasn't reverted back to `{KIKIMANOX2}`)")
             else:
                 await ctx.send("🔹 Running the final socket command")
                 await self.el_get_no_mp3(ctx, driver, True, d_code)
@@ -508,7 +510,7 @@ return ret_7
             driver.set_page_load_timeout(60)
 
     @staticmethod
-    async def get_anime_list_ids(username="kikimanox"):
+    async def get_anime_list_ids(username=KIKIMANOX1):
         off = 0
         ret = ""
         while True:
@@ -928,11 +930,11 @@ return ret_7
             mn.click()
             mn.send_keys(Keys.CONTROL, "a")
             mn.clear()
-            mn.send_keys("kikimanox")
+            mn.send_keys(KIKIMANOX1)
             getMal = driver.find_element_by_xpath("""//*[@id="malUpdateButton"]""")
             getMal.click()
             await ctx.send("Trying to update MAL")
-            driver.implicitly_wait(90)
+            driver.implicitly_wait(300)
             succ = driver.find_element_by_xpath("""//*[@id="swal2-title"]""")
             print(succ.text)
             if succ.text == "Update Successful":
@@ -964,6 +966,7 @@ return ret_7
             await ctx.send("Invoking sockets.")
 
             i = 1
+            driver.set_script_timeout(60)
             for scr in d_scripts:
                 val = driver.execute_script(scr)
                 await ctx.send(f"[{i}/{len(d_scripts)}] Done. ({val} added)")
@@ -988,10 +991,10 @@ return ret_7
                 mn.click()
                 mn.send_keys(Keys.CONTROL, "a")
                 mn.clear()
-                mn.send_keys("kikimanox2")
+                mn.send_keys(f"{KIKIMANOX2}")
                 getMal = driver.find_element_by_xpath("""//*[@id="malUpdateButton"]""")
                 getMal.click()
-                await ctx.send("Trying to update MAL back to kikimanox2")
+                await ctx.send(f"Trying to update MAL back to {KIKIMANOX2}")
                 driver.implicitly_wait(60)
                 succ = driver.find_element_by_xpath("""//*[@id="swal2-title"]""")
                 # print(succ.text)
@@ -1000,7 +1003,7 @@ return ret_7
                 else:
                     await ctx.send("MAL Update failed.")
             except:
-                await ctx.send("Something went wrong when updagint MAL list back to kikimanox2")
+                await ctx.send(f"Something went wrong when updagint MAL list back to {KIKIMANOX2}")
 
     async def el_catboxpls(self, ctx, auto=False):
         rets = []
