@@ -71186,16 +71186,16 @@
         "resourceSetName": "res029022",
         "prefix": [
             "Precious birthday！",
-            null,
+            "Precious Birthday!",
             "Precious birthday！",
-            null,
+            "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1663167600000",
-            null,
+            "1694764800000",
             "1694707200000",
-            null,
+            "1694707200000",
             "1694703600000"
         ],
         "skillId": 57,
@@ -71763,14 +71763,14 @@
         "resourceSetName": "res015063",
         "prefix": [
             "Precious birthday！",
-            null,
+            "Precious Birthday!",
             null,
             null,
             "Precious birthday!"
         ],
         "releasedAt": [
             "1664550000000",
-            null,
+            "1696147200000",
             null,
             null,
             "1696086000000"
@@ -72986,7 +72986,7 @@
             "1691024400000",
             "1678950000000",
             "1690174800000",
-            "4107477600000"
+            "1696226400000"
         ],
         "skillId": 18,
         "type": "permanent",
@@ -73039,7 +73039,7 @@
             "1691024400000",
             "1678950000000",
             "1690174800000",
-            "4107477600000"
+            "1696226400000"
         ],
         "skillId": 22,
         "type": "permanent",
@@ -73092,7 +73092,7 @@
             "1691024400000",
             "1678950000000",
             "1690174800000",
-            "4107477600000"
+            "1696226400000"
         ],
         "skillId": 9,
         "type": "event",
@@ -73145,7 +73145,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 22,
         "type": "limited",
@@ -73198,7 +73198,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 61,
         "type": "limited",
@@ -73251,7 +73251,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 9,
         "type": "event",
@@ -73304,7 +73304,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 5,
         "type": "event",
@@ -73351,7 +73351,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 24,
         "type": "limited",
@@ -73404,7 +73404,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 31,
         "type": "dreamfes",
@@ -73457,7 +73457,7 @@
             "1691715600000",
             "1679900400000",
             "1690952400000",
-            "4107477600000"
+            "1697176800000"
         ],
         "skillId": 28,
         "type": "dreamfes",
@@ -74030,14 +74030,14 @@
         "resourceSetName": "res002057",
         "prefix": [
             "パワー充電中！",
-            "Charging Power In Progress!",
+            "Charging Power!",
             "力量充電中！",
             "能量充电中！",
             "파워 충전 중!"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74083,14 +74083,14 @@
         "resourceSetName": "res013059",
         "prefix": [
             "百たび来復、集む福",
-            "Returning Hundreds of Times, Gathering Good Fortunes",
+            "Gathering Luck",
             "流連千百回，福運招集",
             "往复百次，聚集福气",
             "끝없이 쌓이는 복"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74136,14 +74136,14 @@
         "resourceSetName": "res020066",
         "prefix": [
             "訪るものは福持たり",
-            "Blessed Be Those Who Visit",
+            "Luck for Those Who Come",
             "來訪者皆有福",
             "祝来访者福如东海",
             "찾아오는 자에게 복이 있나니"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74189,14 +74189,14 @@
         "resourceSetName": "res024060",
         "prefix": [
             "初日の出を全身に",
-            "The Full View of the First Sunrise",
+            "Feel the First Sunrise",
             "全身新年第一道曙光",
             "全身心感受新年日出",
             "온몸으로 맞이하는 해돋이"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74236,14 +74236,14 @@
         "resourceSetName": "res032024",
         "prefix": [
             "ハト使い、出で来正月",
-            "Messenger Pigeon of New Year's Eve",
+            "The Dove Whisperer",
             "鴿子使者出現的新年",
             "驯鸽师莅临新年",
             "전서구, 내년 설날"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74289,14 +74289,14 @@
         "resourceSetName": "res021060",
         "prefix": [
             "白雪に身をまかせ",
-            "Surrender to The White Snow",
+            "Surrender to the Snow",
             "把身體交給白雪",
             "将身置于皑皑白雪",
             "흰 눈에 몸을 던지고"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74342,14 +74342,14 @@
         "resourceSetName": "res034023",
         "prefix": [
             "令王那もお疲れ様♪",
-            "Reona, Good Work Today Too♪",
+            "Well Done, Too, Reona♪",
             "令王那也辛苦了♪",
             "令王那也辛苦了♪",
             "레오나도 고생했어♪"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74395,14 +74395,14 @@
         "resourceSetName": "res018061",
         "prefix": [
             "悔しさは湯気の中へ",
-            "Frustrations Melting Into The Steam",
+            "Wash Away Frustrations",
             "讓不甘飄向熱氣之中",
             "不甘之情融于蒸汽",
             "분한 마음은 수증기 속으로"
         ],
         "releasedAt": [
             "1672466400000",
-            null,
+            "1694134800000",
             "1682751600000",
             "1693285200000",
             "4107477600000"
@@ -74501,16 +74501,16 @@
         "resourceSetName": "res004056",
         "prefix": [
             "いつかの青空",
-            "The Blue Skies of Someday",
+            "The Blue Sky That Day",
             "某天的藍天",
-            null,
+            "某时的蓝天",
             "언젠가의 푸른 하늘"
         ],
         "releasedAt": [
             "1673416800000",
-            null,
+            "1695258000000",
             "1683702000000",
-            null,
+            "1694062800000",
             "4107477600000"
         ],
         "skillId": 12,
@@ -74554,16 +74554,16 @@
         "resourceSetName": "res003056",
         "prefix": [
             "星影をたどって",
-            "Follow the Starlight",
+            "Following the Starlight",
             "循著星光",
-            null,
+            "追随星光",
             "별빛을 더듬어서"
         ],
         "releasedAt": [
             "1673416800000",
-            null,
+            "1695258000000",
             "1683702000000",
-            null,
+            "1694062800000",
             "4107477600000"
         ],
         "skillId": 43,
@@ -74607,16 +74607,16 @@
         "resourceSetName": "res005063",
         "prefix": [
             "寄り添える言葉を",
-            "Words That You Can Rely On",
+            "Supportive Words",
             "給予寬慰的話語",
-            null,
+            "送上抚慰的话语",
             "말을 더해서"
         ],
         "releasedAt": [
             "1673416800000",
-            null,
+            "1695258000000",
             "1683702000000",
-            null,
+            "1694062800000",
             "4107477600000"
         ],
         "skillId": 9,
@@ -74715,14 +74715,14 @@
             "最果ての誓い",
             "My Vow to the Ends of the Earth",
             "最終的誓約",
-            null,
+            "最后的誓言",
             "최후의 맹세"
         ],
         "releasedAt": [
             "1674280800000",
             null,
             "1684566000000",
-            null,
+            "1694840400000",
             "4107477600000"
         ],
         "skillId": 14,
@@ -74768,14 +74768,14 @@
             "背中を押す夕陽",
             "The Sunset That Pushes You Forwards",
             "賦予勇氣的夕陽",
-            null,
+            "激励的夕阳",
             "응원해 주는 석양"
         ],
         "releasedAt": [
             "1674280800000",
             null,
             "1684566000000",
-            null,
+            "1694840400000",
             "4107477600000"
         ],
         "skillId": 61,
@@ -74821,14 +74821,14 @@
             "すべて出し切った先に",
             "After Giving It All You’ve Got",
             "釋放全部之後",
-            null,
+            "使出全力之后",
             "최선을 다한 결과"
         ],
         "releasedAt": [
             "1674280800000",
             null,
             "1684566000000",
-            null,
+            "1694840400000",
             "4107477600000"
         ],
         "skillId": 6,
@@ -77168,14 +77168,14 @@
         "prefix": [
             "staring",
             null,
-            null,
+            "staring",
             null,
             null
         ],
         "releasedAt": [
             "1681797600000",
             null,
-            null,
+            "1694156400000",
             null,
             null
         ],
@@ -77221,14 +77221,14 @@
         "prefix": [
             "もっといい音に",
             "For A Better Sound",
-            null,
+            "蛻變成更美好的音色",
             null,
             null
         ],
         "releasedAt": [
             "1681797600000",
             null,
-            null,
+            "1694156400000",
             null,
             null
         ],
@@ -77274,14 +77274,14 @@
         "prefix": [
             "ニューサウンドに乾杯",
             "Cheers to Our New Sound",
-            null,
+            "為新聲響乾杯",
             null,
             null
         ],
         "releasedAt": [
             "1681797600000",
             null,
-            null,
+            "1694156400000",
             null,
             null
         ],
@@ -77315,14 +77315,14 @@
         "prefix": [
             "前方不注意？",
             "Carelessly Advancing?",
-            null,
+            "沒注意前方？",
             null,
             null
         ],
         "releasedAt": [
             "1681797600000",
             null,
-            null,
+            "1694156400000",
             null,
             null
         ],
@@ -77350,14 +77350,14 @@
         "prefix": [
             "音を支えるお仕事",
             "Our Sound-Supporting Work",
-            null,
+            "支持音樂的工作",
             null,
             null
         ],
         "releasedAt": [
             "1681797600000",
             null,
-            null,
+            "1694156400000",
             null,
             null
         ],
@@ -77403,14 +77403,14 @@
         "prefix": [
             "選ぶべきは",
             "The Choices Are...",
-            null,
+            "應選擇的是",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -77456,14 +77456,14 @@
         "prefix": [
             "その身にまとうのは",
             "What One Wears Is...",
-            null,
+            "纏繞於此身之物是",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -77509,14 +77509,14 @@
         "prefix": [
             "徹底リサーチ？",
             "Thorough Research?",
-            null,
+            "調查徹底？",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -77550,14 +77550,14 @@
         "prefix": [
             "いざ、トリッシュ",
             "Come on, Trisch!",
-            null,
+            "前進，Trish",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -77585,14 +77585,14 @@
         "prefix": [
             "一音一音、積み上げて",
             "One Note At A Time, Accumulating",
-            null,
+            "一聲一聲，逐步累積",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -77638,14 +77638,14 @@
         "prefix": [
             "晴天、その下で",
             "Beneath The Sunny Skies",
-            null,
+            "晴天，豔陽底下",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -77691,14 +77691,14 @@
         "prefix": [
             "一輪、幽玄に挿して",
             "A Single Flower, In The Ethereal",
-            null,
+            "花一朵，佇於幽玄間",
             null,
             null
         ],
         "releasedAt": [
             "1682748000000",
             null,
-            null,
+            "1695106800000",
             null,
             null
         ],
@@ -80770,6 +80770,1323 @@
                 "performance": 400,
                 "technique": 400,
                 "visual": 400
+            }
+        }
+    },
+    "1801": {
+        "characterId": 26,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res026035",
+        "prefix": [
+            "落陽の雫",
+            "Droplets of the Setting Sun",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 66,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3228,
+                "technique": 3440,
+                "visual": 4022
+            },
+            "60": {
+                "performance": 9623,
+                "technique": 10251,
+                "visual": 11983
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1802": {
+        "characterId": 28,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res028032",
+        "prefix": [
+            "届けたい言葉",
+            "Words That I Want to Deliver",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 67,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3450,
+                "technique": 3345,
+                "visual": 4001
+            },
+            "60": {
+                "performance": 10281,
+                "technique": 9968,
+                "visual": 11923
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1803": {
+        "characterId": 30,
+        "rarity": 3,
+        "attribute": "happy",
+        "levelLimit": 40,
+        "resourceSetName": "res030033",
+        "prefix": [
+            "熱音に焦がされて",
+            "Scorched by the Blistering Sound",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 9,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 3453,
+                "technique": 3259,
+                "visual": 3085
+            },
+            "50": {
+                "performance": 10289,
+                "technique": 9716,
+                "visual": 9181
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1804": {
+        "characterId": 27,
+        "rarity": 2,
+        "attribute": "pure",
+        "levelLimit": 30,
+        "resourceSetName": "res027032",
+        "prefix": [
+            "ランガラスバタフライ",
+            "Glass Butterfly",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 8,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 2158,
+                "technique": 2315,
+                "visual": 2132
+            },
+            "30": {
+                "performance": 5372,
+                "technique": 5765,
+                "visual": 5309
+            }
+        }
+    },
+    "1805": {
+        "characterId": 29,
+        "rarity": 4,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res029030",
+        "prefix": [
+            "いざ！渋谷を冒険",
+            "Here We Go! Shibuya Adventure",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 61,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3256,
+                "technique": 3508,
+                "visual": 3417
+            },
+            "60": {
+                "performance": 9701,
+                "technique": 10455,
+                "visual": 10183
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1806": {
+        "characterId": 22,
+        "rarity": 5,
+        "attribute": "powerful",
+        "levelLimit": 50,
+        "resourceSetName": "res022070",
+        "prefix": [
+            "雨雫と陽",
+            "Raindrops and the Sun",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 69,
+        "type": "dreamfes",
+        "stat": {
+            "1": {
+                "performance": 3482,
+                "technique": 3683,
+                "visual": 3546
+            },
+            "60": {
+                "performance": 10376,
+                "technique": 10976,
+                "visual": 10566
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1807": {
+        "characterId": 9,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res009066",
+        "prefix": [
+            "IN THE ZONE",
+            null,
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694152800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 69,
+        "type": "dreamfes",
+        "stat": {
+            "1": {
+                "performance": 3524,
+                "technique": 3588,
+                "visual": 3599
+            },
+            "60": {
+                "performance": 10502,
+                "technique": 10692,
+                "visual": 10724
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1808": {
+        "characterId": 36,
+        "rarity": 1,
+        "attribute": "cool",
+        "levelLimit": 20,
+        "resourceSetName": "res036001",
+        "prefix": [
+            "心を歌う少女",
+            "Girl Who Sings from Her Heart",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 1,
+        "type": "initial",
+        "stat": {
+            "1": {
+                "performance": 642,
+                "technique": 903,
+                "visual": 1212
+            },
+            "20": {
+                "performance": 1624,
+                "technique": 2284,
+                "visual": 3066
+            },
+            "episodes": [
+                {
+                    "performance": 100,
+                    "technique": 100,
+                    "visual": 100
+                },
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                }
+            ]
+        }
+    },
+    "1809": {
+        "characterId": 37,
+        "rarity": 1,
+        "attribute": "happy",
+        "levelLimit": 20,
+        "resourceSetName": "res037001",
+        "prefix": [
+            "バンドの中心人物",
+            "Center of the Band",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 1,
+        "type": "initial",
+        "stat": {
+            "1": {
+                "performance": 1167,
+                "technique": 897,
+                "visual": 693
+            },
+            "20": {
+                "performance": 2953,
+                "technique": 2269,
+                "visual": 1752
+            },
+            "episodes": [
+                {
+                    "performance": 100,
+                    "technique": 100,
+                    "visual": 100
+                },
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                }
+            ]
+        }
+    },
+    "1810": {
+        "characterId": 38,
+        "rarity": 1,
+        "attribute": "pure",
+        "levelLimit": 20,
+        "resourceSetName": "res038001",
+        "prefix": [
+            "ライク・ア・キャット",
+            "Like A Cat",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 1,
+        "type": "initial",
+        "stat": {
+            "1": {
+                "performance": 858,
+                "technique": 1161,
+                "visual": 738
+            },
+            "20": {
+                "performance": 2171,
+                "technique": 2937,
+                "visual": 1866
+            },
+            "episodes": [
+                {
+                    "performance": 100,
+                    "technique": 100,
+                    "visual": 100
+                },
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                }
+            ]
+        }
+    },
+    "1811": {
+        "characterId": 39,
+        "rarity": 1,
+        "attribute": "powerful",
+        "levelLimit": 20,
+        "resourceSetName": "res039001",
+        "prefix": [
+            "みんなの『お母さん』",
+            "Everyone's \"Mother\"",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 1,
+        "type": "initial",
+        "stat": {
+            "1": {
+                "performance": 1182,
+                "technique": 708,
+                "visual": 867
+            },
+            "20": {
+                "performance": 2987,
+                "technique": 1791,
+                "visual": 2197
+            },
+            "episodes": [
+                {
+                    "performance": 100,
+                    "technique": 100,
+                    "visual": 100
+                },
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                }
+            ]
+        }
+    },
+    "1812": {
+        "characterId": 40,
+        "rarity": 1,
+        "attribute": "powerful",
+        "levelLimit": 20,
+        "resourceSetName": "res040001",
+        "prefix": [
+            "リズム・リ・スタート",
+            "Rhythm Restart",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 1,
+        "type": "initial",
+        "stat": {
+            "1": {
+                "performance": 1215,
+                "technique": 705,
+                "visual": 837
+            },
+            "20": {
+                "performance": 3075,
+                "technique": 1788,
+                "visual": 2119
+            },
+            "episodes": [
+                {
+                    "performance": 100,
+                    "technique": 100,
+                    "visual": 100
+                },
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                }
+            ]
+        }
+    },
+    "1813": {
+        "characterId": 36,
+        "rarity": 2,
+        "attribute": "happy",
+        "levelLimit": 30,
+        "resourceSetName": "res036002",
+        "prefix": [
+            "一生を、はじめよう",
+            "For The Rest of Our Lives, Beginning Now",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 8,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 1998,
+                "technique": 2160,
+                "visual": 1962
+            },
+            "30": {
+                "performance": 4975,
+                "technique": 5377,
+                "visual": 4885
+            },
+            "episodes": [
+                {
+                    "performance": 150,
+                    "technique": 150,
+                    "visual": 150
+                },
+                {
+                    "performance": 300,
+                    "technique": 300,
+                    "visual": 300
+                }
+            ]
+        }
+    },
+    "1814": {
+        "characterId": 37,
+        "rarity": 2,
+        "attribute": "powerful",
+        "levelLimit": 30,
+        "resourceSetName": "res037002",
+        "prefix": [
+            "一生を、はじめよう",
+            "For The Rest of Our Lives, Beginning Now",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 2,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 2172,
+                "technique": 1914,
+                "visual": 1974
+            },
+            "30": {
+                "performance": 5408,
+                "technique": 4766,
+                "visual": 4911
+            },
+            "episodes": [
+                {
+                    "performance": 150,
+                    "technique": 150,
+                    "visual": 150
+                },
+                {
+                    "performance": 300,
+                    "technique": 300,
+                    "visual": 300
+                }
+            ]
+        }
+    },
+    "1815": {
+        "characterId": 38,
+        "rarity": 2,
+        "attribute": "happy",
+        "levelLimit": 30,
+        "resourceSetName": "res038002",
+        "prefix": [
+            "一生を、はじめよう",
+            "For The Rest of Our Lives, Beginning Now",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 8,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 1884,
+                "technique": 2028,
+                "visual": 2208
+            },
+            "30": {
+                "performance": 4687,
+                "technique": 5050,
+                "visual": 5498
+            },
+            "episodes": [
+                {
+                    "performance": 150,
+                    "technique": 150,
+                    "visual": 150
+                },
+                {
+                    "performance": 300,
+                    "technique": 300,
+                    "visual": 300
+                }
+            ]
+        }
+    },
+    "1816": {
+        "characterId": 39,
+        "rarity": 2,
+        "attribute": "cool",
+        "levelLimit": 30,
+        "resourceSetName": "res039002",
+        "prefix": [
+            "一生を、はじめよう",
+            "For The Rest of Our Lives, Beginning Now",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 23,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 1878,
+                "technique": 2178,
+                "visual": 2064
+            },
+            "30": {
+                "performance": 4676,
+                "technique": 5423,
+                "visual": 5140
+            },
+            "episodes": [
+                {
+                    "performance": 150,
+                    "technique": 150,
+                    "visual": 150
+                },
+                {
+                    "performance": 300,
+                    "technique": 300,
+                    "visual": 300
+                }
+            ]
+        }
+    },
+    "1817": {
+        "characterId": 40,
+        "rarity": 2,
+        "attribute": "cool",
+        "levelLimit": 30,
+        "resourceSetName": "res040002",
+        "prefix": [
+            "一生を、はじめよう",
+            "For The Rest of Our Lives, Beginning Now",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 5,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 2040,
+                "technique": 1980,
+                "visual": 2100
+            },
+            "30": {
+                "performance": 5079,
+                "technique": 4931,
+                "visual": 5228
+            },
+            "episodes": [
+                {
+                    "performance": 150,
+                    "technique": 150,
+                    "visual": 150
+                },
+                {
+                    "performance": 300,
+                    "technique": 300,
+                    "visual": 300
+                }
+            ]
+        }
+    },
+    "1818": {
+        "characterId": 36,
+        "rarity": 3,
+        "attribute": "powerful",
+        "levelLimit": 40,
+        "resourceSetName": "res036003",
+        "prefix": [
+            "不思議な小動物",
+            "Mysterious Little Animal",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 24,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 2898,
+                "technique": 2997,
+                "visual": 3285
+            },
+            "50": {
+                "performance": 8636,
+                "technique": 8931,
+                "visual": 9789
+            },
+            "episodes": [
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                },
+                {
+                    "performance": 500,
+                    "technique": 500,
+                    "visual": 500
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1819": {
+        "characterId": 37,
+        "rarity": 3,
+        "attribute": "cool",
+        "levelLimit": 40,
+        "resourceSetName": "res037003",
+        "prefix": [
+            "仲良くする相手は…",
+            "Someone Who Gets Along Well With...",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 13,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 2988,
+                "technique": 3222,
+                "visual": 2970
+            },
+            "50": {
+                "performance": 8904,
+                "technique": 9602,
+                "visual": 8850
+            },
+            "episodes": [
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                },
+                {
+                    "performance": 500,
+                    "technique": 500,
+                    "visual": 500
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1820": {
+        "characterId": 38,
+        "rarity": 3,
+        "attribute": "cool",
+        "levelLimit": 40,
+        "resourceSetName": "res038003",
+        "prefix": [
+            "爪弾く猫",
+            "A Kitten Clawing at the Guitar",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 21,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3474,
+                "technique": 2772,
+                "visual": 2934
+            },
+            "50": {
+                "performance": 10354,
+                "technique": 8263,
+                "visual": 8742
+            },
+            "episodes": [
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                },
+                {
+                    "performance": 500,
+                    "technique": 500,
+                    "visual": 500
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1821": {
+        "characterId": 39,
+        "rarity": 3,
+        "attribute": "happy",
+        "levelLimit": 40,
+        "resourceSetName": "res039003",
+        "prefix": [
+            "調停者は心静かに",
+            "The Calm Mediator",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 11,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3393,
+                "technique": 2907,
+                "visual": 2880
+            },
+            "50": {
+                "performance": 10111,
+                "technique": 8663,
+                "visual": 8581
+            },
+            "episodes": [
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                },
+                {
+                    "performance": 500,
+                    "technique": 500,
+                    "visual": 500
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1822": {
+        "characterId": 40,
+        "rarity": 3,
+        "attribute": "pure",
+        "levelLimit": 40,
+        "resourceSetName": "res040003",
+        "prefix": [
+            "守るのは、過去",
+            "Protector of the Past",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 3,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 2907,
+                "technique": 3132,
+                "visual": 3051
+            },
+            "50": {
+                "performance": 8663,
+                "technique": 9333,
+                "visual": 9089
+            },
+            "episodes": [
+                {
+                    "performance": 200,
+                    "technique": 200,
+                    "visual": 200
+                },
+                {
+                    "performance": 500,
+                    "technique": 500,
+                    "visual": 500
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1823": {
+        "characterId": 36,
+        "rarity": 5,
+        "attribute": "pure",
+        "levelLimit": 50,
+        "resourceSetName": "res036004",
+        "prefix": [
+            "心の叫び",
+            "The Cries of My Heart",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 66,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3842,
+                "technique": 3334,
+                "visual": 3514
+            },
+            "60": {
+                "performance": 11449,
+                "technique": 9934,
+                "visual": 10473
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1824": {
+        "characterId": 37,
+        "rarity": 5,
+        "attribute": "pure",
+        "levelLimit": 50,
+        "resourceSetName": "res037004",
+        "prefix": [
+            "迷いながら",
+            "While We're Wandering",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 67,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3313,
+                "technique": 3599,
+                "visual": 3884
+            },
+            "60": {
+                "performance": 9873,
+                "technique": 10724,
+                "visual": 11571
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1825": {
+        "characterId": 39,
+        "rarity": 5,
+        "attribute": "pure",
+        "levelLimit": 50,
+        "resourceSetName": "res039004",
+        "prefix": [
+            "終わらせてあげる",
+            "I'll Put an End to This",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 68,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3588,
+                "technique": 3895,
+                "visual": 3313
+            },
+            "60": {
+                "performance": 10692,
+                "technique": 11607,
+                "visual": 9873
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1826": {
+        "characterId": 38,
+        "rarity": 3,
+        "attribute": "powerful",
+        "levelLimit": 40,
+        "resourceSetName": "res038004",
+        "prefix": [
+            "気の向くままに",
+            "At Her Own Spontaneous Pace",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 6,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 3056,
+                "technique": 2929,
+                "visual": 3521
+            },
+            "50": {
+                "performance": 9230,
+                "technique": 8848,
+                "visual": 10633
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1827": {
+        "characterId": 40,
+        "rarity": 3,
+        "attribute": "happy",
+        "levelLimit": 40,
+        "resourceSetName": "res040004",
+        "prefix": [
+            "理想に届かない",
+            "Falling Short of My Ideals",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1694772000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 9,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 3434,
+                "technique": 3259,
+                "visual": 3104
+            },
+            "50": {
+                "performance": 10233,
+                "technique": 9716,
+                "visual": 9254
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
             }
         }
     },

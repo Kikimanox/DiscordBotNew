@@ -118,7 +118,7 @@ class ClaimsManager:
                 if k == 'bandori':
                     # Fetch or load character data for each of the 35 characters and construct the chars dictionary
                     chars = {}
-                    for i in range(1, 36):
+                    for i in range(1, 41):
                         char_data = await fetch_and_save_or_load(
                             f"https://bestdori.com/api/characters/{i}.json",
                             f"data/bandori/{i}.json"
