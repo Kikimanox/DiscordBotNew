@@ -7,7 +7,6 @@ venv/
 __pycache__
 data/
 !data/_amq/annMal.json
-!data/bandori
 tmp/
 _scripts/
 logs/
