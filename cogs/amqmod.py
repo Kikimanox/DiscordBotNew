@@ -549,7 +549,7 @@ return ret_7
 
         try:
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, self.do_request, payload, files)
+            response = await loop.run_in_executor(None, self.do_request_c, payload, files)
             was_ok = True
             if response.ok:
                 await ctx.send(f"✅ {origname}: " + f'<{response.text}>')
@@ -567,8 +567,51 @@ return ret_7
         return was_ok, rett_2
 
     @staticmethod
-    def do_request(p, f):
+    def do_request_c(p, f):
         return requests.post("https://catbox.moe/user/api.php", data=p, files=f)
+
+    async def upload_file_to_litterbox(self, file, ctx):
+        # https://github.com/amq-script-project/AMQ-Scripts/blob/master/programs/old-expand-but-better/catbox.py
+        origname = file
+        if re.match(r"^.*\.webm$", file):
+            mime_type = "video/webm"
+            ext = ".webm"
+        elif re.match(r"^.*\.mp3$", file):
+            mime_type = "audio/mpeg"
+            ext = ".mp3"
+        else:
+            return None
+
+        payload = {'reqtype': 'fileupload', 'time': '72h'}
+        timestamp = str(int(datetime.datetime.now().timestamp()))
+        file = "tmp/amq/tmp" + timestamp + ext
+        os.rename(origname, file)  # fixes special character errors
+        f = open(file, 'rb')
+        files = {'fileToUpload': (file, f, mime_type)}
+        # await ctx.send(f"Uploading **{origname}**")
+
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, self.do_request_l, payload, files)
+            was_ok = True
+            if response.ok:
+                await ctx.send(f"✅ {origname}: " + f'<{response.text}>')
+                rett_2 = response.text
+            else:
+                await ctx.send(f"❌ {origname}:\n" + f'```\n{response.text}```')
+                was_ok = False
+                rett_2 = response.text
+        except:
+            was_ok = False
+            rett_2 = traceback.format_exc()
+
+        f.close()
+        os.rename(file, origname)
+        return was_ok, rett_2
+
+    @staticmethod
+    def do_request_l(p, f):
+        return requests.post("https://litterbox.catbox.moe/resources/internals/api.php", data=p, files=f)
 
     @staticmethod
     async def is_catbox_alive():
@@ -1041,7 +1084,7 @@ return ret_7
             out = f'tmp/amq/{upl["annID"]}_{upl["annSongId"]}_{ee}.mp3'
 
             if not os.path.exists(out) or (os.path.exists(out) and (out not in uploaded)):
-                fil = upl[ll].replace('files.', 'nl.')  # actually just use NL now that it's active
+                fil = upl[ll].replace('ladist1.', 'nl.')  # actually just use NL now that it's active
                 await ctx.send(f"[{len(list(set(uploaded)))}/{total}] Creating **{out}** from <{fil}>")
                 if os.path.exists(out):
                     os.remove(out)  # we go agane
@@ -1069,7 +1112,8 @@ return ret_7
                     await ctx.send("❗❗Catbox ded rn. Continue later..")
                     raise
                 await ctx.send(f"Uploading **{out}**")
-                ok, link = await self.upload_file_to_catbox(out, ctx)
+                ok, link = await self.upload_file_to_litterbox(out, ctx)
+                d = 0
             else:
                 feedback = False
                 ok = True

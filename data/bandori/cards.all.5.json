@@ -71975,16 +71975,16 @@
         "resourceSetName": "res025055",
         "prefix": [
             "Precious birthday！",
-            null,
+            "Precious Birthday!",
             "Precious birthday！",
-            null,
+            "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1665932400000",
-            null,
+            "1697529600000",
             "1697472000000",
-            null,
+            "1697472000000",
             "1697468400000"
         ],
         "skillId": 57,
@@ -72287,16 +72287,16 @@
         "resourceSetName": "res008058",
         "prefix": [
             "Precious birthday！",
-            null,
-            null,
-            null,
+            "Precious Birthday!",
+            "Precious birthday！",
+            "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1666450800000",
-            null,
-            null,
-            null,
+            "1698048000000",
+            "1697990400000",
+            "1697990400000",
             "1697986800000"
         ],
         "skillId": 57,
@@ -72341,15 +72341,15 @@
         "prefix": [
             "Precious birthday！",
             null,
-            null,
-            null,
+            "Precious birthday！",
+            "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1666710000000",
             null,
-            null,
-            null,
+            "1698249600000",
+            "1698249600000",
             "1698246000000"
         ],
         "skillId": 57,
@@ -72394,15 +72394,15 @@
         "prefix": [
             "Precious birthday！",
             null,
-            null,
-            null,
+            "Precious birthday！",
+            "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1666796400000",
             null,
-            null,
-            null,
+            "1698336000000",
+            "1698336000000",
             "1698332400000"
         ],
         "skillId": 57,
@@ -74872,14 +74872,14 @@
         "resourceSetName": "res030026",
         "prefix": [
             "増えていく記録と、",
-            "Accumulating Memories, And",
+            "Another Record And...",
             "逐漸增加的紀錄與、",
             "不断增加的记录，以及……",
             "늘어가는 기록과"
         ],
         "releasedAt": [
             "1675144800000",
-            null,
+            "1697245200000",
             "1685602800000",
             "1695618000000",
             "4107477600000"
@@ -74925,14 +74925,14 @@
         "resourceSetName": "res027024",
         "prefix": [
             "一生のお願いD.C.",
-            "My Lifelong Wish Da Capo",
+            "I’m Begging You D.C.",
             "畢生的請求D.C.",
             "一辈子的请求D.C.",
             "일생의 소원D.C."
         ],
         "releasedAt": [
             "1675144800000",
-            null,
+            "1697245200000",
             "1685602800000",
             "1695618000000",
             "4107477600000"
@@ -74978,14 +74978,14 @@
         "resourceSetName": "res026027",
         "prefix": [
             "こだわりトッピング",
-            "Carefully Picked Topping",
+            "Special Toppings",
             "很講究配料",
             "讲究的配料",
             "엄선한 토핑"
         ],
         "releasedAt": [
             "1675144800000",
-            null,
+            "1697245200000",
             "1685602800000",
             "1695618000000",
             "4107477600000"
@@ -75031,14 +75031,14 @@
         "resourceSetName": "res028024",
         "prefix": [
             "♡For you",
-            null,
+            "♡ For You",
             "♡For you",
             "♡For you",
             "♡For you"
         ],
         "releasedAt": [
             "1675144800000",
-            null,
+            "1697245200000",
             "1685602800000",
             "1695618000000",
             "4107477600000"
@@ -75078,14 +75078,14 @@
         "resourceSetName": "res029024",
         "prefix": [
             "焼き加減かんぺきっ！",
-            "Baked to Perfection!",
+            "Perfectly Baked!",
             "烤得恰到好處！",
             "火候很完美！",
             "완벽한 굽기 정도!"
         ],
         "releasedAt": [
             "1675144800000",
-            null,
+            "1697245200000",
             "1685602800000",
             "1695618000000",
             "4107477600000"
@@ -75345,14 +75345,14 @@
             "花の名前",
             "Our Flower's Name",
             "花的名字",
-            null,
+            "花的名字",
             "꽃 이름"
         ],
         "releasedAt": [
             "1676786400000",
             null,
             "1687503600000",
-            null,
+            "1697173200000",
             "4107477600000"
         ],
         "skillId": 45,
@@ -75398,14 +75398,14 @@
             "HPが0になるまで！",
             "Not Until Our HP Hits 0!",
             "堅持到HP歸零！",
-            null,
+            "直到生命值降为0！",
             "HP가 0이 될 때까지!"
         ],
         "releasedAt": [
             "1676786400000",
             null,
             "1687503600000",
-            null,
+            "1697173200000",
             "4107477600000"
         ],
         "skillId": 60,
@@ -75451,14 +75451,14 @@
             "この曲が終わったら",
             "When This Song Ends",
             "這首歌結束後",
-            null,
+            "这首曲子结束之后",
             "이 곡이 끝나면"
         ],
         "releasedAt": [
             "1676786400000",
             null,
             "1687503600000",
-            null,
+            "1697173200000",
             "4107477600000"
         ],
         "skillId": 6,
@@ -75557,14 +75557,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             "졸업"
         ],
         "releasedAt": [
             "1677564000000",
             null,
             "1688454000000",
-            null,
+            "1697950800000",
             "4107477600000"
         ],
         "skillId": 63,
@@ -75610,14 +75610,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             "졸업"
         ],
         "releasedAt": [
             "1677564000000",
             null,
             "1688454000000",
-            null,
+            "1697950800000",
             "4107477600000"
         ],
         "skillId": 63,
@@ -75663,14 +75663,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             "졸업"
         ],
         "releasedAt": [
             "1677564000000",
             null,
             "1688454000000",
-            null,
+            "1697950800000",
             "4107477600000"
         ],
         "skillId": 63,
@@ -75716,14 +75716,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             "졸업"
         ],
         "releasedAt": [
             "1677564000000",
             null,
             "1688454000000",
-            null,
+            "1697950800000",
             "4107477600000"
         ],
         "skillId": 65,
@@ -75769,14 +75769,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             "졸업"
         ],
         "releasedAt": [
             "1677564000000",
             null,
             "1688454000000",
-            null,
+            "1697950800000",
             "4107477600000"
         ],
         "skillId": 64,
@@ -78214,14 +78214,14 @@
         "prefix": [
             "綺羅星マリアージュ",
             "Sparkling Starry Marriage",
-            null,
+            "滿天星婚約",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -78267,14 +78267,14 @@
         "prefix": [
             "ギャラクシーアイドル",
             "Galaxy Idol",
-            null,
+            "銀河偶像",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -78320,14 +78320,14 @@
         "prefix": [
             "チーム・パレ町",
             "Team Pale-Town",
-            null,
+            "PARE町隊",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -78361,14 +78361,14 @@
         "prefix": [
             "流星の花嫁",
             "Shooting Star's Bride ",
-            null,
+            "流星的新娘",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -78396,14 +78396,14 @@
         "prefix": [
             "手繰る糸の先に",
             "At the End of the Thread You're Reeling In",
-            null,
+            "手中絲線的彼端",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -78449,14 +78449,14 @@
         "prefix": [
             "これかわいいかも♪",
             "Isn't This Cute ♪",
-            null,
+            "這還蠻可愛的♪",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -78502,14 +78502,14 @@
         "prefix": [
             "最強爆映えショット！",
             "The Most Powerful Camera-Blasting Shot!",
-            null,
+            "最強奇蹟美照！",
             null,
             null
         ],
         "releasedAt": [
             "1685512800000",
             null,
-            null,
+            "1697958000000",
             null,
             null
         ],
@@ -82645,6 +82645,241 @@
                 "performance": 10930,
                 "technique": 9852,
                 "visual": 9552
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1840": {
+        "characterId": 32,
+        "rarity": 5,
+        "attribute": "happy",
+        "levelLimit": 50,
+        "resourceSetName": "res032031",
+        "prefix": [
+            "発見、現行犯！？",
+            "Discovered and Caught Red-Handed!?",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1697781600000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 66,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3599,
+                "technique": 3387,
+                "visual": 3704
+            },
+            "60": {
+                "performance": 10724,
+                "technique": 10093,
+                "visual": 11037
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1841": {
+        "characterId": 10,
+        "rarity": 5,
+        "attribute": "happy",
+        "levelLimit": 50,
+        "resourceSetName": "res010069",
+        "prefix": [
+            "羽丘の輝く生徒会長",
+            "Haneoka's Brilliant Student Council President",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1697781600000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 67,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3641,
+                "technique": 3831,
+                "visual": 3323
+            },
+            "60": {
+                "performance": 10859,
+                "technique": 11417,
+                "visual": 9903
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1842": {
+        "characterId": 15,
+        "rarity": 3,
+        "attribute": "cool",
+        "levelLimit": 40,
+        "resourceSetName": "res015072",
+        "prefix": [
+            "会議後は、ぐったり",
+            "Exhausted, After the Meeting",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1697781600000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 3,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 2832,
+                "technique": 3288,
+                "visual": 3094
+            },
+            "50": {
+                "performance": 8664,
+                "technique": 10061,
+                "visual": 9467
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1843": {
+        "characterId": 7,
+        "rarity": 2,
+        "attribute": "powerful",
+        "levelLimit": 30,
+        "resourceSetName": "res007064",
+        "prefix": [
+            "名探偵モカちゃん先輩",
+            "Detective Moca-Chan-Senpai",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1697781600000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 8,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 2073,
+                "technique": 2158,
+                "visual": 2374
+            },
+            "30": {
+                "performance": 5164,
+                "technique": 5372,
+                "visual": 5912
+            }
+        }
+    },
+    "1844": {
+        "characterId": 5,
+        "rarity": 4,
+        "attribute": "happy",
+        "levelLimit": 50,
+        "resourceSetName": "res005074",
+        "prefix": [
+            "暴走は止められない！",
+            "Can't Stop the Runaways!",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1697781600000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 22,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3125,
+                "technique": 3810,
+                "visual": 3347
+            },
+            "60": {
+                "performance": 9312,
+                "technique": 11355,
+                "visual": 9973
             },
             "episodes": [
                 {
