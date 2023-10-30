@@ -6,6 +6,7 @@ import logging
 import random
 import traceback
 
+import aiohttp
 import discord
 from discord import Embed
 from discord.ext import commands
@@ -14,7 +15,9 @@ import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
 from models.claims import ClaimsManager, Claimed, UserSettings, History
+from utils.SimplePaginator import SimplePaginator
 from utils.dataIOa import dataIOa
+import re
 
 conf = dataIOa.load_json('settings/claims_settings.json')
 possible_for_bot = conf['use_these']
@@ -620,6 +623,121 @@ class Fun(commands.Cog):
                 em.set_footer(text=':warning: potentially nsfw pic claim thumbnail ignored')
 
         await ctx.channel.send(content=f'{ctx.author.mention} your {CT} claim history:', embed=em)
+
+    @commands.command()
+    async def search(self, ctx, *, text: str):
+        """Text search through guya.cubari.moe, defaults to the Oshi no Ko series.
+
+        --guya mobile phone (for searching the kaguya-sama manga)
+        --4koma erika (kaguya-sama 4koma search)
+        --doujin maki (kaguya-sama official doujin search)
+        """
+        series_dict = {
+            'main': 'Oshi-no-Ko',
+            'guya': 'Kaguya-Wants-To-Be-Confessed-To',
+            '4koma': 'We-Want-To-Talk-About-Kaguya',
+            'doujin': 'Kaguya-Wants-To-Be-Confessed-To-Official-Doujin'
+        }
+        if text.strip().startswith('--'):
+            series = text.strip().split('--')[1].split(' ', 1)[0]
+            if series in series_dict:
+                slug = series_dict[series]
+                text = text.replace(f'--{series}', '').strip()
+            else:
+                return await ctx.send(
+                    f"The specified series is not recognized. Options are: `{', '.join(series_dict.keys())}`")
+        else:
+            series = 'main'
+            slug = series_dict[series]
+        match = re.search(r'^([><=])(\d+(?:\.\d+)?)(-)?(\d+(?:\.\d+)?)?\s.+', text)
+        if match:
+            if match.group(3):
+                operand_match = False
+            else:
+                operand_match = True
+            for i in range(1, 5):
+                if match.group(i):
+                    text = text[len(match.group(i)):]
+        search_response = {}
+        async with aiohttp.ClientSession() as session:
+            async with session.post(f"https://guya.cubari.moe/api/search_index/{slug}/",
+                                    data={"searchQuery": text}) as resp:
+                if resp.status == 200:
+                    search_response = await resp.json()
+                else:
+                    return await ctx.send(f"Error: server returned {resp.status}")
+        first_word = next(iter(search_response))
+        final_results = {}
+        for variation, matches in search_response[first_word].items():
+            for chapter, pages in matches.items():
+                chapter_float = float(chapter.replace('-', '.'))
+                if match:
+                    if operand_match:
+                        if match.group(1) == "<" and not chapter_float < float(match.group(2)):
+                            continue
+                        elif match.group(1) == ">" and not chapter_float > float(match.group(2)):
+                            continue
+                        elif match.group(1) == "=" and not chapter_float == float(match.group(2)):
+                            continue
+                    else:
+                        if chapter_float <= float(match.group(2)) or chapter_float >= float(match.group(4)):
+                            continue
+                for page in pages:
+                    for search_word in search_response:
+                        if not any(chapter in search_response[search_word][matched_word] and page in
+                                   search_response[search_word][matched_word][chapter] for matched_word, matched_chap in
+                                   search_response[search_word].items()):
+                            break
+                    else:
+                        chapter_float = chapter.replace('-', '.')
+                        if chapter_float not in final_results:
+                            final_results[chapter_float] = set([page])
+                        else:
+                            final_results[chapter_float].add(page)
+        if not final_results:
+            return await ctx.send("Search returned no results.")
+        search_desc = ""
+        chapter_count = 0
+        embeds = []
+
+        def create_embed(embed_page_numb):
+            em = Embed(
+                title=f"Manga text search for \"{text.strip()}\" in {series} series | Page {embed_page_numb} of ",
+                color=0xea7938)
+            em.set_thumbnail(url="https://i.imgur.com/PexT2dz.png")
+            em.set_footer(text="Search powered by https://guya.cubari.moe")
+            return em
+
+        for chapter in sorted(final_results, key=float):
+            chapter_count += 1
+            em = create_embed(len(embeds) + 1)
+            this_chapter = f"Ch. {chapter} | Pages: "
+            if series == 'main':
+                this_chapter += ", ".join(
+                    [f"[{p}](https://guya.cubari.moe/reader/series/Oshi-no-Ko/{chapter.replace('.', '-')}/{p})" for p in
+                     sorted(final_results[chapter])])  # Well this was fun to learn to do
+            else:
+                this_chapter += ", ".join(
+                    [f"[{p}](https://guya.cubari.moe/read/manga/{series_dict[series]}/{chapter.replace('.', '-')}/{p})"
+                     for p
+                     in sorted(final_results[chapter])])
+            if len(search_desc) + len(this_chapter) <= 2048 and chapter_count < 10:
+                search_desc += f"{this_chapter}\n"
+            else:
+                em.description = search_desc
+                embeds.append(em)
+                em = create_embed(len(embeds) + 1)
+                search_desc = f"{this_chapter}\n"
+                chapter_count = 0
+        em.description = search_desc
+        embeds.append(em)
+        if len(embeds) > 1:
+            for em in embeds:
+                em.title += str(len(embeds))
+            await SimplePaginator(extras=embeds).paginate(ctx)
+        else:
+            em.title += "1"
+            await ctx.send(content=None, embed=embeds[0])
 
 
 async def setup(

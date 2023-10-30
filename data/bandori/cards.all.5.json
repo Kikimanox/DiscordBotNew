@@ -72340,14 +72340,14 @@
         "resourceSetName": "res021058",
         "prefix": [
             "Precious birthday！",
-            null,
+            "Precious Birthday!",
             "Precious birthday！",
             "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1666710000000",
-            null,
+            "1698307200000",
             "1698249600000",
             "1698249600000",
             "1698246000000"
@@ -72393,14 +72393,14 @@
         "resourceSetName": "res005062",
         "prefix": [
             "Precious birthday！",
-            null,
+            "Precious Birthday!",
             "Precious birthday！",
             "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1666796400000",
-            null,
+            "1698393600000",
             "1698336000000",
             "1698336000000",
             "1698332400000"
@@ -72711,16 +72711,16 @@
         "resourceSetName": "res019060",
         "prefix": [
             "Precious birthday！",
+            "Precious Birthday!",
             null,
-            null,
-            null,
+            "Precious birthday！",
             "Precious birthday!"
         ],
         "releasedAt": [
             "1667401200000",
+            "1698998400000",
             null,
-            null,
-            null,
+            "1698940800000",
             "1698937200000"
         ],
         "skillId": 57,
@@ -75131,14 +75131,14 @@
         "resourceSetName": "res005064",
         "prefix": [
             "舞台袖の誓い",
-            "Our Promise Made in the Stage Wings",
+            "Offstage Vow",
             "舞台通道的誓約",
             "舞台侧的誓言",
             "무대 위의 맹세"
         ],
         "releasedAt": [
             "1676008800000",
-            null,
+            "1698195600000",
             "1686553200000",
             "1696395600000",
             "4107477600000"
@@ -75184,14 +75184,14 @@
         "resourceSetName": "res015066",
         "prefix": [
             "二人三脚で",
-            "Our Three-Legged Race",
+            "Cooperative Endeavor",
             "兩人三腳前進",
             "两人一起努力",
             "이인삼각으로"
         ],
         "releasedAt": [
             "1676008800000",
-            null,
+            "1698195600000",
             "1686553200000",
             "1696395600000",
             "4107477600000"
@@ -75237,14 +75237,14 @@
         "resourceSetName": "res025057",
         "prefix": [
             "エールを受け取って",
-            "Receive My Yell",
+            "Best Wishes Received",
             "接受聲援",
             "收下我的声援",
             "응원을 받고"
         ],
         "releasedAt": [
             "1676008800000",
-            null,
+            "1698195600000",
             "1686553200000",
             "1696395600000",
             "4107477600000"
@@ -75822,14 +75822,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             null
         ],
         "releasedAt": [
             "1678255200000",
             null,
             "1689404400000",
-            null,
+            "1698642000000",
             null
         ],
         "skillId": 63,
@@ -75875,14 +75875,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             null
         ],
         "releasedAt": [
             "1678255200000",
             null,
             "1689404400000",
-            null,
+            "1698642000000",
             null
         ],
         "skillId": 63,
@@ -75928,14 +75928,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             null
         ],
         "releasedAt": [
             "1678255200000",
             null,
             "1689404400000",
-            null,
+            "1698642000000",
             null
         ],
         "skillId": 63,
@@ -75981,14 +75981,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             null
         ],
         "releasedAt": [
             "1678255200000",
             null,
             "1689404400000",
-            null,
+            "1698642000000",
             null
         ],
         "skillId": 64,
@@ -76034,14 +76034,14 @@
             "卒業",
             "Graduation",
             "畢業",
-            null,
+            "毕业",
             null
         ],
         "releasedAt": [
             "1678255200000",
             null,
             "1689404400000",
-            null,
+            "1698642000000",
             null
         ],
         "skillId": 65,
@@ -82880,6 +82880,347 @@
                 "performance": 9312,
                 "technique": 11355,
                 "visual": 9973
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1845": {
+        "characterId": 7,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res007065",
+        "prefix": [
+            "夕陽に照らされた横顔",
+            "Your Sunset-Illuminated Profile",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 66,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3916,
+                "technique": 2964,
+                "visual": 3810
+            },
+            "60": {
+                "performance": 11670,
+                "technique": 8834,
+                "visual": 11355
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1846": {
+        "characterId": 6,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res006076",
+        "prefix": [
+            "まっすぐ伝える言葉",
+            "My Candid and Straightforward Words",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 68,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3810,
+                "technique": 3546,
+                "visual": 3440
+            },
+            "60": {
+                "performance": 11355,
+                "technique": 10566,
+                "visual": 10251
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1847": {
+        "characterId": 10,
+        "rarity": 3,
+        "attribute": "happy",
+        "levelLimit": 40,
+        "resourceSetName": "res010070",
+        "prefix": [
+            "２人の想い",
+            "The Feelings of Two People",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 9,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 3026,
+                "technique": 3482,
+                "visual": 3288
+            },
+            "50": {
+                "performance": 9015,
+                "technique": 10376,
+                "visual": 9798
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1848": {
+        "characterId": 8,
+        "rarity": 2,
+        "attribute": "happy",
+        "levelLimit": 30,
+        "resourceSetName": "res008068",
+        "prefix": [
+            "不安に揺れる瞳",
+            "Eyes Flickering With Anxiety",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 5,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 2027,
+                "technique": 2060,
+                "visual": 2322
+            },
+            "30": {
+                "performance": 5088,
+                "technique": 5171,
+                "visual": 5829
+            }
+        }
+    },
+    "1849": {
+        "characterId": 9,
+        "rarity": 4,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res009068",
+        "prefix": [
+            "屋上からのメッセージ",
+            "Messages From The Roof",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 44,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3246,
+                "technique": 3830,
+                "visual": 3105
+            },
+            "60": {
+                "performance": 9676,
+                "technique": 11412,
+                "visual": 9253
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1850": {
+        "characterId": 17,
+        "rarity": 5,
+        "attribute": "pure",
+        "levelLimit": 50,
+        "resourceSetName": "res017072",
+        "prefix": [
+            "双子コーデでるんっ♪",
+            "Boppin'♪ Twinnin' OOTD",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 69,
+        "type": "dreamfes",
+        "stat": {
+            "1": {
+                "performance": 3556,
+                "technique": 3620,
+                "visual": 3535
+            },
+            "60": {
+                "performance": 10598,
+                "technique": 10790,
+                "visual": 10533
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1851": {
+        "characterId": 3,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res003064",
+        "prefix": [
+            "見つけた、ちいさい秋",
+            "I Found It, An Itty-Bitty Dose of Autumn",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1698732000000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 69,
+        "type": "dreamfes",
+        "stat": {
+            "1": {
+                "performance": 3672,
+                "technique": 3524,
+                "visual": 3515
+            },
+            "60": {
+                "performance": 10943,
+                "technique": 10502,
+                "visual": 10475
             },
             "episodes": [
                 {
