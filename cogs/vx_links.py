@@ -1,7 +1,9 @@
 import re
 
-from discord import Message, Webhook, Thread
+from discord import Message, Webhook, Thread, Reaction, User, Member
 from discord.ext import commands
+
+from typing import Dict, Union
 
 
 class VxLinks(commands.Cog):
@@ -10,6 +12,8 @@ class VxLinks(commands.Cog):
             bot: commands.Bot
     ):
         self.bot = bot
+
+        self.user_webhooks_ownership: Dict[int, int] = {}
 
 
     async def cog_load(self) -> None:
@@ -40,7 +44,7 @@ class VxLinks(commands.Cog):
     ):
         webhook = await self.create_webhook(channel)
         if isinstance(channel, Thread):
-            await webhook.send(
+            webhook_message = await webhook.send(
                 content,
                 username=replied_message.author.display_name,
                 avatar_url=replied_message.author.display_avatar.url,
@@ -48,13 +52,14 @@ class VxLinks(commands.Cog):
                 wait=True
             )
         else:
-            await webhook.send(
+            webhook_message = await webhook.send(
                 content,
                 username=replied_message.author.display_name,
                 avatar_url=replied_message.author.display_avatar.url,
                 wait=True
             )
 
+        self.user_webhooks_ownership.update({webhook_message.id: replied_message.author.id})
         await replied_message.delete()
 
 
@@ -84,6 +89,18 @@ class VxLinks(commands.Cog):
                 msg,
                 phixiv_url
             )
+
+    @commands.Cog.listener()
+    async def on_reaction_add(
+            self,
+            reaction: Reaction,
+            user: Union[User, Member]
+    ):
+        if reaction.message.id in self.user_webhooks_ownership.keys():
+            if user.id == self.user_webhooks_ownership[reaction.message.id]:
+                if reaction.emoji == "❌":
+                    await reaction.message.delete()
+                    self.user_webhooks_ownership.pop(reaction.message.id)
 
 
 
