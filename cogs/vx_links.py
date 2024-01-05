@@ -43,9 +43,13 @@ class VxLinks(commands.Cog):
             content: str
     ):
         webhook = await self.create_webhook(channel)
+        msg = f"{content}\n{replied_message.jump_url}"
+        
+        await replied_message.edit(suppress=True)
+
         if isinstance(channel, Thread):
             webhook_message = await webhook.send(
-                content,
+                msg,
                 username=replied_message.author.display_name,
                 avatar_url=replied_message.author.display_avatar.url,
                 thread= channel,
@@ -53,14 +57,13 @@ class VxLinks(commands.Cog):
             )
         else:
             webhook_message = await webhook.send(
-                content,
+                msg,
                 username=replied_message.author.display_name,
                 avatar_url=replied_message.author.display_avatar.url,
                 wait=True
             )
 
         self.user_webhooks_ownership.update({webhook_message.id: replied_message.author.id})
-        await replied_message.delete()
 
 
 
