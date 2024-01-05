@@ -1,4 +1,3 @@
-from calendar import c
 import re
 
 from discord import Message, Webhook, Thread
