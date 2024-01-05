@@ -45,7 +45,7 @@ class VxLinks(commands.Cog):
         self, channel, replied_message: Message, content: str
     ):
         webhook = await self.create_webhook(channel)
-        msg = f"{content}\n{replied_message.jump_url}"
+        msg = f"{content}\n\n[Original Message]({replied_message.jump_url})"
 
         await replied_message.edit(suppress=True)
 
@@ -89,9 +89,13 @@ class VxLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: Message, after: Message):
+        if before.content == after.content:
+            return
         if before.id in self.message_tracker.keys():
             webhook_message = self.message_tracker[before.id]
-            update_content = f"{after.content}\n{before.jump_url}"
+            await after.edit(suppress=True)
+
+            update_content = f"{after.content}\n\n[Original Message]({before.jump_url})"
 
             update_content = re.sub(twitter_url, r"\1vxtwitter.com", update_content)
             update_content = re.sub(pixiv_url, r"\1phixiv.net", update_content)
