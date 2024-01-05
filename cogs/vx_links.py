@@ -10,7 +10,6 @@ class VxLinks(commands.Cog):
             bot: commands.Bot
     ):
         self.bot = bot
-
     @commands.Cog.listener()
     async def on_message(
         self,
@@ -19,10 +18,11 @@ class VxLinks(commands.Cog):
         if msg.author.bot:
             return
 
-        twitter_url = r'(https?://(?:www\.)?)twitter\.com'
+        twitter_url = r'(https?://(?:www\.)?)(twitter|x)\.com'
         if re.search(twitter_url, msg.content):
             await msg.edit(suppress=True)
             vxtwitter_url = re.sub(twitter_url, r'\1vxtwitter.com', msg.content)
+
             await msg.reply(
                 f"{vxtwitter_url}",
                 mention_author=False
