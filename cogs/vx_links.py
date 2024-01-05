@@ -23,15 +23,17 @@ class VxLinks(commands.Cog):
         if re.search(twitter_url, msg.content):
             await msg.edit(suppress=True)
             vxtwitter_url = re.sub(twitter_url, r'\1vxtwitter.com', msg.content)
-            await msg.channel.send(
-                f"{vxtwitter_url}"
+            await msg.reply(
+                f"{vxtwitter_url}",
+                mention_author=False
             )
         pixiv_url = r'(https?://(?:www\.)?)pixiv\.net'
         if re.search(pixiv_url, msg.content):
             await msg.edit(suppress=True)
             phixiv_url = re.sub(pixiv_url, r'\1phixiv.net', msg.content)
-            await msg.channel.send(
-                f"{phixiv_url}"
+            await msg.reply(
+                f"{phixiv_url}",
+                mention_author=False
             )
 
 
