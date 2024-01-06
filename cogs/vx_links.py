@@ -10,8 +10,29 @@ import logging
 LOGGER = logging.getLogger('info')
 ERROR_LOGGER = logging.getLogger('error')
 
-TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com"
-PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net"
+TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com/\S*"
+PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
+
+def convert_twitter_links_to_markdown(text):
+    markdown_link_format = "[Tweet]({})"
+
+    def replace_link(match):
+        url = match.group(0)
+        url = url.replace("twitter.com", "vxtwitter.com")
+        url = url.replace("x.com", "vxtwitter.com")
+        return markdown_link_format.format(url)
+
+    return re.sub(TWITTER_URL, replace_link, text)
+
+def convert_pixiv_links_to_markdown(text):
+    markdown_link_format = "[PIXIV LINK]({})"
+
+    def replace_link(match):
+        url = match.group(0)
+        url = url.replace("pixiv.net", "phixiv.net")
+        return markdown_link_format.format(url)
+
+    return re.sub(PIXIV_URL, replace_link, text)
 
 class VxLinks(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -73,8 +94,8 @@ class VxLinks(commands.Cog):
     async def on_message(self, msg: Message):
         if re.search(TWITTER_URL, msg.content) or re.search(PIXIV_URL, msg.content):
 
-            twitter_content = re.sub(TWITTER_URL, r"\1vxtwitter.com", msg.content)
-            combine_content = re.sub(PIXIV_URL, r"\1phixiv.net", twitter_content)
+            twitter_content = convert_twitter_links_to_markdown(msg.content)
+            combine_content = convert_pixiv_links_to_markdown(twitter_content)
 
             await self.send_webhook_message(msg.channel, msg, combine_content)
 
@@ -97,8 +118,8 @@ class VxLinks(commands.Cog):
 
             update_content = f"{after.content}\n\n[Original Message]({before.jump_url})"
 
-            update_content = re.sub(TWITTER_URL, r"\1vxtwitter.com", update_content)
-            update_content = re.sub(PIXIV_URL, r"\1phixiv.net", update_content)
+            update_content = convert_twitter_links_to_markdown(update_content)
+            update_content = convert_pixiv_links_to_markdown(update_content)
 
             await webhook_message.edit(content=update_content)
 
