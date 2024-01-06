@@ -1,25 +1,33 @@
+import logging
 import re
 from typing import Dict, Tuple, Union
-
-from discord import Member, Message, Reaction, Thread, User, Webhook, WebhookMessage
-from discord.ext import commands
-
 from urllib.parse import urlparse, urlunparse
 
-import logging
+from discord import (
+    AllowedMentions,
+    Member,
+    Message,
+    Reaction,
+    Thread,
+    User,
+    Webhook,
+    WebhookMessage,
+)
+from discord.ext import commands
 
-
-LOGGER = logging.getLogger('info')
-ERROR_LOGGER = logging.getLogger('error')
+LOGGER = logging.getLogger("info")
+ERROR_LOGGER = logging.getLogger("error")
 
 TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com/\S*"
 PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
 
+
 def remove_query_params(url):
     parsed = urlparse(url)
     # Reconstruct the URL without query parameters
-    clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
+    clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
     return clean_url
+
 
 def convert_twitter_links_to_markdown(text):
     markdown_link_format = "[Tweet]({})"
@@ -32,6 +40,7 @@ def convert_twitter_links_to_markdown(text):
         return markdown_link_format.format(url)
 
     return re.sub(TWITTER_URL, replace_link, text)
+
 
 def convert_pixiv_links_to_markdown(text):
     markdown_link_format = "[Pixiv]({})"
@@ -63,22 +72,6 @@ class VxLinks(commands.Cog):
                         await webhook.delete()
         LOGGER.info("Finished checking all old webhooks")
 
-    async def remove_mention(self, text):
-        members = re.findall(r"<@!?(\d+)>", text)
-        for member in members:
-            user = await self.bot.fetch_user(member)
-            text = text.replace(f"<@{member}>", f"`@{user.display_name}`")
-            text = text.replace(f"<@!{member}>", f"`@{user.display_name}`")
-
-        return text
-
-    async def remove_role_mention(self, text):
-        roles = re.findall(r"<@&id>", text)
-        for role in roles:
-            text = text.replace(f"<@&{role.id}>", "")
-
-        return text
-
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
             channel = channel.parent
@@ -104,6 +97,7 @@ class VxLinks(commands.Cog):
                 avatar_url=replied_message.author.display_avatar.url,
                 thread=channel,
                 wait=True,
+                allowed_mentions=AllowedMentions.none(),
             )
         else:
             webhook_message = await webhook.send(
@@ -111,6 +105,7 @@ class VxLinks(commands.Cog):
                 username=replied_message.author.display_name,
                 avatar_url=replied_message.author.display_avatar.url,
                 wait=True,
+                allowed_mentions=AllowedMentions.none(),
             )
         self.user_webhooks_ownership.update(
             {webhook_message.id: (replied_message.author.id, webhook_message)}
@@ -120,13 +115,10 @@ class VxLinks(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, msg: Message):
         if re.search(TWITTER_URL, msg.content) or re.search(PIXIV_URL, msg.content):
+            msg_content = convert_twitter_links_to_markdown(msg.content)
+            msg_content = convert_pixiv_links_to_markdown(msg_content)
 
-            twitter_content = convert_twitter_links_to_markdown(msg.content)
-            combine_content = convert_pixiv_links_to_markdown(twitter_content)
-            no_mention = await self.remove_mention(combine_content)
-            no_mention = await self.remove_role_mention(no_mention)
-
-            await self.send_webhook_message(msg.channel, msg, no_mention)
+            await self.send_webhook_message(msg.channel, msg, msg_content)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, user: Union[User, Member]):
@@ -153,11 +145,11 @@ class VxLinks(commands.Cog):
 
             update_content = convert_twitter_links_to_markdown(update_content)
             update_content = convert_pixiv_links_to_markdown(update_content)
-            update_content = await self.remove_mention(update_content)
-            update_content = await self.remove_role_mention(update_content)
 
-            await webhook_message.edit(content=update_content)
-
+            await webhook_message.edit(
+                content=update_content,
+                allowed_mentions=AllowedMentions.none(),
+            )
 
 
 async def setup(bot: commands.Bot):
