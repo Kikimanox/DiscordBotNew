@@ -67,8 +67,8 @@ class VxLinks(commands.Cog):
         members = re.findall(r"<@!?(\d+)>", text)
         for member in members:
             user = await self.bot.fetch_user(member)
-            text = text.replace(f"<@{member}>", f"@{user.display_name}")
-            text = text.replace(f"<@!{member}>", f"@{user.display_name}")
+            text = text.replace(f"<@{member}>", f"`@{user.display_name}`")
+            text = text.replace(f"<@!{member}>", f"`@{user.display_name}`")
 
         return text
 
