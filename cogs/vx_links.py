@@ -76,7 +76,7 @@ class VxLinks(commands.Cog):
         self, channel, replied_message: Message, content: str
     ):
         webhook = await self.create_webhook(channel)
-        msg = f"{content}\n\n[Original Message]({replied_message.jump_url})"
+        msg = f"{content}\n[Original Message]({replied_message.jump_url})"
 
         await replied_message.edit(suppress=True)
 
@@ -130,7 +130,7 @@ class VxLinks(commands.Cog):
 
             await after.edit(suppress=True)
 
-            update_content = f"{after.content}\n\n[Original Message]({before.jump_url})"
+            update_content = f"{after.content}\n[Original Message]({before.jump_url})"
 
             update_content = convert_twitter_links_to_markdown(update_content)
             update_content = convert_pixiv_links_to_markdown(update_content)
