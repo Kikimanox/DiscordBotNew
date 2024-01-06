@@ -114,7 +114,9 @@ class VxLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: Message):
-        if re.search(TWITTER_URL, msg.content) or re.search(PIXIV_URL, msg.content):
+        pattern = r'(?:[^<]|^)(https?://(?:www\.)?)(twitter\.com|x\.com|pixiv\.net)(?:[^>]|$)'
+        matches = re.search(pattern, msg.content)
+        if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
             msg_content = convert_pixiv_links_to_markdown(msg_content)
 
