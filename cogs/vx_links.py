@@ -7,11 +7,11 @@ from discord.ext import commands
 import logging
 
 
-logger = logging.getLogger('info')
-error_logger = logging.getLogger('error')
+LOGGER = logging.getLogger('info')
+ERROR_LOGGER = logging.getLogger('error')
 
-twitter_url = r"(https?://(?:www\.)?)(twitter|x)\.com"
-pixiv_url = r"(https?://(?:www\.)?)pixiv\.net"
+TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com"
+PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net"
 
 class VxLinks(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -29,7 +29,7 @@ class VxLinks(commands.Cog):
                 for webhook in webhooks:
                     if webhook.name == "vxlinks" and webhook.user == self.bot.user:
                         await webhook.delete()
-        logger.info("Finished checking all old webhooks")
+        LOGGER.info("Finished checking all old webhooks")
 
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
@@ -71,10 +71,10 @@ class VxLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: Message):
-        if re.search(twitter_url, msg.content) or re.search(pixiv_url, msg.content):
+        if re.search(TWITTER_URL, msg.content) or re.search(PIXIV_URL, msg.content):
 
-            twitter_content = re.sub(twitter_url, r"\1vxtwitter.com", msg.content)
-            combine_content = re.sub(pixiv_url, r"\1phixiv.net", twitter_content)
+            twitter_content = re.sub(TWITTER_URL, r"\1vxtwitter.com", msg.content)
+            combine_content = re.sub(PIXIV_URL, r"\1phixiv.net", twitter_content)
 
             await self.send_webhook_message(msg.channel, msg, combine_content)
 
@@ -97,8 +97,8 @@ class VxLinks(commands.Cog):
 
             update_content = f"{after.content}\n\n[Original Message]({before.jump_url})"
 
-            update_content = re.sub(twitter_url, r"\1vxtwitter.com", update_content)
-            update_content = re.sub(pixiv_url, r"\1phixiv.net", update_content)
+            update_content = re.sub(TWITTER_URL, r"\1vxtwitter.com", update_content)
+            update_content = re.sub(PIXIV_URL, r"\1phixiv.net", update_content)
 
             await webhook_message.edit(content=update_content)
 
