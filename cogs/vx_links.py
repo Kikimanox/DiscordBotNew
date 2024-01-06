@@ -44,6 +44,9 @@ def convert_pixiv_links_to_markdown(text):
 
     return re.sub(PIXIV_URL, replace_link, text)
 
+def remove_mention(text):
+    return re.sub(r"<@!?(\d+)>", "", text)
+
 class VxLinks(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -106,8 +109,9 @@ class VxLinks(commands.Cog):
 
             twitter_content = convert_twitter_links_to_markdown(msg.content)
             combine_content = convert_pixiv_links_to_markdown(twitter_content)
+            no_mention = remove_mention(combine_content)
 
-            await self.send_webhook_message(msg.channel, msg, combine_content)
+            await self.send_webhook_message(msg.channel, msg, no_mention)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, user: Union[User, Member]):
@@ -134,6 +138,7 @@ class VxLinks(commands.Cog):
 
             update_content = convert_twitter_links_to_markdown(update_content)
             update_content = convert_pixiv_links_to_markdown(update_content)
+            update_content = remove_mention(update_content)
 
             await webhook_message.edit(content=update_content)
 
