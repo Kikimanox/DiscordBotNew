@@ -124,6 +124,10 @@ class VxLinks(commands.Cog):
             return
         if before.id in self.message_tracker.keys():
             webhook_message = self.message_tracker[before.id]
+
+            if webhook_message.id not in self.user_webhooks_ownership.keys():
+                return
+
             await after.edit(suppress=True)
 
             update_content = f"{after.content}\n\n[Original Message]({before.jump_url})"
