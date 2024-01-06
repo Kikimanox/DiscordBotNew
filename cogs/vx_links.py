@@ -44,8 +44,6 @@ def convert_pixiv_links_to_markdown(text):
 
     return re.sub(PIXIV_URL, replace_link, text)
 
-def remove_mention(text):
-    return re.sub(r"<@!?(\d+)>", "", text)
 
 class VxLinks(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -64,6 +62,15 @@ class VxLinks(commands.Cog):
                     if webhook.name == "vxlinks" and webhook.user == self.bot.user:
                         await webhook.delete()
         LOGGER.info("Finished checking all old webhooks")
+
+    async def remove_mention(self, text):
+        members = re.findall(r"<@!?(\d+)>", text)
+        for member in members:
+            user = await self.bot.fetch_user(member)
+            text = text.replace(f"<@{member}>", f"{user.display_name}")
+            text = text.replace(f"<@!{member}>", f"{user.display_name}")
+
+        return text
 
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
@@ -109,7 +116,7 @@ class VxLinks(commands.Cog):
 
             twitter_content = convert_twitter_links_to_markdown(msg.content)
             combine_content = convert_pixiv_links_to_markdown(twitter_content)
-            no_mention = remove_mention(combine_content)
+            no_mention = await self.remove_mention(combine_content)
 
             await self.send_webhook_message(msg.channel, msg, no_mention)
 
@@ -138,7 +145,7 @@ class VxLinks(commands.Cog):
 
             update_content = convert_twitter_links_to_markdown(update_content)
             update_content = convert_pixiv_links_to_markdown(update_content)
-            update_content = remove_mention(update_content)
+            update_content = await self.remove_mention(update_content)
 
             await webhook_message.edit(content=update_content)
 
