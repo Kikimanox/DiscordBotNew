@@ -34,7 +34,7 @@ def convert_twitter_links_to_markdown(text):
     return re.sub(TWITTER_URL, replace_link, text)
 
 def convert_pixiv_links_to_markdown(text):
-    markdown_link_format = "[PIXIV LINK]({})"
+    markdown_link_format = "[Pixiv]({})"
 
     def replace_link(match):
         url = match.group(0)
