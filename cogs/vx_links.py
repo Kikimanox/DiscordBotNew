@@ -72,6 +72,13 @@ class VxLinks(commands.Cog):
 
         return text
 
+    async def remove_role_mention(self, text):
+        roles = re.findall(r"<@&id>", text)
+        for role in roles:
+            text = text.replace(f"<@&{role.id}>", "")
+
+        return text
+
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
             channel = channel.parent
@@ -117,6 +124,7 @@ class VxLinks(commands.Cog):
             twitter_content = convert_twitter_links_to_markdown(msg.content)
             combine_content = convert_pixiv_links_to_markdown(twitter_content)
             no_mention = await self.remove_mention(combine_content)
+            no_mention = await self.remove_role_mention(no_mention)
 
             await self.send_webhook_message(msg.channel, msg, no_mention)
 
@@ -146,6 +154,7 @@ class VxLinks(commands.Cog):
             update_content = convert_twitter_links_to_markdown(update_content)
             update_content = convert_pixiv_links_to_markdown(update_content)
             update_content = await self.remove_mention(update_content)
+            update_content = await self.remove_role_mention(update_content)
 
             await webhook_message.edit(content=update_content)
 
