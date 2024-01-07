@@ -114,6 +114,9 @@ class VxLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: Message):
+        if msg.author.bot:
+            return
+
         pattern = r'(?:[^<]|^)(https?://(?:www\.)?)(twitter\.com|x\.com|pixiv\.net)(?:[^>]|$)'
         matches = re.search(pattern, msg.content)
         if matches:
@@ -124,6 +127,9 @@ class VxLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, user: Union[User, Member]):
+        if user.bot:
+            return
+        
         if reaction.message.id in self.user_webhooks_ownership.keys():
             user_id, _ = self.user_webhooks_ownership[reaction.message.id]
             if user.id == user_id:
@@ -133,6 +139,9 @@ class VxLinks(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: Message, after: Message):
+        if before.author.bot:
+            return
+
         if before.content == after.content:
             return
         if before.id in self.message_tracker.keys():
