@@ -117,7 +117,7 @@ class VxLinks(commands.Cog):
         if msg.author.bot:
             return
 
-        pattern = r'(?:[^<]|^)(https?://(?:www\.)?)(twitter\.com|x\.com|pixiv\.net)(?:[^>]|$)'
+        pattern = r'(?:[^<]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net)(?:[^>]|$)'
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
@@ -129,7 +129,7 @@ class VxLinks(commands.Cog):
     async def on_reaction_add(self, reaction: Reaction, user: Union[User, Member]):
         if user.bot:
             return
-        
+
         if reaction.message.id in self.user_webhooks_ownership.keys():
             user_id, _ = self.user_webhooks_ownership[reaction.message.id]
             if user.id == user_id:
