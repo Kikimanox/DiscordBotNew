@@ -60,6 +60,10 @@ class VxLinks(commands.Cog):
 
         self.user_webhooks_ownership: Dict[int, Tuple[int, WebhookMessage]] = {}
         self.message_tracker: Dict[int, WebhookMessage] = {}
+        self.channels_list = [
+            727951803521695795,
+            727951886896070658
+        ]
 
     async def cog_load(self) -> None:
         guilds = self.bot.guilds
@@ -116,6 +120,10 @@ class VxLinks(commands.Cog):
     async def on_message(self, msg: Message):
         if msg.author.bot:
             return
+        # Prevents the bot from sending messages in the vxlinks channels
+        if msg.guild is not None:
+            if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
+                return
 
         pattern = r'(?:[^<]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net)(?:[^>]|$)'
         matches = re.search(pattern, msg.content)
