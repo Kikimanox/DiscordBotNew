@@ -61,8 +61,9 @@ class VxLinks(commands.Cog):
         self.user_webhooks_ownership: Dict[int, Tuple[int, WebhookMessage]] = {}
         self.message_tracker: Dict[int, WebhookMessage] = {}
         self.channels_list = [
-            727951803521695795,
-            727951886896070658
+            727951803521695795, # mengo-tweets
+            727951886896070658, # onk-tweets
+            705264951367041086, # raw-spoilers
         ]
 
     async def cog_load(self) -> None:
