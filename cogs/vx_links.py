@@ -61,8 +61,9 @@ class VxLinks(commands.Cog):
         self.user_webhooks_ownership: Dict[int, Tuple[int, WebhookMessage]] = {}
         self.message_tracker: Dict[int, WebhookMessage] = {}
         self.channels_list = [
-            727951803521695795,
-            727951886896070658
+            727951803521695795, # mengo-tweets
+            727951886896070658, # onk-tweets
+            705264951367041086, # raw-spoilers
         ]
 
     async def cog_load(self) -> None:
@@ -169,6 +170,21 @@ class VxLinks(commands.Cog):
                 content=update_content,
                 allowed_mentions=AllowedMentions.none(),
             )
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, msg: Message):
+        if msg.author.bot:
+            return
+
+        if msg.id in self.message_tracker.keys():
+            webhook_message = self.message_tracker[msg.id]
+
+            if webhook_message.id not in self.user_webhooks_ownership.keys():
+                return
+
+            await webhook_message.delete()
+            self.user_webhooks_ownership.pop(webhook_message.id)
+            self.message_tracker.pop(msg.id)
 
 
 async def setup(bot: commands.Bot):
