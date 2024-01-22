@@ -170,6 +170,21 @@ class VxLinks(commands.Cog):
                 allowed_mentions=AllowedMentions.none(),
             )
 
+    @commands.Cog.listener()
+    async def on_message_delete(self, msg: Message):
+        if msg.author.bot:
+            return
+
+        if msg.id in self.message_tracker.keys():
+            webhook_message = self.message_tracker[msg.id]
+
+            if webhook_message.id not in self.user_webhooks_ownership.keys():
+                return
+
+            await webhook_message.delete()
+            self.user_webhooks_ownership.pop(webhook_message.id)
+            self.message_tracker.pop(msg.id)
+
 
 async def setup(bot: commands.Bot):
     ext = VxLinks(bot)
