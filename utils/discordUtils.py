@@ -57,7 +57,7 @@ async def getChannel(ctx, arg, silent=False):
     channels = []
     channel = arg.strip()
     if channel.startswith("<#") and channel.endswith(">"):
-        chan = ctx.guild.get_channel(int(channel[2:-1]))
+        chan = ctx.guild.get_channel_or_thread(int(channel[2:-1]))
         if chan:
             channels.append(chan)
     else:
