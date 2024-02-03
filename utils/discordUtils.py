@@ -10,6 +10,7 @@ import aiohttp
 import discord
 from discord import Embed
 from discord import File
+from discord.ext import commands
 
 from models.antiraid import ArGuild
 from models.bot import BotBlacklist, BotBanlist
@@ -53,15 +54,20 @@ def escape_at(content):
     return content.replace('@', '@\u200b')
 
 
-async def getChannel(ctx, arg, silent=False):
+async def getChannel(ctx: commands.Context, arg, silent=False):
     channels = []
     channel = arg.strip()
     if channel.startswith("<#") and channel.endswith(">"):
-        chan = ctx.guild.get_channel(int(channel[2:-1]))
+        chan = ctx.guild.get_channel_or_thread(int(channel[2:-1]))
         if chan:
             channels.append(chan)
     else:
         for chan in ctx.guild.text_channels:
+            if chan.name == channel or str(chan.id) == channel:
+                if chan.permissions_for(ctx.author).read_messages:
+                    channels.append(chan)
+                    break
+        for chan in ctx.guild.threads:
             if chan.name == channel or str(chan.id) == channel:
                 if chan.permissions_for(ctx.author).read_messages:
                     channels.append(chan)
