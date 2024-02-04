@@ -126,7 +126,7 @@ class VxLinks(commands.Cog):
             if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
                 return
 
-        pattern = r'(?:[^<\|]]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net)(?:[^>\|]|$)'
+        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net)(?:[^>\|\]]|$)'
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
