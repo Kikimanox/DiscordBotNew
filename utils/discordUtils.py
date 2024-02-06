@@ -58,16 +58,18 @@ async def getChannel(ctx: commands.Context, arg, silent=False):
     channels = []
     channel = arg.strip()
     if channel.startswith("<#") and channel.endswith(">"):
+        if ctx.guild is None:
+            return None
         chan = ctx.guild.get_channel_or_thread(int(channel[2:-1]))
         if chan:
             channels.append(chan)
     else:
-        for chan in ctx.guild.text_channels:
-            if chan.name == channel or str(chan.id) == channel:
-                if chan.permissions_for(ctx.author).read_messages:
-                    channels.append(chan)
-                    break
-        for chan in ctx.guild.threads:
+        guild = ctx.guild
+        if guild is None:
+            return None
+        channel_list_check = guild.text_channels + guild.voice_channels + list(guild.threads)+ guild.stage_channels
+
+        for chan in channel_list_check:
             if chan.name == channel or str(chan.id) == channel:
                 if chan.permissions_for(ctx.author).read_messages:
                     channels.append(chan)
