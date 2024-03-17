@@ -20,6 +20,7 @@ ERROR_LOGGER = logging.getLogger("error")
 
 TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com/\S*"
 PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
+REDDIT_URL = r"(https?://(?:www\.)?)reddit\.com/\S*"
 
 
 def remove_query_params(url):
@@ -71,6 +72,27 @@ def convert_pixiv_links_to_markdown(text):
 
     text = re.sub(markdown_link_pattern, replace_markdown_link, text)
     text = re.sub(PIXIV_URL, replace_link, text)
+
+    return text
+
+def convert_reddit_links_to_markdown(text):
+    markdown_link_format = "[Reddit]({})"
+    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
+
+    def replace_link(match):
+        url = match.group(0)
+        url = url.replace("reddit.com", "rxddit.com")
+        url = remove_query_params(url)
+        return markdown_link_format.format(url)
+
+    def replace_markdown_link(match):
+        url = match.group(1)
+        url = url.replace("reddit.com", "rxddit.com")
+        url = remove_query_params(url)
+        return match.group(0).replace(match.group(1), url)
+
+    text = re.sub(markdown_link_pattern, replace_markdown_link, text)
+    text = re.sub(REDDIT_URL, replace_link, text)
 
     return text
 
@@ -136,11 +158,12 @@ class VxLinks(commands.Cog):
             if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
                 return
 
-        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net)(?:[^>\|\]]|$)'
+        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|reddit\.com)(?:[^>\|\]]|$)'
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
             msg_content = convert_pixiv_links_to_markdown(msg_content)
+            msg_content = convert_reddit_links_to_markdown(msg_content)
 
             await self.send_webhook_message(msg.channel, msg, msg_content)
 
@@ -175,6 +198,7 @@ class VxLinks(commands.Cog):
 
             update_content = convert_twitter_links_to_markdown(update_content)
             update_content = convert_pixiv_links_to_markdown(update_content)
+            update_content = convert_reddit_links_to_markdown(update_content)
 
             await webhook_message.edit(
                 content=update_content,
