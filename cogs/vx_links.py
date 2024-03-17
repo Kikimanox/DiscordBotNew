@@ -102,12 +102,14 @@ def convert_tiktok_links_to_markdown(text):
 
     def replace_link(match):
         url = match.group(0)
+        url = url.replace("vt.tiktok.com", "tnktok.com")
         url = url.replace("tiktok.com", "tnktok.com")
         url = remove_query_params(url)
         return markdown_link_format.format(url)
 
     def replace_markdown_link(match):
         url = match.group(1)
+        url = url.replace("vt.tiktok.com", "tnktok.com")
         url = url.replace("tiktok.com", "tnktok.com")
         url = remove_query_params(url)
         return match.group(0).replace(match.group(1), url)
@@ -179,7 +181,7 @@ class VxLinks(commands.Cog):
             if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
                 return
 
-        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|tiktok\.com)(?:[^>\|\]]|$)'
+        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)'
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
