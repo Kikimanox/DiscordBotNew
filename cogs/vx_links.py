@@ -28,9 +28,9 @@ def remove_query_params(url):
     clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
     return clean_url
 
-
 def convert_twitter_links_to_markdown(text):
     markdown_link_format = "[Tweet]({})"
+    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
 
     def replace_link(match):
         url = match.group(0)
@@ -39,11 +39,23 @@ def convert_twitter_links_to_markdown(text):
         url = remove_query_params(url)
         return markdown_link_format.format(url)
 
-    return re.sub(TWITTER_URL, replace_link, text)
+    def replace_markdown_link(match):
+        url = match.group(1)
+        url = url.replace("twitter.com", "vxtwitter.com")
+        url = url.replace("x.com", "vxtwitter.com")
+        url = remove_query_params(url)
+        return match.group(0).replace(match.group(1), url)
+
+
+    text = re.sub(markdown_link_pattern, replace_markdown_link, text)
+    text = re.sub(TWITTER_URL, replace_link, text)
+
+    return text
 
 
 def convert_pixiv_links_to_markdown(text):
     markdown_link_format = "[Pixiv]({})"
+    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
 
     def replace_link(match):
         url = match.group(0)
@@ -51,7 +63,16 @@ def convert_pixiv_links_to_markdown(text):
         url = remove_query_params(url)
         return markdown_link_format.format(url)
 
-    return re.sub(PIXIV_URL, replace_link, text)
+    def replace_markdown_link(match):
+        url = match.group(1)
+        url = url.replace("pixiv.net", "phixiv.net")
+        url = remove_query_params(url)
+        return match.group(0).replace(match.group(1), url)
+
+    text = re.sub(markdown_link_pattern, replace_markdown_link, text)
+    text = re.sub(PIXIV_URL, replace_link, text)
+
+    return text
 
 
 class VxLinks(commands.Cog):
