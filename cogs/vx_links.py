@@ -66,17 +66,6 @@ class VxLinks(commands.Cog):
             705264951367041086, # raw-spoilers
         ]
 
-    async def cog_load(self) -> None:
-        guilds = self.bot.guilds
-        for guild in guilds:
-            channels = guild.text_channels + guild.forums + guild.voice_channels
-            for channel in channels:
-                webhooks = await channel.webhooks()
-                for webhook in webhooks:
-                    if webhook.name == "vxlinks" and webhook.user == self.bot.user:
-                        await webhook.delete()
-        LOGGER.info("Finished checking all old webhooks")
-
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
             channel = channel.parent
