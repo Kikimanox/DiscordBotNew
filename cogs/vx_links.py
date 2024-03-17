@@ -20,7 +20,7 @@ ERROR_LOGGER = logging.getLogger("error")
 
 TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com/\S*"
 PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
-REDDIT_URL = r"(https?://(?:www\.)?)reddit\.com/\S*"
+REDDIT_URL = r"(https?://(?:www\.|old\.|new\.)?)reddit\.com/\S*"
 TIKTOK_URL = r"(https?://(?:www\.|vt\.)?)tiktok\.com/\S*"
 
 def remove_query_params(url):
@@ -179,7 +179,7 @@ class VxLinks(commands.Cog):
             if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
                 return
 
-        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|reddit\.com|tiktok\.com)(?:[^>\|\]]|$)'
+        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|tiktok\.com)(?:[^>\|\]]|$)'
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
