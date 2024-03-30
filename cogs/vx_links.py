@@ -182,7 +182,10 @@ class VxLinks(commands.Cog):
                 return
 
         pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)'
-        matches = re.search(pattern, msg.content)
+        code_block_pattern = r'(`{1,3})(?:.*?)\b(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)\b(?:.*?)(`{1,3})'
+
+        combined_pattern = f"{pattern}&{code_block_pattern}"
+        matches = re.search(combined_pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
             msg_content = convert_pixiv_links_to_markdown(msg_content)
