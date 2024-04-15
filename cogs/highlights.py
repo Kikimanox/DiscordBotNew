@@ -10,7 +10,7 @@ import discord
 from discord import ClientUser
 from discord.ext import commands
 
-from utils.checks import manage_roles_check
+from utils.checks import admin_check
 from utils.dataIOa import dataIOa
 
 SPOILER_SETTINGS_JSON = "settings/spoiler_settings.json"
@@ -96,7 +96,7 @@ class Highlights(commands.Cog):
         parent_channel = channel.parent if hasattr(channel, "parent") else channel
         return channel, parent_channel
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @commands.command(aliases=["initialize_smuglights"])
     async def initialize_highlights(self, ctx):
         """First-time initialization command. Run once to initialize highlights settings and configurations on the global bot scope."""
@@ -139,7 +139,7 @@ class Highlights(commands.Cog):
             "Initialized default highlights settings for this server. View and edit them with `.smugsettings view/edit` alias: `.highlightsettings view/edit`"
         )
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @commands.command(aliases=["togglesmuglights"])
     async def togglehighlights(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel] = None):
         """Toggle highlights on or off for the entire server or specific channels."""
@@ -166,7 +166,7 @@ class Highlights(commands.Cog):
         self.highlights_settings[str(ctx.guild.id)] = guild_highlights_settings
         dataIOa.save_json(HIGHLIGHTS_THRESHOLD_JSON, self.highlights_settings)
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @commands.command(aliases=["highlightsthreshold"])
     async def smugthreshold(self, ctx, *channels: Union[discord.Thread, discord.abc.GuildChannel]):
         """View the current threshold for number of unique users needing to react to a message in order to hit the highlights channel."""
@@ -180,7 +180,7 @@ class Highlights(commands.Cog):
             txt += f"\n{channel.mention}: {required_stars} | {formula}"
         await ctx.send(f"Required stars for:{txt}")
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @commands.command(aliases=["smuglights_channel"])
     async def highlights_channel(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel] = None):
         """Set the highlights channel where highlights get posted. Provide no channel to remove (same as disabling highlights across the entire server with `.togglehiglights`)."""
@@ -197,7 +197,7 @@ class Highlights(commands.Cog):
             )
         dataIOa.save_json(HIGHLIGHTS_THRESHOLD_JSON, self.highlights_settings)
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @commands.command(aliases=["spoiler_smuglights_channel"])
     async def spoiler_highlights_channel(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel] = None):
         """Set the spoiler highlights channel where highlights from spoiler channels get posted. NOTE: `.highlights_channel` must be configured as well in order to function. Provide no channel to remove (will default to regular highlights)."""
@@ -214,14 +214,14 @@ class Highlights(commands.Cog):
             )
         dataIOa.save_json(HIGHLIGHTS_THRESHOLD_JSON, self.highlights_settings)
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @commands.group(aliases=["highlightssettings"])
     async def smugsettings(self, ctx):
         """View and configure settings for determining message highlight thresholds."""
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @smugsettings.group()
     async def edit(self, ctx, setting_key: str, value: float):
         """Configure settings for determining message highlight thresholds.
@@ -274,7 +274,7 @@ class Highlights(commands.Cog):
             dataIOa.save_json(HIGHLIGHTS_THRESHOLD_JSON, self.highlights_settings)
         await ctx.send(f"Saved setting {setting_key} with value {value}")
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @smugsettings.group()
     async def upscale(self, ctx, channel: Union[discord.Thread, discord.abc.GuildChannel], value: int):
         """Temporarily upscale the threshold for an unusually active channel. Downscaling can also be done by giving a negative number.
@@ -289,7 +289,7 @@ class Highlights(commands.Cog):
         else:
             await ctx.send(f"Successfully removed threshold upscale for {channel}")
 
-    @commands.check(manage_roles_check)
+    @commands.check(admin_check)
     @smugsettings.command()
     async def view(self, ctx):
         """View highlights settings."""
