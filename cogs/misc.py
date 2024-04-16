@@ -311,10 +311,12 @@ class Misc(commands.Cog):
                                 del self.was_just_pinged[ment.id]
                         else:
                             self.was_just_pinged[ment.id] = now
-                        await message.channel.send(f'{ment.display_name.replace("@", "\@")} is currently away due to{rsn} '
+                        mp = ment.display_name.replace("@", "@\u200b")
+                        await message.channel.send(f'{mp} is currently away due to{rsn} '
                                                    f'(since {tt} ago)')
                     else:
-                        await message.channel.send(f'{ment.display_name.replace("@", "\@")} is currently away '
+                        mp = ment.display_name.replace("@", "\@u200b")
+                        await message.channel.send(f'{mp} is currently away '
                                                    f'(since {tt} ago)')
 
 
