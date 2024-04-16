@@ -228,7 +228,9 @@ class Fun(commands.Cog):
                 return await ctx.send(f"{member.mention} you have no claim history for the "
                                       f"**{claim_type}** command")
             else:
-                return await ctx.send(f"{member.display_name} has no claim history for the "
+                mp = member.display_name.replace("@", "\@u200b")
+
+                return await ctx.send(f"{mp} has no claim history for the "
                                       f"**{claim_type}** command")
         his['last_3_claims'][0] += ' (last claim)'
 
