@@ -44,6 +44,7 @@ class Fun(commands.Cog):
             await self.bot.wait_until_ready()
         try:
             self.data = await ClaimsManager.get_data_from_server(self.bot, conf)
+            d = 0
         except:
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             error_logger.error(f"Claims data not loaded\n{traceback.format_exc()}")

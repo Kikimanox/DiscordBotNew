@@ -110,7 +110,9 @@ class ClaimsManager:
             if not g:
                 raise Exception(f"Can't find the claims guild {G}")
             for k, v in config['saves_guild'][G]['categories'].items():
-                if k not in possible_for_bot: continue
+                if k not in possible_for_bot:
+                    continue
+                d = 0
 
                 # for i in {1..35}; do curl -v -X GET https://bestdori.com/api/characters/$i.json > $i.json; end; done
                 # curl -v -X GET https://bestdori.com/api/characters/main.3.json > characters.main.3.json (not needed)
@@ -207,6 +209,7 @@ class ClaimsManager:
                             pics[char_key][0].append([type('obj', (object,), {'url': trained_url}), False])
 
                     ret[k] = pics
+                    continue
 
                 cat = g.get_channel(v)
                 pics = {}
