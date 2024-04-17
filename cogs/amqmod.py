@@ -21,6 +21,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver import ActionChains
+from webdriver_manager.chrome import ChromeDriverManager
 
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -416,7 +417,8 @@ return ret_7
             options.add_argument('window-size=1920x1080')
             options.binary_location = r"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
             c = r"A:\\Unsorted\\old-desktop-junk\\chromedriver_win32\\chromedriver.exe"
-            driver = webdriver.Chrome(c, chrome_options=options)
+            # driver = webdriver.Chrome(c, chrome_options=options)
+            driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
 
             if start_from_page < 0 and start_from_page != -999:
                 await ctx.send("🔸 Skipping crawl")
@@ -1084,7 +1086,21 @@ return ret_7
             out = f'tmp/amq/{upl["annID"]}_{upl["annSongId"]}_{ee}.mp3'
 
             if not os.path.exists(out) or (os.path.exists(out) and (out not in uploaded)):
-                fil = upl[ll].replace('ladist1.', 'nl.')  # actually just use NL now that it's active
+                fil = upl[ll].replace('ladist1.catbox.video', 'nl.catbox.moe')  # actually just use NL now that it's active
+
+                async def check_url(url):
+                    async with aiohttp.ClientSession() as session:
+                        async with session.head(url) as response:
+                            return response.status
+
+                status = 500
+                try:
+                    status = await check_url(fil)
+                except:
+                    pass
+                if status != 200:
+                    fil = fil.replace('nl.catbox.moe', 'ladist1.catbox.video')
+
                 await ctx.send(f"[{len(list(set(uploaded)))}/{total}] Creating **{out}** from <{fil}>")
                 if os.path.exists(out):
                     os.remove(out)  # we go agane

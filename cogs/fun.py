@@ -105,6 +105,10 @@ class Fun(commands.Cog):
         else:
             ar = str(claim_types[0]).split(' ')
         to_claim = list(set(ar) & set(possible_for_bot))
+
+        if len(to_claim) > 9:
+            return await ctx.send("You can only claim up to 9 types at a time.")
+
         if not to_claim:
             return await ctx.send(f"None of your claim_types were valid.\nYou can do `{dutils.bot_pfx_by_ctx(ctx)}"
                                   f"claim multi {' '.join(possible_for_bot)}` (leaving out those that you don't want"
