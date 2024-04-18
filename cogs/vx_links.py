@@ -23,6 +23,8 @@ PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
 REDDIT_URL = r"(https?://(?:www\.|old\.|new\.)?)reddit\.com/\S*"
 TIKTOK_URL = r"(https?://(?:www\.|vt\.)?)tiktok\.com/\S*"
 
+EXCLUDED_SERVERS = [920092394945384508, 599963725352534027]
+
 def remove_query_params(url):
     parsed = urlparse(url)
     # Reconstruct the URL without query parameters
@@ -180,6 +182,9 @@ class VxLinks(commands.Cog):
         if msg.guild is not None:
             if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
                 return
+
+        if msg.guild.id in EXCLUDED_SERVERS:
+            return
 
         pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)'
         matches = re.search(pattern, msg.content)
