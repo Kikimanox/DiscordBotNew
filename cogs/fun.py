@@ -346,21 +346,26 @@ class Fun(commands.Cog):
                     d = {k: v for k, v in d.items() if not k.startswith(dab)}
             ######################## / extra for raiha only
             u = UserSettings.get_or_none(user=ctx.author.id, type=c_type)
-            while True:
+            async with aiohttp.ClientSession() as session:
                 orig_key = random.choice(list(d))
                 orig_key_split = orig_key.split('_')
                 color = int(orig_key_split[1], 16)
-                got = random.choice(d[orig_key][0])  # attachements list on index 0
-                attachement = got[0]  # urls
-                is_nsfw = got[1]
-                if not u:
-                    break
-                if u.nsfw == 'off' and not is_nsfw:
-                    break
-                if u.nsfw == 'default':
-                    break
-                if u.nsfw == 'off' and is_nsfw:
-                    continue
+                while True:
+                    got = random.choice(d[orig_key][0])  # attachements list on index 0
+                    attachement = got[0]  # urls
+                    is_nsfw = got[1]
+                    async with session.head(attachement.url) as response:
+                        if response.status == 200:
+                            if not u:
+                                break
+                            if u.nsfw == 'off' and not is_nsfw:
+                                break
+                            if u.nsfw == 'default':
+                                break
+                            if u.nsfw == 'off' and is_nsfw:
+                                continue
+                        else:
+                            continue
 
             em = None
 
