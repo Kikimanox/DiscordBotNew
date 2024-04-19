@@ -351,7 +351,7 @@ class Fun(commands.Cog):
                 orig_key_split = orig_key.split('_')
                 color = int(orig_key_split[1], 16)
                 while True:
-                    got = random.choice(d[orig_key][0])  # attachements list on index 0
+                    got = random.choice(d[orig_key][0])  # attachments list on index 0
                     attachement = got[0]  # urls
                     is_nsfw = got[1]
                     async with session.head(attachement.url) as response:
