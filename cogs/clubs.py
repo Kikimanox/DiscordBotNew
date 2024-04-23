@@ -82,7 +82,6 @@ ACCESS_LEVEL_MAP = {
     AccessLevel.PUBLIC: "public",
 }
 
-
 DESCRIPTION_STRING = "0"
 ROLE_STRING = "1"
 APPROVAL_LISTENER_STRING = "4"
@@ -161,7 +160,6 @@ USER_METADATA_DEFAULTS = {
 LINK_METADATA_DEFAULTS = {
     PERMISSIONS_STRING: Permissions.USER,
 }
-
 
 MAX_DESCRIPTION_LEN = 1000
 MAX_CLUB_NAME_LENGTH = 64
@@ -328,8 +326,8 @@ class ClubManager(ClubManagerCommons):
         return self.exists_common(
             ClubToUser,
             lambda: (
-                (ClubToUser.club == Club.get(Club.ident == club))
-                & (ClubToUser.user == User.get(User.ident == user_id))
+                    (ClubToUser.club == Club.get(Club.ident == club))
+                    & (ClubToUser.user == User.get(User.ident == user_id))
             ),
         )
 
@@ -354,8 +352,8 @@ class ClubManager(ClubManagerCommons):
             self.delete_common(
                 ClubToUser,
                 lambda: (
-                    (ClubToUser.club == Club.get(Club.ident == club))
-                    & (ClubToUser.user == User.get(User.ident == user_id))
+                        (ClubToUser.club == Club.get(Club.ident == club))
+                        & (ClubToUser.user == User.get(User.ident == user_id))
                 ),
             )
             club_metadata = self.get_club_metadata(club)
@@ -369,8 +367,8 @@ class ClubManager(ClubManagerCommons):
         return self.get_metadata_common(
             ClubToUser,
             lambda: (
-                (ClubToUser.club == Club.get(Club.ident == club))
-                & (ClubToUser.user == User.get(User.ident == user_id))
+                    (ClubToUser.club == Club.get(Club.ident == club))
+                    & (ClubToUser.user == User.get(User.ident == user_id))
             ),
             LINK_METADATA_DEFAULTS,
         )
@@ -379,8 +377,8 @@ class ClubManager(ClubManagerCommons):
         return self.edit_metadata_common(
             ClubToUser,
             lambda: (
-                (ClubToUser.club == Club.get(Club.ident == club))
-                & (ClubToUser.user == User.get(User.ident == user_id))
+                    (ClubToUser.club == Club.get(Club.ident == club))
+                    & (ClubToUser.user == User.get(User.ident == user_id))
             ),
             LINK_METADATA_DEFAULTS,
             **metadata,
@@ -513,7 +511,7 @@ club_manager = SoftDeleteClubManager()
 
 
 def permissions_check(
-    *, club_name_position, requires_president=True, server_mods_capable=True
+        *, club_name_position, requires_president=True, server_mods_capable=True
 ):
     async def predicate(ctx):
         # Help text runs this check for subcommands, so we'll return true to show all
@@ -521,7 +519,7 @@ def permissions_check(
             return True
         try:
             club = (
-                ctx.message.content[len(ctx.prefix) :]
+                ctx.message.content[len(ctx.prefix):]
                 .split()[club_name_position]
                 .lower()
             )
@@ -556,20 +554,20 @@ def club_manage_messages_check():
         if ctx.message.content.startswith(f"{ctx.prefix}help"):
             return True
         if not club_json or (
-            CLUB_JSON_CATEGORY not in club_json
-            and CLUB_JSON_ACCESS_ROLE not in club_json
+                CLUB_JSON_CATEGORY not in club_json
+                and CLUB_JSON_ACCESS_ROLE not in club_json
         ):
             return False
         else:
             return ctx.channel.category_id == int(club_json[CLUB_JSON_CATEGORY]) and (
-                ctx.author.id == ctx.bot.config["OWNER_ID"]
-                or (
-                    isinstance(ctx.author, discord.Member)
-                    and (
-                        ctx.author.guild_permissions.manage_messages
-                        or ctx.channel.permissions_for(ctx.author).manage_messages
+                    ctx.author.id == ctx.bot.config["OWNER_ID"]
+                    or (
+                            isinstance(ctx.author, discord.Member)
+                            and (
+                                    ctx.author.guild_permissions.manage_messages
+                                    or ctx.channel.permissions_for(ctx.author).manage_messages
+                            )
                     )
-                )
             )
 
     return commands.check(predicate)
@@ -690,7 +688,7 @@ class Clubs(commands.Cog):
         return ping_str_list
 
     async def join_helper(
-        self, ctx, club: str, user_id: str, permissions=Permissions.USER
+            self, ctx, club: str, user_id: str, permissions=Permissions.USER
     ):
         """Helper function to wrap user creation (if they don't
         exist) and link creation. You must validate that the
@@ -784,7 +782,7 @@ class Clubs(commands.Cog):
                         u: m
                         for u, m in club_users.items()
                         if m[LINK_METADATA_STRING][PERMISSIONS_STRING]
-                        == Permissions.MODERATOR
+                           == Permissions.MODERATOR
                     }
                     try:
                         new_president_id = (
@@ -874,7 +872,7 @@ class Clubs(commands.Cog):
             )
 
     async def channel_init_helper(
-        self, guild, club, channel_obj, category_id, club_access_role_id
+            self, guild, club, channel_obj, category_id, club_access_role_id
     ):
         """Helper that handles all channel properties. Assumes the channel exists and club is valid."""
         club = club.lower()
@@ -890,7 +888,7 @@ class Clubs(commands.Cog):
         )
         overwrites[public_room_access_role] = discord.PermissionOverwrite(
             read_messages=(
-                club_metadata[ROOM_ACCESS_LEVEL_STRING] == AccessLevel.PUBLIC
+                    club_metadata[ROOM_ACCESS_LEVEL_STRING] == AccessLevel.PUBLIC
             )
         )
 
@@ -903,8 +901,8 @@ class Clubs(commands.Cog):
                         read_messages=True,
                         manage_messages=True
                         if (
-                            md[LINK_METADATA_STRING][PERMISSIONS_STRING]
-                            in [Permissions.MODERATOR, Permissions.PRESIDENT]
+                                md[LINK_METADATA_STRING][PERMISSIONS_STRING]
+                                in [Permissions.MODERATOR, Permissions.PRESIDENT]
                         )
                         else None,
                     )
@@ -1015,7 +1013,7 @@ class Clubs(commands.Cog):
             await self.closest_club(ctx, club)
 
     async def edit_link_metadata(
-        self, ctx, club, user_id, thing, metadata, silent=False
+            self, ctx, club, user_id, thing, metadata, silent=False
     ):
         club = club.lower()
         if self.club_manager.link_exists(club, user_id):
@@ -1032,8 +1030,8 @@ class Clubs(commands.Cog):
                             read_messages=permissions.read_messages,
                             manage_messages=True
                             if (
-                                metadata[PERMISSIONS_STRING]
-                                in [Permissions.MODERATOR, Permissions.PRESIDENT]
+                                    metadata[PERMISSIONS_STRING]
+                                    in [Permissions.MODERATOR, Permissions.PRESIDENT]
                             )
                             else None,
                         )
@@ -1215,11 +1213,12 @@ class Clubs(commands.Cog):
                 await approval_msg.add_reaction("✅")
                 await approval_msg.add_reaction("❌")
             await ctx.send(
-                f"Successfully created club and added you to it!\n\nNote: A mod will still need to approve this club. In the event of a veto, the club will be deleted.\n\nGet others to join this club by having them type `.join {club}` Anyone can then ping all the members of the club with the command `.ping {club}` or `.pingclub {club}`"
+                f"Successfully created club and added you to it!\n\nNote: A mod will still need to approve this club. In the event of a veto, the club will be deleted.\n\nGet others to join this club by having them type `[p]join {club}` Anyone can then ping all the members of the club with the command `[p]ping {club}` or `[p]"
+                f"pingclub {club}`"
             )
         else:
             raise InvalidCommandUsage(
-                "This club already exists. View a list of clubs with `.club list`"
+                "This club already exists. View a list of clubs with `[p]club list`"
             )
 
     @club.command()
@@ -1695,13 +1694,13 @@ class Clubs(commands.Cog):
             await ctx.send("Done.", delete_after=3)
 
     async def club_list_printer(
-        self,
-        ctx,
-        title,
-        clubs,
-        *,
-        compact=False,
-        sort_string=MEMBERCOUNT_STRING,
+            self,
+            ctx,
+            title,
+            clubs,
+            *,
+            compact=False,
+            sort_string=MEMBERCOUNT_STRING,
     ):
         sort_functions = {
             PINGCOUNT_STRING: lambda lst: lst.sort(
@@ -1731,7 +1730,7 @@ class Clubs(commands.Cog):
             )
             desc = []
             footer = ["Available sorting options: pings, recent, members, alphabetical"]
-            for club in clubs_iterator[index : index + items_per_page]:
+            for club in clubs_iterator[index: index + items_per_page]:
                 if compact:
                     max_length = 60 - len(club)
                     club_desc = clubs[club][DESCRIPTION_STRING].splitlines()[0]
@@ -1840,13 +1839,13 @@ class Clubs(commands.Cog):
                         f"`room:{ACCESS_LEVEL_MAP[md[METADATA_STRING][ROOM_ACCESS_LEVEL_STRING]]}`"
                     )
                 if (
-                    md[LINK_METADATA_STRING][PERMISSIONS_STRING]
-                    == Permissions.PRESIDENT
+                        md[LINK_METADATA_STRING][PERMISSIONS_STRING]
+                        == Permissions.PRESIDENT
                 ):
                     parameters.append("`president`")
                 elif (
-                    md[LINK_METADATA_STRING][PERMISSIONS_STRING]
-                    == Permissions.MODERATOR
+                        md[LINK_METADATA_STRING][PERMISSIONS_STRING]
+                        == Permissions.MODERATOR
                 ):
                     parameters.append("`moderator`")
                 modified_club_dict[
@@ -1909,10 +1908,10 @@ class Clubs(commands.Cog):
         results = {}
         for club, md in clubs.items():
             if any(
-                [
-                    keyword in club.lower() or keyword in md[DESCRIPTION_STRING].lower()
-                    for keyword in keywords
-                ]
+                    [
+                        keyword in club.lower() or keyword in md[DESCRIPTION_STRING].lower()
+                        for keyword in keywords
+                    ]
             ):
                 parameters = []
                 if md[ACCESS_LEVEL_STRING] != AccessLevel.STANDARD:
@@ -2009,13 +2008,13 @@ class Clubs(commands.Cog):
             club_mods = []
             for member, md in club_users.items():
                 if (
-                    md[LINK_METADATA_STRING][PERMISSIONS_STRING]
-                    == Permissions.PRESIDENT
+                        md[LINK_METADATA_STRING][PERMISSIONS_STRING]
+                        == Permissions.PRESIDENT
                 ):
                     club_president = member
                 elif (
-                    md[LINK_METADATA_STRING][PERMISSIONS_STRING]
-                    == Permissions.MODERATOR
+                        md[LINK_METADATA_STRING][PERMISSIONS_STRING]
+                        == Permissions.MODERATOR
                 ):
                     club_mods.append(member)
             em = discord.Embed(
@@ -2116,7 +2115,7 @@ class Clubs(commands.Cog):
                         description="\n".join(
                             [
                                 str(ctx.guild.get_member(int(user)))
-                                for user in users[index : index + members_per_page]
+                                for user in users[index: index + members_per_page]
                             ]
                         ),
                     )
@@ -2138,14 +2137,14 @@ class Clubs(commands.Cog):
         await self.bot.wait_until_ready()
         # Handles approvals of clubs
         if (
-            event.message_id in self.approvals
-            and event.emoji.name in ["✅", "❌"]
+                event.message_id in self.approvals
+                and event.emoji.name in ["✅", "❌"]
         ):
             channel = self.bot.get_channel(event.channel_id)
             user = channel.guild.get_member(event.user_id)
             if (
-                channel.permissions_for(user).manage_roles
-                and user.id != channel.guild.me.id
+                    channel.permissions_for(user).manage_roles
+                    and user.id != channel.guild.me.id
             ):
                 msg = await self.bot.get_channel(event.channel_id).fetch_message(
                     event.message_id
@@ -2165,9 +2164,9 @@ class Clubs(commands.Cog):
                 await msg.add_reaction("👌")
         # Handles reactions to pings
         if (
-            event.message_id in self.react_listeners
-            and event.user_id != self.bot.user.id
-            and event.user_id not in self.react_listeners[event.message_id][0]
+                event.message_id in self.react_listeners
+                and event.user_id != self.bot.user.id
+                and event.user_id not in self.react_listeners[event.message_id][0]
         ):
             reacted_users, clubs, _ = self.react_listeners[event.message_id]
             reacted_users.add(event.user_id)
@@ -2216,8 +2215,8 @@ class Clubs(commands.Cog):
             if metadata_dict[club]:
                 member_dict[club] = self.club_manager.get_club_users(club)
                 if (
-                    str(ctx.author.id) not in member_dict[club]
-                    and metadata_dict[club][ACCESS_LEVEL_STRING] != AccessLevel.PUBLIC
+                        str(ctx.author.id) not in member_dict[club]
+                        and metadata_dict[club][ACCESS_LEVEL_STRING] != AccessLevel.PUBLIC
                 ):
                     return await ctx.send(
                         f"`{club}` doesn't allow public pings and you're not a member; cannot ping.",
@@ -2243,13 +2242,13 @@ class Clubs(commands.Cog):
                         allowed_mentions=discord.AllowedMentions.none(),
                     )
                 if (
-                    datetime.now().timestamp()
-                    - int(metadata_dict[club][LAST_PING_TIMESTAMP_STRING])
+                        datetime.now().timestamp()
+                        - int(metadata_dict[club][LAST_PING_TIMESTAMP_STRING])
                 ) < metadata_dict[club][RATE_LIMIT_STRING]:
                     time_left = (
-                        int(metadata_dict[club][LAST_PING_TIMESTAMP_STRING])
-                        + metadata_dict[club][RATE_LIMIT_STRING]
-                        - int(datetime.now().timestamp())
+                            int(metadata_dict[club][LAST_PING_TIMESTAMP_STRING])
+                            + metadata_dict[club][RATE_LIMIT_STRING]
+                            - int(datetime.now().timestamp())
                     )
                     return await ctx.send(
                         f"`{club}` is rate-limited. Please wait `{time_seconds_to_string(time_left)}`.",
@@ -2365,7 +2364,7 @@ class Clubs(commands.Cog):
         """Restore a club backup. This should only be used in emergencies."""
         if not os.path.exists(f"{BACKUP_DIR}/{backup}"):
             return await ctx.send(
-                f"Backup with name `{backup}` doesn't exist. Try `.clubutils backup list`"
+                f"Backup with name `{backup}` doesn't exist. Try `[p]clubutils backup list`"
             )
         await ctx.send(
             "Are you sure? (y/n) Make sure you create a backup before restoring because the database CANNOT be restored."
@@ -2391,6 +2390,7 @@ class Clubs(commands.Cog):
         """Club system consistency check.
         Cleans dangling users and manages clubs.
         """
+
         # I could split this one out into a subgroup but this'll be so rarely used that I didn't bother
         async def clean_users():
             all_users = self.club_manager.get_all_users()
@@ -2445,8 +2445,8 @@ class Clubs(commands.Cog):
             for club, metadata in all_clubs.items():
                 club = club.lower()
                 if (
-                    metadata[ROLE_STRING]
-                    and ctx.guild.get_role(int(metadata[ROLE_STRING])) is None
+                        metadata[ROLE_STRING]
+                        and ctx.guild.get_role(int(metadata[ROLE_STRING])) is None
                 ):
                     log.append(f"Cleaned role metadata for: '{club}'")
                     self.club_manager.edit_club_metadata(club, **{ROLE_STRING: None})
@@ -2462,8 +2462,8 @@ class Clubs(commands.Cog):
             for club, metadata in all_clubs.items():
                 club = club.lower()
                 if (
-                    metadata[CHANNEL_ID_STRING]
-                    and ctx.guild.get_channel(int(metadata[CHANNEL_ID_STRING])) is None
+                        metadata[CHANNEL_ID_STRING]
+                        and ctx.guild.get_channel(int(metadata[CHANNEL_ID_STRING])) is None
                 ):
                     log.append(f"Cleaned channel metadata for: '{club}'")
                     self.club_manager.edit_club_metadata(
@@ -2836,7 +2836,6 @@ async def setup(
     clubs = Clubs(bot)
     await bot.add_cog(clubs)
     # await bot.loop.create_task(clubs.time_mute_check())
-
 
 # def pre_setup(bot):
 #     try:
