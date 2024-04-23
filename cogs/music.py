@@ -199,7 +199,7 @@ class Music(commands.Cog):
             raise Exception(ex)
 
     @commands.cooldown(1, 25, commands.BucketType.user)
-    @commands.command(aliases=['pm'])
+    @commands.command(aliases=['plm'])
     async def playmultiple(self, ctx, *, query):
         """
         Add multiple songs to the queue (delimiter: `|`)

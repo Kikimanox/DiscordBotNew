@@ -1213,8 +1213,8 @@ class Clubs(commands.Cog):
                 await approval_msg.add_reaction("✅")
                 await approval_msg.add_reaction("❌")
             await ctx.send(
-                f"Successfully created club and added you to it!\n\nNote: A mod will still need to approve this club. In the event of a veto, the club will be deleted.\n\nGet others to join this club by having them type `[p]join {club}` Anyone can then ping all the members of the club with the command `[p]ping {club}` or `[p]"
-                f"pingclub {club}`"
+                f"Successfully created club and added you to it!\n\nNote: A mod will still need to approve this club. In the event of a veto, the club will be deleted.\n\nGet others to join this club by having them type `[p]join {club}` Anyone can then ping all the members of the club with the command `[p]ping {club}` or `[p]pingclub {club}`".replace(
+                    '[p]', dutils.bot_pfx_by_ctx(ctx))
             )
         else:
             raise InvalidCommandUsage(
@@ -1299,7 +1299,7 @@ class Clubs(commands.Cog):
 
     @club.group(aliases=["e"])
     async def edit(self, ctx):
-        """Functionality related to editing clubs."""
+        """Functionality related to editing clubs. (ratelimit, description, banner, thumbnail, colour, access)"""
         if ctx.invoked_subcommand is None:
             raise commands.errors.BadArgument
 
@@ -2192,7 +2192,7 @@ class Clubs(commands.Cog):
         club = club.lower()
         return await self.ping_helper(ctx, [club])
 
-    @commands.command(aliases=["pingmulti", "multiping", "pa", "pm", "mp"])
+    @commands.command(aliases=["pingmulti", "multiping", "pa", "pm"])
     async def pingall(self, ctx, *, clubs: str):
         """Ping all members of multiple clubs. Ie `[p]pingall pcmasterrace fancomics`"""
         clubs = clubs.split()
