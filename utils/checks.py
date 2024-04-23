@@ -1,3 +1,7 @@
+import aiohttp
+from PIL import Image
+from io import BytesIO
+
 from discord import Member
 from discord.ext import commands
 
@@ -156,3 +160,27 @@ async def light_server_check_admin(ctx):
     if ctx.guild and ctx.guild.id != 464231424820772866: return False
     return ctx.author.id == ctx.bot.config['OWNER_ID'] or (
             isinstance(ctx.author, Member) and ctx.author.guild_permissions.administrator)
+
+async def _is_url_image_common(image_url, download=False):
+    image_formats = ("image/png", "image/jpeg", "image/jpg", "image/gif", "image/x-icon")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(image_url) as resp:
+                if resp.status == 200:
+                    if resp.headers["content-type"] in image_formats:
+                        return (await resp.read()) if download else resp
+    except aiohttp.client_exceptions.InvalidURL:
+        pass
+    return None
+
+async def is_url_image(image_url):
+    return await _is_url_image_common(image_url) is not None
+
+async def is_url_image_of_ratio(image_url, ratio):
+    resp = await _is_url_image_common(image_url, True)
+    if resp:
+        im = Image.open(BytesIO(resp))
+        width, height = im.size
+        return (width / height) >= ratio
+    else:
+        return False

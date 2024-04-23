@@ -1109,8 +1109,8 @@ class Ignorethis(commands.Cog):
         return SequenceMatcher(None, a, b).ratio()
 
 
-async def setup(
-        bot: commands.Bot
-):
-    ext = Ignorethis(bot)
-    await bot.add_cog(ext)
+# async def setup(
+#         bot: commands.Bot
+# ):
+#     ext = Ignorethis(bot)
+#     await bot.add_cog(ext)
