@@ -63,7 +63,6 @@ REPORTS_DB_PATH = "data/reports.db"
 REPORTS_TABLE_NAME = "report_table"
 USER_TRUST_TABLE_NAME = "user_trust_table"
 
-
 Base = declarative_base()
 
 
@@ -156,7 +155,7 @@ class Reports(commands.Cog):
         return self.reports_json[guild_id_str].get(key)
 
     def update_reports_setting(
-        self, guild_id: int, parameter: str, value: Any
+            self, guild_id: int, parameter: str, value: Any
     ) -> Dict[str, Any]:
         guild_id_str = str(guild_id)
         self.ensure_reports_configured(guild_id)
@@ -172,7 +171,7 @@ class Reports(commands.Cog):
             raise commands.errors.BadArgument
 
     async def send_guild_settings(
-        self, channel: discord.TextChannel, guild_settings: Dict[str, Any]
+            self, channel: discord.TextChannel, guild_settings: Dict[str, Any]
     ) -> None:
         await channel.send(
             f"Guild settings:\n```json\n{json.dumps(guild_settings, indent=4)}\n```"
@@ -266,18 +265,19 @@ class Reports(commands.Cog):
                 session.query(TrustedUsers.user_id, TrustedUsers.trust_score)
                 .filter_by(guild_id=ctx.guild.id)
                 .order_by(
-                    TrustedUsers.trust_score.desc(), TrustedUsers.report_count.desc(), TrustedUsers.last_report_timestamp.desc()
+                    TrustedUsers.trust_score.desc(), TrustedUsers.report_count.desc(),
+                    TrustedUsers.last_report_timestamp.desc()
                 )
                 .limit(10)
                 .all()
             )
-            
+
             trusted_users_stats = {}
             for user in trusted_users:
                 trusted_user_recent_ack_reports = (
                     session.query(ReportLog)
                     .filter_by(guild_id=ctx.guild.id, acknowledged=AcknowledgementLevel.GOOD_ACK.value)
-                    .filter(ReportLog.timestamp >= int((datetime.now() - timedelta(days=days+1)).timestamp()))
+                    .filter(ReportLog.timestamp >= int((datetime.now() - timedelta(days=days + 1)).timestamp()))
                     .filter(ReportLog.timestamp <= int((datetime.now() - timedelta(days=1)).timestamp()))
                     .filter(ReportLog.reporters.like(f"%{user[0]}%"))
                     .count()
@@ -352,7 +352,7 @@ class Reports(commands.Cog):
         await self.send_guild_settings(ctx.channel, guild_settings)
 
     async def mapping_add(
-        self, ctx, reports_setting: str, key: str, value: Any
+            self, ctx, reports_setting: str, key: str, value: Any
     ) -> None:
         self.ensure_reports_configured(ctx.guild.id)
         reports_channel_overrides = self.get_reports_setting(
@@ -388,7 +388,7 @@ class Reports(commands.Cog):
     @reports_channel_overrides.command(aliases=["add", "a"])
     @commands.check(ban_members_check)
     async def add_(
-        self, ctx, channel: discord.TextChannel, reports_channel: discord.TextChannel
+            self, ctx, channel: discord.TextChannel, reports_channel: discord.TextChannel
     ):
         """Add a reports channel override. Ex: `[p]ru e reports_channel_override #general #channel-to-escalate-to`"""
         await self.mapping_add(
@@ -571,7 +571,7 @@ class Reports(commands.Cog):
             return self.get_reports_setting(guild_id, REPORTS_CHANNEL)
 
     def get_trusted_user(
-        self, session: Session, guild_id: int, reporter_id: int
+            self, session: Session, guild_id: int, reporter_id: int
     ) -> TrustedUsers:
         user = (
             session.query(TrustedUsers)
@@ -591,7 +591,7 @@ class Reports(commands.Cog):
         return user
 
     def update_trust_score(
-        self, user: TrustedUsers, guild_id: int, value: int
+            self, user: TrustedUsers, guild_id: int, value: int
     ) -> TrustedUsers:
         trust_score_scale = self.get_reports_setting(guild_id, TRUST_SCORE_SCALE)
         trust_score = user.trust_score
@@ -601,17 +601,17 @@ class Reports(commands.Cog):
         return user
 
     async def update_user_report_count(
-        self, session: Session, guild_id: int, reporter_id: int
+            self, session: Session, guild_id: int, reporter_id: int
     ) -> None:
         user = self.get_trusted_user(session, guild_id, reporter_id)
         user.report_count += 1
         user.last_report_timestamp = datetime.now().timestamp()
 
     async def send_escalated_report_msg(
-        self,
-        message: discord.Message,
-        mod_channel_id: int,
-        escalation_reason: EscalationReason,
+            self,
+            message: discord.Message,
+            mod_channel_id: int,
+            escalation_reason: EscalationReason,
     ) -> None:
         has_embed = "\n\n[Has Embed]" if message.embeds or message.attachments else ""
         if escalation_reason != EscalationReason.DELETED_MESSAGE.value:
@@ -623,7 +623,7 @@ class Reports(commands.Cog):
             color=0xBD0808,
             title=f"{ESCALATION_REPORT_STR} ({escalation_reason})",
             description=message.content[:1500]
-            + f"{' ...' if len(message.content) > 1500 else ''}{has_embed}{jump_to_msg_str}{user_id}",
+                        + f"{' ...' if len(message.content) > 1500 else ''}{has_embed}{jump_to_msg_str}{user_id}",
             timestamp=message.created_at,
         )
         em.set_author(
@@ -648,13 +648,13 @@ class Reports(commands.Cog):
         )
 
     async def add_report(
-        self,
-        session: Session,
-        report: ReportLog,
-        reporter_id: int,
-        message: discord.Message,
-        *,
-        auto_escalate: bool = False,
+            self,
+            session: Session,
+            report: ReportLog,
+            reporter_id: int,
+            message: discord.Message,
+            *,
+            auto_escalate: bool = False,
     ) -> ReportLog:
         guild_id = message.channel.guild.id
         trusted_user = self.get_trusted_user(session, guild_id, reporter_id)
@@ -709,7 +709,7 @@ class Reports(commands.Cog):
         return report
 
     async def send_to_user(
-        self, user: discord.User, msg: str, embed: discord.Embed
+            self, user: discord.User, msg: str, embed: discord.Embed
     ) -> None:
         try:
             await user.send(content=msg, embed=embed)
@@ -717,7 +717,7 @@ class Reports(commands.Cog):
             pass
 
     async def report_message(
-        self, message: discord.Message, reporter_id: int, *, auto_escalate: bool = False
+            self, message: discord.Message, reporter_id: int, *, auto_escalate: bool = False
     ) -> None:
         guild_id = message.channel.guild.id
         mod_channel_id = await self.get_reports_channel(guild_id, message.channel.id)
@@ -769,10 +769,10 @@ class Reports(commands.Cog):
         await self.send_to_user(reporter_duser, None, default_ack_em)
 
     async def handle_report(
-        self,
-        message: discord.Message,
-        reporter_id: int,
-        emoji: Union[discord.Emoji, str],
+            self,
+            message: discord.Message,
+            reporter_id: int,
+            emoji: Union[discord.Emoji, str],
     ) -> None:
         # Ignore if self-react
         if message.author.id == reporter_id:
@@ -782,7 +782,7 @@ class Reports(commands.Cog):
             message.channel.guild.id, VALID_REPORT_MSG_MAX_AGE
         )
         if max_age == 0 or (
-            datetime.now().timestamp() - max_age <= message.created_at.timestamp()
+                datetime.now().timestamp() - max_age <= message.created_at.timestamp()
         ):
             auto_escalate = False
             try:
@@ -793,7 +793,7 @@ class Reports(commands.Cog):
             await self.report_message(message, reporter_id, auto_escalate=auto_escalate)
 
     async def handle_report_ack(
-        self, message: discord.Message, is_good_report: bool
+            self, message: discord.Message, is_good_report: bool
     ) -> None:
         reporters_list = []
         with self.Session() as session:
@@ -839,7 +839,7 @@ class Reports(commands.Cog):
         return ctx
 
     async def invoke_audit_log(
-        self, event: discord.RawReactionActionEvent, message: discord.Message
+            self, event: discord.RawReactionActionEvent, message: discord.Message
     ) -> None:
         if "Moderation" in self.bot.cogs and hasattr(self.bot.cogs["Moderation"], "cases"):
             user = message.guild.get_member(
@@ -855,7 +855,7 @@ class Reports(commands.Cog):
         if not event.guild_id or event.user_id == self.bot.user.id:
             return
         elif str(event.guild_id) in self.reports_json and self.get_reports_setting(
-            event.guild_id, REPORTS_ENABLED
+                event.guild_id, REPORTS_ENABLED
         ):
             guild = self.bot.get_guild(event.guild_id)
             channel = await guild.fetch_channel(event.channel_id)
@@ -863,20 +863,20 @@ class Reports(commands.Cog):
                 event.guild_id, REPORTS_EMOJI
             )
             if event.emoji.id == guild_reports_emoji or (
-                not event.emoji.id and event.emoji.name == guild_reports_emoji
+                    not event.emoji.id and event.emoji.name == guild_reports_emoji
             ):
                 message = await channel.fetch_message(event.message_id)
                 await self.handle_report(message, event.user_id, event.emoji)
             elif event.emoji.name in ["✅", "❌", "❓"]:
                 if not channel.permissions_for(
-                    channel.guild.get_member(event.user_id)
+                        channel.guild.get_member(event.user_id)
                 ).manage_messages:
                     return
                 message = await channel.fetch_message(event.message_id)
                 if (
-                    not message.embeds
-                    or not message.embeds[0].title
-                    or not message.embeds[0].title.startswith(ESCALATION_REPORT_STR)
+                        not message.embeds
+                        or not message.embeds[0].title
+                        or not message.embeds[0].title.startswith(ESCALATION_REPORT_STR)
                 ):
                     return
                 if event.emoji.name == "❓":

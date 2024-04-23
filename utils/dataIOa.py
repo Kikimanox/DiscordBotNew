@@ -10,7 +10,6 @@ error_logger = logging.getLogger('error')
 
 
 class DataIOa:
-
     def init_json(self, filename):
         """Verifies that a JSON file exists and is valid; if not, create one."""
         try:
@@ -18,7 +17,7 @@ class DataIOa:
                 load(f)
         except (FileNotFoundError, decoder.JSONDecodeError):
             with open(filename, 'w', encoding='utf-8') as f:
-                dump({}, f, indent=4,sort_keys=True,separators=(',',' : '))
+                dump({}, f, indent=4, sort_keys=True, separators=(',', ' : '))
 
     @staticmethod
     def save_json(filename, data):

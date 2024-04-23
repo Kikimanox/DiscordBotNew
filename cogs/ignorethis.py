@@ -247,14 +247,14 @@ class Ignorethis(commands.Cog):
             await club_created_message.edit(content=f'The club **{club_name}** has been '
                                                     f'approved by {view.member_click} ✅')
             await ver_ch.send(content=f'The club **{club_name}** has been '
-                                                    f'approved by {view.member_click} ✅')
+                                      f'approved by {view.member_click} ✅')
             self.initialize_clubs()
         else:
             await club_creator.send(f'The club **{club_name}** has been denied ❌')
             await club_created_message.edit(content=f'The club **{club_name}** has been '
                                                     f'denied by {view.member_click} ❌')
             await ver_ch.send(content=f'The club **{club_name}** has been '
-                                                    f'denied by {view.member_click} ❌')
+                                      f'denied by {view.member_click} ❌')
 
     @commands.check(checks.onk_server_check_admin)
     @commands.command()
@@ -1107,7 +1107,6 @@ class Ignorethis(commands.Cog):
     @staticmethod
     def similar(a, b):
         return SequenceMatcher(None, a, b).ratio()
-
 
 # async def setup(
 #         bot: commands.Bot
