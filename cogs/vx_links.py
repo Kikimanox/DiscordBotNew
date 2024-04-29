@@ -183,7 +183,7 @@ class VxLinks(commands.Cog):
             if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
                 return
 
-        if msg.guild.id in EXCLUDED_SERVERS:
+        if msg.guild and (msg.guild.id in EXCLUDED_SERVERS):
             return
 
         pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)'
@@ -246,7 +246,10 @@ class VxLinks(commands.Cog):
             if webhook_message.id not in self.user_webhooks_ownership.keys():
                 return
 
-            await webhook_message.delete()
+            try:
+                await webhook_message.delete()
+            except:
+                pass
             self.user_webhooks_ownership.pop(webhook_message.id)
             self.message_tracker.pop(msg.id)
 

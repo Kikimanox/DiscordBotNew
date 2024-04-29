@@ -450,8 +450,10 @@ class Bets2(commands.Cog):
         # if str(event.guild_id) == "695200821910044783":
         #     async with self.highlights_lock:
         #         await self.highlight_reaction(event)
-        if hasattr(self.bot, "watched_bets") and str(event.message_id) in self.bot.watched_bets[
-            "bets"] and event.user_id != self.bot.user.id:
+        if (hasattr(self.bot, "watched_bets") and
+                "bets" in self.bot.watched_bets and
+                str(event.message_id) in self.bot.watched_bets["bets"] and
+                event.user_id != self.bot.user.id):
             await self.bets_reaction(event)
 
 

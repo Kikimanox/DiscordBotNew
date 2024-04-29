@@ -505,15 +505,19 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, member):
-        if self.bot.banned_cuz_blacklist and f'{member.id}_{member.guild.id}' in self.bot.banned_cuz_blacklist:
-            self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] -= \
-                self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
-            if self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}'] == 0:
-                del self.bot.banned_cuz_blacklist[f'{member.id}_{member.guild.id}']
+        try:
+            member_guild_id = f'{member.id}_{member.guild.id}'
+        except:
+            member_guild_id = f'{member.id}_{guild.id}'
+
+        if hasattr(self.bot, 'banned_cuz_blacklist') and member_guild_id in self.bot.banned_cuz_blacklist:
+            self.bot.banned_cuz_blacklist[member_guild_id] -= 1
+            if self.bot.banned_cuz_blacklist[member_guild_id] == 0:
+                del self.bot.banned_cuz_blacklist[member_guild_id]
             return
 
-        if self.bot.just_banned_by_bot and f'{member.id}_{member.guild.id}' in self.bot.just_banned_by_bot:
-            del self.bot.just_banned_by_bot[f'{member.id}_{member.guild.id}']
+        if hasattr(self.bot, 'just_banned_by_bot') and member_guild_id in self.bot.just_banned_by_bot:
+            del self.bot.just_banned_by_bot[member_guild_id]
             return
 
         limit = 5

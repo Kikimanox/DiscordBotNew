@@ -107,9 +107,6 @@ class Fun(commands.Cog):
             ar = str(claim_types[0]).split(' ')
         to_claim = list(set(ar) & set(possible_for_bot))
 
-        if len(to_claim) > 9:
-            return await ctx.send("You can only claim up to 9 types at a time.")
-
         if not to_claim:
             return await ctx.send(f"None of your claim_types were valid.\nYou can do `{dutils.bot_pfx_by_ctx(ctx)}"
                                   f"claim multi {' '.join(possible_for_bot)}` (leaving out those that you don't want"
@@ -119,6 +116,8 @@ class Fun(commands.Cog):
 
         ch: discord.TextChannel = ctx.channel
         hook = None
+
+        status_msg = await ctx.send(f'{ctx.author.mention} your multi claim is being processed, please wait a bit...')
 
         try:
             hooks = await ch.webhooks()
@@ -131,23 +130,30 @@ class Fun(commands.Cog):
         except:
             return await ctx.send("Something went wrong, maybe I'm missing manage webhook perms?")
 
-        embeds = []
+        all_embeds = []
         cds = []
         for claim in to_claim:
             e = await self.do_claim(ctx, claim, claim_cd=20, multi_claim=True)
 
             if e and not isinstance(e, str):
-                embeds.append(e)
+                all_embeds.append(e)
             if e and isinstance(e, str):
                 cds.append(f"{claim} - {e}")
 
-        if embeds and isinstance(hook, discord.Webhook):
-            await hook.send(avatar_url=ctx.author.display_avatar.url,
-                            username=f'Multi claim for {ctx.author.name}'[:32],
-                            wait=False, embeds=embeds, content=f'{ctx.author.mention} your multi claim:\n' +
-                                                               '\n'.join(cds))
-        else:
+        # Split embeds into groups of 9
+        embed_groups = [all_embeds[i:i + 9] for i in range(0, len(all_embeds), 9)]
+        for group in embed_groups:
+            if group:
+                content_description = '\n'.join([f"{embed.title} - {embed.url}" for embed in group if embed.url])
+                await hook.send(avatar_url=ctx.author.display_avatar.url,
+                                username=f'Multi claim for {ctx.author.name}'[:32],
+                                wait=False, embeds=group,
+                                content=f'{ctx.author.mention} your multi claim:\n' + content_description)
+
+        if not all_embeds:
             await ctx.send("Nothing out of these is available to claim at the moment.\n" + '\n'.join(cds))
+
+        await status_msg.delete()
 
     @commands.cooldown(1, 5, commands.BucketType.user)
     @claim.command()

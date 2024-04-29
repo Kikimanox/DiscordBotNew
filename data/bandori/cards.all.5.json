@@ -80781,14 +80781,14 @@
         "resourceSetName": "res026035",
         "prefix": [
             "落陽の雫",
-            "Droplets of the Setting Sun",
+            "Sunset Droplets",
             "落陽之雫",
             "夕阳的泪滴",
             null
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -80834,14 +80834,14 @@
         "resourceSetName": "res028032",
         "prefix": [
             "届けたい言葉",
-            "Words That I Want to Deliver",
+            "What I Want to Tell You",
             "想傳遞的話語",
             "想要传达的话语",
             null
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -80887,14 +80887,14 @@
         "resourceSetName": "res030033",
         "prefix": [
             "熱音に焦がされて",
-            "Scorched by the Blistering Sound",
+            "Touched by Fiery Sound",
             "因熱音而焦灼",
             "被声浪催促着",
             null
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -80928,14 +80928,14 @@
         "resourceSetName": "res027032",
         "prefix": [
             "ランガラスバタフライ",
-            "Glass Butterfly",
+            "Languorous Butterfly",
             "玻璃彩蝶",
             "玻璃蝴蝶",
             null
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -80963,14 +80963,14 @@
         "resourceSetName": "res029030",
         "prefix": [
             "いざ！渋谷を冒険",
-            "Here We Go! Shibuya Adventure",
+            "Shibuya Adventure!",
             "前進！涉谷冒險！",
             "涩谷冒险，出发！",
             null
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -81023,7 +81023,7 @@
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -81069,14 +81069,14 @@
         "resourceSetName": "res009066",
         "prefix": [
             "IN THE ZONE",
-            null,
+            "IN THE ZONE",
             "IN THE ZONE",
             "IN THE ZONE",
             null
         ],
         "releasedAt": [
             "1694152800000",
-            null,
+            "1713920400000",
             "1706338800000",
             "1711947600000",
             null
@@ -82100,14 +82100,14 @@
             "いちに、さんし！",
             "One Two, Three Four!",
             "一二，三四！",
-            null,
+            "一、二、三、四！",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 68,
@@ -82153,14 +82153,14 @@
             "一緒に踊ろう♪",
             "Let's Dance Together♪",
             "一起跳舞吧♪",
-            null,
+            "一起跳舞吧♪",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 66,
@@ -82206,14 +82206,14 @@
             "ハロウィンのお手伝い",
             "Helping Out with Halloween",
             "萬聖節的幫忙",
-            null,
+            "为万圣节帮忙",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 6,
@@ -82247,14 +82247,14 @@
             "プリズンブレイカー",
             "Prison Breaker",
             "逃獄者",
-            null,
+            "越狱者",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 8,
@@ -82282,14 +82282,14 @@
             "子どもたちと一緒に",
             "With the Kids",
             "和孩子們一起",
-            null,
+            "和孩子们一起",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 45,
@@ -82335,14 +82335,14 @@
             "甘い眠りに誘われて",
             "Lulled Into A Sweet Slumber",
             "被引誘至甜美睡眠中",
-            null,
+            "进入甜美的梦乡",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 70,
@@ -82388,14 +82388,14 @@
             "花と笑顔、ふわり",
             "Flowers and Smiles, Fluffily",
             "花與笑容，輕柔地",
-            null,
+            "花朵与笑容，轻柔地绽放",
             null
         ],
         "releasedAt": [
             "1695967200000",
             null,
             "1709881200000",
-            null,
+            "1713502800000",
             null
         ],
         "skillId": 70,
@@ -82441,14 +82441,14 @@
             "渇望、燻りて",
             "Thirsting, Smouldering",
             "渴望，焦躁",
-            null,
+            "燃烧的渴望",
             null
         ],
         "releasedAt": [
             "1696917600000",
             null,
             "1710831600000",
-            null,
+            "1714280400000",
             null
         ],
         "skillId": 67,
@@ -82494,14 +82494,14 @@
             "そこが地獄でも",
             "Even If It's Hell There",
             "即便那裡是地獄",
-            null,
+            "即使那是地狱",
             null
         ],
         "releasedAt": [
             "1696917600000",
             null,
             "1710831600000",
-            null,
+            "1714280400000",
             null
         ],
         "skillId": 66,
@@ -82547,14 +82547,14 @@
             "あったかい音",
             "This Warm Sound",
             "溫暖的音樂",
-            null,
+            "温暖的声音",
             null
         ],
         "releasedAt": [
             "1696917600000",
             null,
             "1710831600000",
-            null,
+            "1714280400000",
             null
         ],
         "skillId": 6,
@@ -82588,14 +82588,14 @@
             "孤高のインビンシブル",
             "Solitary Invincibility",
             "孤高的無敵",
-            null,
+            "孤高的无敌者",
             null
         ],
         "releasedAt": [
             "1696917600000",
             null,
             "1710831600000",
-            null,
+            "1714280400000",
             null
         ],
         "skillId": 8,
@@ -82623,14 +82623,14 @@
             "狂いだしたコンパス",
             "Haywire Compass",
             "狂亂的羅盤",
-            null,
+            "开始失控的指南针",
             null
         ],
         "releasedAt": [
             "1696917600000",
             null,
             "1710831600000",
-            null,
+            "1714280400000",
             null
         ],
         "skillId": 61,
@@ -83486,14 +83486,14 @@
         "prefix": [
             "虫歯患者の憂鬱",
             "The Cavity Patient's Despair",
-            null,
+            "蛀牙患者的憂鬱",
             null,
             null
         ],
         "releasedAt": [
             "1700460000000",
             null,
-            null,
+            "1714287600000",
             null,
             null
         ],
@@ -83539,14 +83539,14 @@
         "prefix": [
             "戸山院長",
             "Hospital Director Toyama",
-            null,
+            "戶山院長",
             null,
             null
         ],
         "releasedAt": [
             "1700460000000",
             null,
-            null,
+            "1714287600000",
             null,
             null
         ],
@@ -83592,14 +83592,14 @@
         "prefix": [
             "サーチング・フォー",
             "Searching For",
-            null,
+            "Searching For",
             null,
             null
         ],
         "releasedAt": [
             "1700460000000",
             null,
-            null,
+            "1714287600000",
             null,
             null
         ],
@@ -83633,14 +83633,14 @@
         "prefix": [
             "デンタルミラー",
             "Dental Mirror",
-            null,
+            "口腔鏡",
             null,
             null
         ],
         "releasedAt": [
             "1700460000000",
             null,
-            null,
+            "1714287600000",
             null,
             null
         ],
@@ -83668,14 +83668,14 @@
         "prefix": [
             "献身的付き添い人",
             "Her Devoted Escort",
-            null,
+            "奉獻式陪伴者",
             null,
             null
         ],
         "releasedAt": [
             "1700460000000",
             null,
-            null,
+            "1714287600000",
             null,
             null
         ],
@@ -85090,7 +85090,7 @@
             null
         ],
         "skillId": 13,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85131,7 +85131,7 @@
             null
         ],
         "skillId": 45,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85172,7 +85172,7 @@
             null
         ],
         "skillId": 44,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85213,7 +85213,7 @@
             null
         ],
         "skillId": 22,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85254,7 +85254,7 @@
             null
         ],
         "skillId": 12,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85295,7 +85295,7 @@
             null
         ],
         "skillId": 24,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85336,7 +85336,7 @@
             null
         ],
         "skillId": 13,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85377,7 +85377,7 @@
             null
         ],
         "skillId": 21,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85418,7 +85418,7 @@
             null
         ],
         "skillId": 11,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85459,7 +85459,7 @@
             null
         ],
         "skillId": 3,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85500,7 +85500,7 @@
             null
         ],
         "skillId": 26,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85541,7 +85541,7 @@
             null
         ],
         "skillId": 60,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85582,7 +85582,7 @@
             null
         ],
         "skillId": 22,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85623,7 +85623,7 @@
             null
         ],
         "skillId": 18,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85664,7 +85664,7 @@
             null
         ],
         "skillId": 26,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85705,7 +85705,7 @@
             null
         ],
         "skillId": 61,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85746,7 +85746,7 @@
             null
         ],
         "skillId": 14,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85787,7 +85787,7 @@
             null
         ],
         "skillId": 12,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85828,7 +85828,7 @@
             null
         ],
         "skillId": 60,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -85869,7 +85869,7 @@
             null
         ],
         "skillId": 60,
-        "type": "campaign",
+        "type": "others",
         "stat": {
             "1": {
                 "performance": 15000,
@@ -88131,7 +88131,7 @@
             null
         ],
         "skillId": 69,
-        "type": "kirafes",
+        "type": "dreamfes",
         "stat": {
             "1": {
                 "performance": 3546,
@@ -88184,7 +88184,7 @@
             null
         ],
         "skillId": 69,
-        "type": "kirafes",
+        "type": "dreamfes",
         "stat": {
             "1": {
                 "performance": 3630,
@@ -88665,6 +88665,582 @@
                 "performance": 11412,
                 "technique": 9763,
                 "visual": 9463
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1970": {
+        "characterId": 34,
+        "rarity": 5,
+        "attribute": "powerful",
+        "levelLimit": 50,
+        "resourceSetName": "res034033",
+        "prefix": [
+            "離さないでよ",
+            "Don't Leave Me",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1713592800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 67,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 4022,
+                "technique": 3556,
+                "visual": 3218
+            },
+            "60": {
+                "performance": 11983,
+                "technique": 10598,
+                "visual": 9590
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1971": {
+        "characterId": 35,
+        "rarity": 5,
+        "attribute": "powerful",
+        "levelLimit": 50,
+        "resourceSetName": "res035037",
+        "prefix": [
+            "離してやんない",
+            "I Won't Leave You",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1713592800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 66,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 4001,
+                "technique": 3175,
+                "visual": 3514
+            },
+            "60": {
+                "performance": 11923,
+                "technique": 9463,
+                "visual": 10473
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1972": {
+        "characterId": 31,
+        "rarity": 3,
+        "attribute": "cool",
+        "levelLimit": 40,
+        "resourceSetName": "res031037",
+        "prefix": [
+            "結び繋ぐ手、震えて",
+            "The Hands Which Connect Us, Trembling",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1713592800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 9,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 3133,
+                "technique": 3347,
+                "visual": 3317
+            },
+            "50": {
+                "performance": 9335,
+                "technique": 9973,
+                "visual": 9885
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1973": {
+        "characterId": 32,
+        "rarity": 2,
+        "attribute": "pure",
+        "levelLimit": 30,
+        "resourceSetName": "res032036",
+        "prefix": [
+            "奇跡を繋ぎ止めて",
+            "Miracles Holding Us Together",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1713592800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 5,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 1969,
+                "technique": 2099,
+                "visual": 2341
+            },
+            "30": {
+                "performance": 4942,
+                "technique": 5268,
+                "visual": 5875
+            }
+        }
+    },
+    "1974": {
+        "characterId": 33,
+        "rarity": 4,
+        "attribute": "powerful",
+        "levelLimit": 50,
+        "resourceSetName": "res033034",
+        "prefix": [
+            "お前が踏み出すなら",
+            "If You're Gonna Take the Step",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1713592800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 18,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3336,
+                "technique": 3780,
+                "visual": 3064
+            },
+            "60": {
+                "performance": 9943,
+                "technique": 11265,
+                "visual": 9131
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1975": {
+        "characterId": 19,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res019072",
+        "prefix": [
+            "あなたの場所は、",
+            "Your Stage Is,",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 66,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3980,
+                "technique": 3186,
+                "visual": 3524
+            },
+            "60": {
+                "performance": 11860,
+                "technique": 9493,
+                "visual": 10502
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1976": {
+        "characterId": 16,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res016082",
+        "prefix": [
+            "生粋のアイドルバカ",
+            "Natural-Born Idol Maniac",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 68,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3927,
+                "technique": 3683,
+                "visual": 3186
+            },
+            "60": {
+                "performance": 11701,
+                "technique": 10976,
+                "visual": 9493
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1977": {
+        "characterId": 20,
+        "rarity": 3,
+        "attribute": "happy",
+        "levelLimit": 40,
+        "resourceSetName": "res020076",
+        "prefix": [
+            "くるっとまわって♪",
+            "Spinning, Twirling ♪",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 6,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 2929,
+                "technique": 3046,
+                "visual": 3531
+            },
+            "50": {
+                "performance": 8848,
+                "technique": 9201,
+                "visual": 10665
+            },
+            "training": {
+                "levelLimit": 10,
+                "performance": 300,
+                "technique": 300,
+                "visual": 300
+            }
+        }
+    },
+    "1978": {
+        "characterId": 18,
+        "rarity": 2,
+        "attribute": "powerful",
+        "levelLimit": 30,
+        "resourceSetName": "res018072",
+        "prefix": [
+            "深層信頼",
+            "Deep-Seated Trust",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 8,
+        "type": "event",
+        "stat": {
+            "1": {
+                "performance": 2093,
+                "technique": 2361,
+                "visual": 2152
+            },
+            "30": {
+                "performance": 5212,
+                "technique": 5879,
+                "visual": 5358
+            }
+        }
+    },
+    "1979": {
+        "characterId": 17,
+        "rarity": 4,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res017075",
+        "prefix": [
+            "振り返れば、未来",
+            "The Future, Looking Back",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 26,
+        "type": "permanent",
+        "stat": {
+            "1": {
+                "performance": 3377,
+                "technique": 3326,
+                "visual": 3478
+            },
+            "60": {
+                "performance": 10062,
+                "technique": 9911,
+                "visual": 10365
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1980": {
+        "characterId": 31,
+        "rarity": 5,
+        "attribute": "pure",
+        "levelLimit": 50,
+        "resourceSetName": "res031038",
+        "prefix": [
+            "路地裏のディーヴァ",
+            "The Diva of the Alley",
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 69,
+        "type": "dreamfes",
+        "stat": {
+            "1": {
+                "performance": 3461,
+                "technique": 3588,
+                "visual": 3662
+            },
+            "60": {
+                "performance": 10317,
+                "technique": 10692,
+                "visual": 10915
+            },
+            "episodes": [
+                {
+                    "performance": 250,
+                    "technique": 250,
+                    "visual": 250
+                },
+                {
+                    "performance": 600,
+                    "technique": 600,
+                    "visual": 600
+                }
+            ],
+            "training": {
+                "levelLimit": 10,
+                "performance": 400,
+                "technique": 400,
+                "visual": 400
+            }
+        }
+    },
+    "1981": {
+        "characterId": 24,
+        "rarity": 5,
+        "attribute": "cool",
+        "levelLimit": 50,
+        "resourceSetName": "res024073",
+        "prefix": [
+            "By my side",
+            null,
+            null,
+            null,
+            null
+        ],
+        "releasedAt": [
+            "1714456800000",
+            null,
+            null,
+            null,
+            null
+        ],
+        "skillId": 69,
+        "type": "dreamfes",
+        "stat": {
+            "1": {
+                "performance": 3609,
+                "technique": 3450,
+                "visual": 3651
+            },
+            "60": {
+                "performance": 10756,
+                "technique": 10281,
+                "visual": 10880
             },
             "episodes": [
                 {
