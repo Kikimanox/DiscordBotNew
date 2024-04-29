@@ -19,4 +19,4 @@ scripts/_stop.sh
 claims_settings.json
 /settings/spoiler_settings.json
 /settings/highlights_threshold.json
-/data/bandori/
+/data/bandori/**
