@@ -294,6 +294,8 @@ class Fun(commands.Cog):
         await ctx.send(f"Your nsfw setting for `{cmd_type}` has ben set to `{setting}`")
 
     async def do_claim(self, ctx, c_type, claim_cd=20, multi_claim=False):
+        tmp_time = str(datetime.datetime.utcnow())
+        print(f'{tmp_time} TMPPRINT 1 c_type: {c_type}')  # tmp print
         if not self.data:
             if multi_claim: return "Hold up a little bit, I'm still loading the data."
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
@@ -306,6 +308,8 @@ class Fun(commands.Cog):
         d_key = f"{ctx.author.id}_{c_type}"
         anti_spam_cd = 15
         # [invoked_times, invoked_at]
+
+        print(f'{tmp_time} TMPPRINT 2 {utcnow}')  # tmp print
 
         if d_key in self.just_claimed and ctx.guild.id != 202845295158099980:
             if now - self.just_claimed[d_key][1] < anti_spam_cd:
@@ -325,6 +329,8 @@ class Fun(commands.Cog):
 
         if ctx.guild.id == 202845295158099980:
             self.just_claimed[d_key][0] = 0
+
+        print(f'{tmp_time} TMPPRINT 3 {self.just_claimed}')  # tmp print
 
         if d_key in self.just_claimed and self.just_claimed[d_key][0] == 0:
             d = self.data[c_type]
@@ -352,6 +358,7 @@ class Fun(commands.Cog):
                     d = {k: v for k, v in d.items() if not k.startswith(dab)}
             ######################## / extra for raiha only
             u = UserSettings.get_or_none(user=ctx.author.id, type=c_type)
+            print(f'{tmp_time} TMPPRINT 4 {u}')  # tmp print
             async with aiohttp.ClientSession() as session:
                 orig_key = random.choice(list(d))
                 orig_key_split = orig_key.split('_')
@@ -360,6 +367,7 @@ class Fun(commands.Cog):
                     got = random.choice(d[orig_key][0])  # attachments list on index 0
                     attachement = got[0]  # urls
                     is_nsfw = got[1]
+                    print(f'{tmp_time} TMPPRINT 5 {got[0].url}')  # tmp print
                     async with session.head(attachement.url) as response:
                         if response.status == 200:
                             if not u:
@@ -373,6 +381,7 @@ class Fun(commands.Cog):
                         else:
                             continue
 
+            print(f'{tmp_time} TMPPRINT 6 att: {attachement.url}')  # tmp print
             em = None
 
             usr = Claimed.select().where(Claimed.user == ctx.author.id,
@@ -380,6 +389,7 @@ class Fun(commands.Cog):
                                          Claimed.expires_on > utcnow)
             if usr:
                 usr = usr.get()
+                print(f'{tmp_time} TMPPRINT 7a {usr}')  # tmp print
                 if not multi_claim:
                     await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
                                    f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**")
@@ -389,6 +399,7 @@ class Fun(commands.Cog):
                 if multi_claim:
                     em = f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}** (cooldown)"
             else:
+                print(f'{tmp_time} TMPPRINT 7b')  # tmp print
                 claim, created = Claimed.get_or_create(user=ctx.author.id, type=c_type)
                 claim.expires_on = utcnow + datetime.timedelta(hours=claim_cd)
                 claim.char_name = orig_key_split[0]
@@ -485,6 +496,7 @@ class Fun(commands.Cog):
                     return f"|| {attachement.url} || ⚠ potentially nsfw image for **{orig_key_split[0]}**"
                 return em
 
+            print(f'{tmp_time} TMPPRINT 8 ')  # tmp print
             # when done remove them if they aren't spamming anymore
             await asyncio.sleep(anti_spam_cd + 1)
             if d_key in self.just_claimed:
