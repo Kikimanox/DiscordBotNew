@@ -9,7 +9,7 @@ import traceback
 import aiohttp
 import discord
 from discord import Embed
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import utils.checks as checks
 import utils.discordUtils as dutils
@@ -39,12 +39,37 @@ class Fun(commands.Cog):
         self.just_claimed = {}
         self.possible = possible_for_bot  # THESE TWO HAVE TO BE THE SAME
 
+    def cog_unload(self):
+        self.data_refresh_task.cancel()
+
+    @tasks.loop(hours=10)
+    async def data_refresh_task(self):
+        """Task to refresh data automatically every X hours."""
+        logger.info('data_refresh_task')
+        try:
+            logger.info("Automatically refreshing data.")
+            await self.refresh_data()
+        except Exception as e:
+            error_logger.error(f"Failed to refresh data: {str(e)}")
+
+    async def refresh_data(self):
+        """Helper function to refresh claim data from the server."""
+        try:
+            new_data = await ClaimsManager.get_data_from_server(self.bot, conf)
+            self.data = new_data
+            logger.info("Claims data loaded/refreshed.")
+        except Exception as e:
+            error_logger.error(f"Failed to refresh claims data: {str(e)}")
+            if self.data_refresh_task.is_running():
+                self.data_refresh_task.restart()
+
     async def set_setup(self):
         if not self.bot.is_ready():
             await self.bot.wait_until_ready()
         try:
-            self.data = await ClaimsManager.get_data_from_server(self.bot, conf)
-            d = 0
+            # self.data = await ClaimsManager.get_data_from_server(self.bot, conf)
+            # logger.info("Claims data loaded")
+            self.data_refresh_task.start()
         except:
             # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
             error_logger.error(f"Claims data not loaded\n{traceback.format_exc()}")
@@ -52,7 +77,7 @@ class Fun(commands.Cog):
             self.data = {'-1-1-1': '-1-1-1'}
             return
         # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
-        logger.info("Claims data loaded")
+
 
     @commands.group(aliases=possible_for_bot)  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
     async def claim(self, ctx, *, subcmd=""):
@@ -96,6 +121,16 @@ class Fun(commands.Cog):
             raise commands.errors.BadArgument
 
         await exec_cmd(cmd)
+
+    @claim.command()
+    @commands.cooldown(1, 600, commands.BucketType.default)
+    @commands.has_permissions(administrator=True)
+    async def refresh(self, ctx):
+        """Manually refresh claim data. Requires administrator permission."""
+        await ctx.send("Refreshing claim data, please wait... (this may take a while)")
+        await self.refresh_data()
+        self.data_refresh_task.restart()
+        await ctx.send(f"{ctx.author.mention} Data refreshed successfully.")
 
     @commands.cooldown(1, 120, commands.BucketType.user)
     @claim.command()
@@ -295,7 +330,7 @@ class Fun(commands.Cog):
 
     async def do_claim(self, ctx, c_type, claim_cd=20, multi_claim=False):
         tmp_time = str(datetime.datetime.utcnow())
-        print(f'{tmp_time} TMPPRINT 1 c_type: {c_type}')  # tmp print
+        # print(f'{tmp_time} TMPPRINT 1 c_type: {c_type}')  # tmp print
         if not self.data:
             if multi_claim: return "Hold up a little bit, I'm still loading the data."
             return await ctx.send("Hold up a little bit, I'm still loading the data.")
@@ -309,7 +344,7 @@ class Fun(commands.Cog):
         anti_spam_cd = 15
         # [invoked_times, invoked_at]
 
-        print(f'{tmp_time} TMPPRINT 2 {utcnow}')  # tmp print
+        # print(f'{tmp_time} TMPPRINT 2 {utcnow}')  # tmp print
 
         if d_key in self.just_claimed and ctx.guild.id != 202845295158099980:
             if now - self.just_claimed[d_key][1] < anti_spam_cd:
@@ -330,7 +365,7 @@ class Fun(commands.Cog):
         if ctx.guild.id == 202845295158099980:
             self.just_claimed[d_key][0] = 0
 
-        print(f'{tmp_time} TMPPRINT 3 {self.just_claimed}')  # tmp print
+        # print(f'{tmp_time} TMPPRINT 3 {self.just_claimed}')  # tmp print
 
         if d_key in self.just_claimed and self.just_claimed[d_key][0] == 0:
             d = self.data[c_type]
@@ -358,7 +393,7 @@ class Fun(commands.Cog):
                     d = {k: v for k, v in d.items() if not k.startswith(dab)}
             ######################## / extra for raiha only
             u = UserSettings.get_or_none(user=ctx.author.id, type=c_type)
-            print(f'{tmp_time} TMPPRINT 4 {u}')  # tmp print
+            # print(f'{tmp_time} TMPPRINT 4 {u}')  # tmp print
             async with aiohttp.ClientSession() as session:
                 orig_key = random.choice(list(d))
                 orig_key_split = orig_key.split('_')
@@ -367,7 +402,7 @@ class Fun(commands.Cog):
                     got = random.choice(d[orig_key][0])  # attachments list on index 0
                     attachement = got[0]  # urls
                     is_nsfw = got[1]
-                    print(f'{tmp_time} TMPPRINT 5 {got[0].url}')  # tmp print
+                    # print(f'{tmp_time} TMPPRINT 5 {got[0].url}')  # tmp print
                     async with session.head(attachement.url) as response:
                         if response.status == 200:
                             if not u:
@@ -381,7 +416,7 @@ class Fun(commands.Cog):
                         else:
                             continue
 
-            print(f'{tmp_time} TMPPRINT 6 att: {attachement.url}')  # tmp print
+            # print(f'{tmp_time} TMPPRINT 6 att: {attachement.url}')  # tmp print
             em = None
 
             usr = Claimed.select().where(Claimed.user == ctx.author.id,
@@ -389,7 +424,7 @@ class Fun(commands.Cog):
                                          Claimed.expires_on > utcnow)
             if usr:
                 usr = usr.get()
-                print(f'{tmp_time} TMPPRINT 7a {usr}')  # tmp print
+                # print(f'{tmp_time} TMPPRINT 7a {usr}')  # tmp print
                 if not multi_claim:
                     await ctx.send(f"{ctx.author.mention} you already have a claimed {c_type}. Please try again in "
                                    f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}**")
@@ -399,7 +434,7 @@ class Fun(commands.Cog):
                 if multi_claim:
                     em = f"**{tutils.convert_sec_to_smhd((usr.expires_on - utcnow).total_seconds())}** (cooldown)"
             else:
-                print(f'{tmp_time} TMPPRINT 7b')  # tmp print
+                # print(f'{tmp_time} TMPPRINT 7b')  # tmp print
                 claim, created = Claimed.get_or_create(user=ctx.author.id, type=c_type)
                 claim.expires_on = utcnow + datetime.timedelta(hours=claim_cd)
                 claim.char_name = orig_key_split[0]
@@ -496,7 +531,7 @@ class Fun(commands.Cog):
                     return f"|| {attachement.url} || ⚠ potentially nsfw image for **{orig_key_split[0]}**"
                 return em
 
-            print(f'{tmp_time} TMPPRINT 8 ')  # tmp print
+            # print(f'{tmp_time} TMPPRINT 8 ')  # tmp print
             # when done remove them if they aren't spamming anymore
             await asyncio.sleep(anti_spam_cd + 1)
             if d_key in self.just_claimed:
