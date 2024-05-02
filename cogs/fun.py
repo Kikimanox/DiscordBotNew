@@ -32,6 +32,7 @@ class Fun(commands.Cog):
             bot: commands.Bot
     ):
         self.bot = bot
+        self.refreshing = False
         # _ in channel names is not allowed!!
         # if you want an - instead of a space prefix ch name with _
         self.data = {}
@@ -123,15 +124,19 @@ class Fun(commands.Cog):
         await exec_cmd(cmd)
 
     @claim.command()
-    @commands.max_concurrency(1, commands.BucketType.default)
-    @commands.cooldown(1, 20, commands.BucketType.default)
     @commands.has_permissions(administrator=True)
     async def refresh(self, ctx):
         """Manually refresh claim data. Requires administrator permission."""
-        await ctx.send("Refreshing claim data, please wait... (this may take a while)")
-        await self.refresh_data()
-        self.data_refresh_task.restart()
-        await ctx.send(f"{ctx.author.mention} Data refreshed successfully.")
+        if self.refreshing:
+            return await ctx.send("Someone already invoked refresh, data is currently refreshing.")
+        try:
+            self.refreshing = True
+            await ctx.send("Refreshing claim data, please wait... (this may take a while)")
+            await self.refresh_data()
+            self.data_refresh_task.restart()
+            await ctx.send(f"{ctx.author.mention} Data refreshed successfully.")
+        finally:
+            self.refreshing = False
 
     @commands.cooldown(1, 120, commands.BucketType.user)
     @claim.command()
