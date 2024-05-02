@@ -123,7 +123,8 @@ class Fun(commands.Cog):
         await exec_cmd(cmd)
 
     @claim.command()
-    @commands.cooldown(1, 600, commands.BucketType.default)
+    @commands.max_concurrency(1, commands.BucketType.default)
+    @commands.cooldown(1, 20, commands.BucketType.default)
     @commands.has_permissions(administrator=True)
     async def refresh(self, ctx):
         """Manually refresh claim data. Requires administrator permission."""
