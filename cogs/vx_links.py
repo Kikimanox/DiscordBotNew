@@ -64,15 +64,13 @@ def convert_instagram_links_to_markdown(text):
 
     def replace_link(match):
         url = match.group(0)
-        url = url.replace("www.instagram.com", "instagram.com")
-        url = url.replace("instagram.com", "d.ddinstagram.com")
+        url = url.replace("instagram.com", "ddinstagram.com")
         url = remove_query_params(url)
         return markdown_link_format.format(url)
 
     def replace_markdown_link(match):
         url = match.group(1)
-        url = url.replace("www.instagram.com", "instagram.com")
-        url = url.replace("instagram.com", "d.ddinstagram.com")
+        url = url.replace("instagram.com", "ddinstagram.com")
         url = remove_query_params(url)
         return match.group(0).replace(match.group(1), url)
 
