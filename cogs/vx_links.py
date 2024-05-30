@@ -22,8 +22,10 @@ TWITTER_URL = r"(https?://(?:www\.)?)(twitter|x)\.com/\S*"
 PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
 REDDIT_URL = r"(https?://(?:www\.|old\.|new\.)?)reddit\.com/\S*"
 TIKTOK_URL = r"(https?://(?:www\.|vt\.)?)tiktok\.com/\S*"
+INSTAGRAM_URL = r"(https?://(?:www\.)?)instagram\.com/\S*"
 
 EXCLUDED_SERVERS = [920092394945384508, 599963725352534027]
+
 
 def remove_query_params(url):
     parsed = urlparse(url)
@@ -31,9 +33,10 @@ def remove_query_params(url):
     clean_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
     return clean_url
 
+
 def convert_twitter_links_to_markdown(text):
     markdown_link_format = "[Tweet]({})"
-    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
+    markdown_link_pattern = r"\[.*?\]\((.*?)\)"
 
     def replace_link(match):
         url = match.group(0)
@@ -49,16 +52,37 @@ def convert_twitter_links_to_markdown(text):
         url = remove_query_params(url)
         return match.group(0).replace(match.group(1), url)
 
-
     text = re.sub(markdown_link_pattern, replace_markdown_link, text)
     text = re.sub(TWITTER_URL, replace_link, text)
 
     return text
 
 
+def convert_instagram_links_to_markdown(text):
+    markdown_link_format = "[Instagram]({})"
+    markdown_link_pattern = r"\[.*?\]\((.*?)\)"
+
+    def replace_link(match):
+        url = match.group(0)
+        url = url.replace("instagram.com", "ddinstagram.com")
+        url = remove_query_params(url)
+        return markdown_link_format.format(url)
+
+    def replace_markdown_link(match):
+        url = match.group(1)
+        url = url.replace("instagram.com", "ddinstagram.com")
+        url = remove_query_params(url)
+        return match.group(0).replace(match.group(1), url)
+
+    text = re.sub(markdown_link_pattern, replace_markdown_link, text)
+    text = re.sub(INSTAGRAM_URL, replace_link, text)
+
+    return text
+
+
 def convert_pixiv_links_to_markdown(text):
     markdown_link_format = "[Pixiv]({})"
-    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
+    markdown_link_pattern = r"\[.*?\]\((.*?)\)"
 
     def replace_link(match):
         url = match.group(0)
@@ -77,9 +101,10 @@ def convert_pixiv_links_to_markdown(text):
 
     return text
 
+
 def convert_reddit_links_to_markdown(text):
     markdown_link_format = "[Reddit]({})"
-    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
+    markdown_link_pattern = r"\[.*?\]\((.*?)\)"
 
     def replace_link(match):
         url = match.group(0)
@@ -98,9 +123,10 @@ def convert_reddit_links_to_markdown(text):
 
     return text
 
+
 def convert_tiktok_links_to_markdown(text):
     markdown_link_format = "[Tiktok]({})"
-    markdown_link_pattern = r'\[.*?\]\((.*?)\)'
+    markdown_link_pattern = r"\[.*?\]\((.*?)\)"
 
     def replace_link(match):
         url = match.group(0)
@@ -129,9 +155,9 @@ class VxLinks(commands.Cog):
         self.user_webhooks_ownership: Dict[int, Tuple[int, WebhookMessage]] = {}
         self.message_tracker: Dict[int, WebhookMessage] = {}
         self.channels_list = [
-            727951803521695795, # mengo-tweets
-            727951886896070658, # onk-tweets
-            705264951367041086, # raw-spoilers
+            727951803521695795,  # mengo-tweets
+            727951886896070658,  # onk-tweets
+            705264951367041086,  # raw-spoilers
         ]
 
     async def create_webhook(self, channel) -> Webhook:
@@ -180,19 +206,23 @@ class VxLinks(commands.Cog):
             return
         # Prevents the bot from sending messages in the vxlinks channels
         if msg.guild is not None:
-            if msg.guild.id == 695200821910044783 and msg.channel.id in self.channels_list:
+            if (
+                msg.guild.id == 695200821910044783
+                and msg.channel.id in self.channels_list
+            ):
                 return
 
         if msg.guild and (msg.guild.id in EXCLUDED_SERVERS):
             return
 
-        pattern = r'(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)'
+        pattern = r"(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|instagram\.com|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)"
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
             msg_content = convert_pixiv_links_to_markdown(msg_content)
             msg_content = convert_reddit_links_to_markdown(msg_content)
             msg_content = convert_tiktok_links_to_markdown(msg_content)
+            msg_content = convert_instagram_links_to_markdown(msg_content)
 
             await self.send_webhook_message(msg.channel, msg, msg_content)
 
@@ -229,6 +259,7 @@ class VxLinks(commands.Cog):
             update_content = convert_pixiv_links_to_markdown(update_content)
             update_content = convert_reddit_links_to_markdown(update_content)
             update_content = convert_tiktok_links_to_markdown(update_content)
+            update_content = convert_instagram_links_to_markdown(update_content)
 
             await webhook_message.edit(
                 content=update_content,
