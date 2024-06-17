@@ -173,9 +173,9 @@ class Misc(commands.Cog):
                 afk_text = afk_text[:p[0]] + p[1] + afk_text[p[0]:]
 
         afk_text = re.sub(r'\\', '', afk_text)
-        # afk_text = afk_text.replace('@', '@\u200b')
-        afk_text = afk_text.replace('@everyone', '@\u200beveryone')
-        afk_text = afk_text.replace('@here', '@\u200bhere')
+        # afk_text = afk_text.replace('@everyone', '@\u200beveryone')
+        # afk_text = afk_text.replace('@here', '@\u200bhere')
+        afk_text = afk_text.replace('@', '@\u200b')
 
         ctx.bot.dont_check_this_for_afk.append(ctx.message.id)
         afk, _ = AfkTbl.get_or_create(gid=ctx.guild.id, uid=ctx.author.id)
