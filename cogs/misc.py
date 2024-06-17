@@ -183,7 +183,16 @@ class Misc(commands.Cog):
         afk.afk_on = datetime.datetime.utcnow()
         afk.save()
         AfkManager.set_new_bot_afk(ctx.bot, afk)
-        await ctx.send(f'{ctx.author.mention} is now AFK{"" if not afk_text else ": " + afk_text}')
+
+        embed = Embed(
+            title="AFK status set",
+            description=f"{ctx.author.mention} is now AFK{'' if not afk_text else ': ' + afk_text}",
+            color=ctx.author.color
+        )
+        await ctx.send(
+            embed=embed,
+            allowed_mentions=discord.AllowedMentions.none()
+        )
 
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.check(checks.manage_emojis_check)
