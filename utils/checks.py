@@ -38,6 +38,11 @@ async def manage_channels_check(
     return ctx.author.id == ctx.bot.config['OWNER_ID'] or (
             isinstance(ctx.author, Member) and ctx.author.guild_permissions.manage_channels)
 
+async def manage_current_channel_messages_check(
+        ctx: commands.Context
+):
+    return ctx.author.id == ctx.bot.config['OWNER_ID'] or (
+            isinstance(ctx.author, Member) and ctx.message.channel.permissions_for(ctx.author).manage_messages)
 
 async def kick_members_check(
         ctx: commands.Context
