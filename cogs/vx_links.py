@@ -279,7 +279,7 @@ class VxLinks(commands.Cog):
         if msg.guild and (msg.guild.id in EXCLUDED_SERVERS):
             return
 
-        pattern = r"(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|instagram\.com|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)"
+        pattern = r"(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|instagram\.com|((old\.|new\.)?reddit\.com)(?!.*\.rss)|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)"
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
