@@ -204,10 +204,10 @@ class VxLinks(commands.Cog):
     async def embedfix(self, ctx: commands.Context):
         if ctx.author.id not in self.user_opt_out:
             await self.add_opt_out(ctx.author.id)
-            await ctx.send("You have been opted out of embed fix.")
+            await ctx.send("You have been **opted out** of embed fix.")
         else:
             await self.add_opt_in(ctx.author.id)
-            await ctx.send("You have been opted in to embed fix.")
+            await ctx.send("You have been **opted in** to embed fix.")
 
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
