@@ -1,5 +1,7 @@
+import json
 import logging
 import re
+from pathlib import Path
 from typing import Dict, Tuple, Union
 from urllib.parse import urlparse, urlunparse
 
@@ -23,6 +25,8 @@ PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
 REDDIT_URL = r"(https?://(?:www\.|old\.|new\.)?)reddit\.com/\S*"
 TIKTOK_URL = r"(https?://(?:www\.|vt\.)?)tiktok\.com/\S*"
 INSTAGRAM_URL = r"(https?://(?:www\.)?)instagram\.com/\S*"
+
+OPT_OUT_VX_LINKS_DATA_JSON = "data/vx-links-opt-out.json"
 
 EXCLUDED_SERVERS = [920092394945384508, 599963725352534027]
 
@@ -159,6 +163,66 @@ class VxLinks(commands.Cog):
             727951886896070658,  # onk-tweets
             705264951367041086,  # raw-spoilers
         ]
+
+        self.user_opt_out: list[int] = []
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
+        if data_path.exists():
+            LOGGER.info(f"{data_path} exists. Reading data...")
+            with data_path.open("r") as f:
+                data = json.load(f)
+
+            self.user_opt_out = data.get("users", [])
+
+    async def add_opt_out(self, user_id: int):
+        self.user_opt_out.append(user_id)
+        data = {"users": self.user_opt_out}
+
+        data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
+        with data_path.open("w") as f:
+            json.dump(
+                data,
+                f,
+                indent=4,
+            )
+
+    async def add_opt_in(self, user_id: int):
+        self.user_opt_out.remove(user_id)
+        data = {"users": self.user_opt_out}
+
+        data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
+        with data_path.open("w") as f:
+            json.dump(
+                data,
+                f,
+                indent=4,
+            )
+
+    @commands.hybrid_command(
+        "optout",
+        description="Opt out of vxlinks.",
+    )
+    async def optout(self, ctx: commands.Context):
+        if ctx.author.id in self.user_opt_out:
+            return await ctx.send("You are already opted out of vxlinks.", delete_after=15)
+
+        await self.add_opt_out(ctx.author.id)
+
+        await ctx.send("You have been opted out of vxlinks.")
+
+    @commands.hybrid_command(
+        "optin",
+        description="Opt in to vxlinks.",
+    )
+    async def optin(self, ctx: commands.Context):
+        if ctx.author.id not in self.user_opt_out:
+            return await ctx.send("You are already opted in to vxlinks.", delete_after=15)
+
+        await self.add_opt_in(ctx.author.id)
+
+        await ctx.send("You have been opted in to vxlinks.")
 
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
