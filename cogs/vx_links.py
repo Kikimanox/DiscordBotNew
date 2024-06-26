@@ -268,6 +268,10 @@ class VxLinks(commands.Cog):
     async def on_message(self, msg: Message):
         if msg.author.bot:
             return
+
+        if msg.author.id in self.user_opt_out:
+            return
+
         # Prevents the bot from sending messages in the vxlinks channels
         if msg.guild is not None:
             if (
