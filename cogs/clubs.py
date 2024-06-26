@@ -179,6 +179,7 @@ BACKUP_DIR = "data/club_backups"
 
 MAX_RATE_LIMIT_TIME = 60 * 60 * 24 * 7
 
+DISCORD_INVITE_REGEX_PATTERN = r"(?:https?://)?discord(?:app)?\.(?:com/invite|gg)/[a-zA-Z0-9]+/?"
 
 class ClubManagerCommons:
     @staticmethod
@@ -2187,8 +2188,18 @@ class Clubs(commands.Cog):
 
     @commands.command(aliases=["pingclub"])
     @commands.guild_only()
-    async def ping(self, ctx, club, *, message: str = ""):
+    async def ping(self, ctx: commands.Context, club, *, message: str = ""):
         """Ping all members of a club (with optional message). Ie `[p]ping pcmasterrace hey guys check out my new rig.`"""
+        discord_invite_link = re.search(
+            DISCORD_INVITE_REGEX_PATTERN,
+            message,
+        )
+        if discord_invite_link:
+            await ctx.send(
+                "You can't send discord invite links in pings. Please remove it.",
+            )
+            return
+
         club = club.lower()
         return await self.ping_helper(ctx, [club])
 
