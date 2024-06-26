@@ -171,8 +171,12 @@ class VxLinks(commands.Cog):
         data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
         if data_path.exists():
             LOGGER.info(f"{data_path} exists. Reading data...")
-            with data_path.open("r") as f:
-                data = json.load(f)
+            try:
+                with data_path.open("r") as f:
+                    data = json.load(f)
+            except json.JSONDecodeError:
+                ERROR_LOGGER.error(f"Error reading {data_path}")
+                data = {}
 
             self.user_opt_out = data.get("users", [])
 
