@@ -180,18 +180,15 @@ class VxLinks(commands.Cog):
         self.user_opt_out.append(user_id)
         data = {"users": self.user_opt_out}
 
-        data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
-        with data_path.open("w") as f:
-            json.dump(
-                data,
-                f,
-                indent=4,
-            )
+        self.save_data(data)
 
     async def add_opt_in(self, user_id: int):
         self.user_opt_out.remove(user_id)
         data = {"users": self.user_opt_out}
 
+        self.save_data(data)
+
+    def save_data(self, data):
         data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
         with data_path.open("w") as f:
             json.dump(
@@ -206,7 +203,9 @@ class VxLinks(commands.Cog):
     )
     async def optout(self, ctx: commands.Context):
         if ctx.author.id in self.user_opt_out:
-            return await ctx.send("You are already opted out of vxlinks.", delete_after=15)
+            return await ctx.send(
+                "You are already opted out of vxlinks.", delete_after=15
+            )
 
         await self.add_opt_out(ctx.author.id)
 
@@ -218,7 +217,9 @@ class VxLinks(commands.Cog):
     )
     async def optin(self, ctx: commands.Context):
         if ctx.author.id not in self.user_opt_out:
-            return await ctx.send("You are already opted in to vxlinks.", delete_after=15)
+            return await ctx.send(
+                "You are already opted in to vxlinks.", delete_after=15
+            )
 
         await self.add_opt_in(ctx.author.id)
 
