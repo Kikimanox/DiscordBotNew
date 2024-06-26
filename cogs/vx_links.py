@@ -198,32 +198,16 @@ class VxLinks(commands.Cog):
             )
 
     @commands.hybrid_command(
-        "optout",
-        description="Opt out of vxlinks.",
+        "embedfix",
+        description="Toggle to opt in/out to embed fix.",
     )
-    async def optout(self, ctx: commands.Context):
-        if ctx.author.id in self.user_opt_out:
-            return await ctx.send(
-                "You are already opted out of vxlinks.", delete_after=15
-            )
-
-        await self.add_opt_out(ctx.author.id)
-
-        await ctx.send("You have been opted out of vxlinks.")
-
-    @commands.hybrid_command(
-        "optin",
-        description="Opt in to vxlinks.",
-    )
-    async def optin(self, ctx: commands.Context):
+    async def embedfix(self, ctx: commands.Context):
         if ctx.author.id not in self.user_opt_out:
-            return await ctx.send(
-                "You are already opted in to vxlinks.", delete_after=15
-            )
-
-        await self.add_opt_in(ctx.author.id)
-
-        await ctx.send("You have been opted in to vxlinks.")
+            await self.add_opt_out(ctx.author.id)
+            await ctx.send("You have been opted out of embed fix.")
+        else:
+            await self.add_opt_in(ctx.author.id)
+            await ctx.send("You have been opted in to embed fix.")
 
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
