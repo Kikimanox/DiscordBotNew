@@ -1,5 +1,7 @@
+import json
 import logging
 import re
+from pathlib import Path
 from typing import Dict, Tuple, Union
 from urllib.parse import urlparse, urlunparse
 
@@ -23,6 +25,8 @@ PIXIV_URL = r"(https?://(?:www\.)?)pixiv\.net/\S*"
 REDDIT_URL = r"(https?://(?:www\.|old\.|new\.)?)reddit\.com/\S*"
 TIKTOK_URL = r"(https?://(?:www\.|vt\.)?)tiktok\.com/\S*"
 INSTAGRAM_URL = r"(https?://(?:www\.)?)instagram\.com/\S*"
+
+OPT_OUT_VX_LINKS_DATA_JSON = "data/vx-links-opt-out.json"
 
 EXCLUDED_SERVERS = [920092394945384508, 599963725352534027]
 
@@ -160,6 +164,55 @@ class VxLinks(commands.Cog):
             705264951367041086,  # raw-spoilers
         ]
 
+        self.user_opt_out: list[int] = []
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
+        if data_path.exists():
+            LOGGER.info(f"{data_path} exists. Reading data...")
+            try:
+                with data_path.open("r") as f:
+                    data = json.load(f)
+            except json.JSONDecodeError:
+                ERROR_LOGGER.error(f"Error reading {data_path}")
+                data = {}
+
+            self.user_opt_out = data.get("users", [])
+
+    async def add_opt_out(self, user_id: int):
+        self.user_opt_out.append(user_id)
+        data = {"users": self.user_opt_out}
+
+        self.save_data(data)
+
+    async def add_opt_in(self, user_id: int):
+        self.user_opt_out.remove(user_id)
+        data = {"users": self.user_opt_out}
+
+        self.save_data(data)
+
+    def save_data(self, data):
+        data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
+        with data_path.open("w") as f:
+            json.dump(
+                data,
+                f,
+                indent=4,
+            )
+
+    @commands.hybrid_command(
+        "embedfix",
+        description="Toggle to opt in/out to embed fix.",
+    )
+    async def embedfix(self, ctx: commands.Context):
+        if ctx.author.id not in self.user_opt_out:
+            await self.add_opt_out(ctx.author.id)
+            await ctx.send("You have been **opted out** of embed fix.")
+        else:
+            await self.add_opt_in(ctx.author.id)
+            await ctx.send("You have been **opted in** to embed fix.")
+
     async def create_webhook(self, channel) -> Webhook:
         if isinstance(channel, Thread):
             channel = channel.parent
@@ -204,6 +257,10 @@ class VxLinks(commands.Cog):
     async def on_message(self, msg: Message):
         if msg.author.bot:
             return
+
+        if msg.author.id in self.user_opt_out:
+            return
+
         # Prevents the bot from sending messages in the vxlinks channels
         if msg.guild is not None:
             if (
@@ -215,7 +272,7 @@ class VxLinks(commands.Cog):
         if msg.guild and (msg.guild.id in EXCLUDED_SERVERS):
             return
 
-        pattern = r"(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|instagram\.com|(old\.|new\.)?reddit\.com|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)"
+        pattern = r"(?:[^<\|\[]|^)(https?://(?:www\.)?)(twitter\.com/[^/]+/status/\d+|x\.com/[^/]+/status/\d+|pixiv\.net|instagram\.com|((old\.|new\.)?reddit\.com)(?!.*\.rss)|(vt\.)?tiktok\.com)(?:[^>\|\]]|$)"
         matches = re.search(pattern, msg.content)
         if matches:
             msg_content = convert_twitter_links_to_markdown(msg.content)
