@@ -5,6 +5,7 @@ from discord.ext import commands
 
 import utils.checks as checks
 from utils.dataIOa import dataIOa
+from typing import Union, Optional
 
 CHANNEL_MUTE_CONFIGS = "data/channel_mute_configs.json"
 dataIOa.init_json(CHANNEL_MUTE_CONFIGS)
@@ -24,7 +25,7 @@ class ChannelMute(commands.Cog):
 
     @commands.command(aliases=['cmuter', 'cmuterole'])
     @commands.check(checks.moderator_or_underground_idols_check)
-    async def channelmuterole(self, ctx, role: discord.Role, *channels: discord.TextChannel):
+    async def channelmuterole(self, ctx, role: discord.Role, *channels: Union[discord.TextChannel, discord.ForumChannel]):
         """Add a role that will be used to mute users in a channel(s).
         
         `[p]cmuter ROLE_ID CHANNEL_ID`
@@ -69,7 +70,7 @@ class ChannelMute(commands.Cog):
 
     @commands.command(aliases=['cmutec', 'cmutechannel'])
     @commands.check(checks.moderator_or_underground_idols_check)
-    async def channelmutereportchannel(self, ctx, channel: discord.TextChannel):
+    async def channelmutereportchannel(self, ctx, channel: Union[discord.TextChannel, discord.ForumChannel]):
         """Set the channel where channel mute reports will be sent."""
                     
         cmute_cfg = dataIOa.load_json(CHANNEL_MUTE_CONFIGS)
@@ -85,7 +86,9 @@ class ChannelMute(commands.Cog):
         
         if channel is None:
             dataIOa.save_json(CHANNEL_MUTE_CONFIGS, {})
+            await ctx.send(embed=Embed(description=f"Channel mute configurations have been cleared globally.", color=0xbbdabb))
         else:
+            channel = get_parent_channel(channel)
             cmute_cfg = dataIOa.load_json(CHANNEL_MUTE_CONFIGS)
             if "channel_mute_role" not in cmute_cfg.keys() or not cmute_cfg['channel_mute_role'].get(str(channel.id)):
                 await ctx.send(embed=Embed(description="No channel mute configurations have been set.", color=0x753b34))
@@ -105,15 +108,23 @@ class ChannelMute(commands.Cog):
         
     @commands.command(aliases=['cmute'])
     @commands.check(checks.manage_current_channel_messages_check)
-    async def channelmute(self, ctx, user: discord.Member, *, reason: str = ""):
-        """Mute a user channel wide until further moderation action is decided.
+    async def channelmute(
+        self,
+        ctx: commands.Context,
+        user: Union[discord.Member, discord.User],
+        channel: Optional[Union[discord.abc.GuildChannel, discord.Thread]] = None,
+        *,
+        reason: str = "",
+    ):
+        """Mute a user in a channel until further moderation action is decided.
         
-        `[p]channelmute @user`
+        `[p]channelmute @user #channel reason`
         `[p]cmute USER_ID`
         """
 
         cmute_cfg = dataIOa.load_json(CHANNEL_MUTE_CONFIGS)
-        channel = get_parent_channel(ctx.message.channel)   
+        channel = get_parent_channel(channel if channel else ctx.message.channel)
+        
         
         report_channel = cmute_cfg.get("report_channel")
         if report_channel is None:
@@ -140,6 +151,7 @@ class ChannelMute(commands.Cog):
         em.add_field(name="Offender", value=f"`{user.id}` ({user.mention})", inline=True)
         em.add_field(name="Other info", value=jump_msg, inline=True)
         em.add_field(name="Reason", value=f"```{reason}```", inline=False)
+        em.set_footer(text=f"channel id: {channel.id}")
         
         new_dict = {}
         for k, v in cmute_cfg["channel_mute_role"].items():
@@ -180,7 +192,7 @@ class ChannelMute(commands.Cog):
                     return
             
             user_id = int(message.embeds[0].fields[1].value.split()[0][1:-1])
-            channel_id = int(message.embeds[0].fields[2].value.split()[-1][2:-1])
+            channel_id = int(message.embeds[0].footer.text.split()[-1])
             
             channel_id = get_parent_channel(await guild.fetch_channel(channel_id)).id
             
@@ -196,16 +208,23 @@ class ChannelMute(commands.Cog):
 
     @commands.command(aliases=['cunmute', 'uncmute'])
     @commands.check(checks.manage_current_channel_messages_check)
-    async def channelunmute(self, ctx, user: discord.Member, *, reason: str = ""):
+    async def channelunmute(
+        self, 
+        ctx, 
+        user: discord.Member, 
+        channel: Optional[Union[discord.abc.GuildChannel, discord.Thread]] = None, 
+        *, 
+        reason: str = ""
+    ):
         """Unmute a user channel wide.
         
-        `[p]channelunmute @user`
+        `[p]channelunmute @user #channel reason`
         `[p]uncmute USER_ID`
         """
         
         cmute_cfg = dataIOa.load_json(CHANNEL_MUTE_CONFIGS)
         
-        channel = get_parent_channel(ctx.message.channel)   
+        channel = get_parent_channel(channel if channel else ctx.message.channel)   
         if "channel_mute_role" not in cmute_cfg.keys():
             return await ctx.send(embed=Embed(description="No channel mutes have been configured in the server.", color=0x753b34))
         
