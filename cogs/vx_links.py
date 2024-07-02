@@ -166,8 +166,8 @@ class VxLinks(commands.Cog):
 
         self.user_opt_out: list[int] = []
 
-    @commands.Cog.listener()
-    async def on_ready(self):
+
+    async def cog_load(self):
         data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
         if data_path.exists():
             LOGGER.info(f"{data_path} exists. Reading data...")
@@ -179,6 +179,11 @@ class VxLinks(commands.Cog):
                 data = {}
 
             self.user_opt_out = data.get("users", [])
+
+    async def cog_unload(self) -> None:
+        data = {"users": self.user_opt_out}
+
+        self.save_data(data)
 
     async def add_opt_out(self, user_id: int):
         self.user_opt_out.append(user_id)
@@ -195,11 +200,14 @@ class VxLinks(commands.Cog):
     def save_data(self, data):
         data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
         with data_path.open("w") as f:
-            json.dump(
-                data,
-                f,
-                indent=4,
-            )
+            try:
+                json.dump(
+                    data,
+                    f,
+                    indent=4,
+                )
+            except json.JSONDecodeError:
+                ERROR_LOGGER.error(f"Error writing to {data_path}")
 
     @commands.hybrid_command(
         "embedfix",
