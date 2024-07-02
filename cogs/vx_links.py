@@ -200,11 +200,14 @@ class VxLinks(commands.Cog):
     def save_data(self, data):
         data_path = Path(OPT_OUT_VX_LINKS_DATA_JSON)
         with data_path.open("w") as f:
-            json.dump(
-                data,
-                f,
-                indent=4,
-            )
+            try:
+                json.dump(
+                    data,
+                    f,
+                    indent=4,
+                )
+            except json.JSONDecodeError:
+                ERROR_LOGGER.error(f"Error writing to {data_path}")
 
     @commands.hybrid_command(
         "embedfix",
