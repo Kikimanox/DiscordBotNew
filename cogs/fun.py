@@ -543,10 +543,10 @@ class Fun(commands.Cog):
             if d_key in self.just_claimed:
                 del self.just_claimed[d_key]
 
-    @commands.command(hidden=True, aliases=['m'])
-    async def mood(self, ctx):
-        """Will be back soonTM"""
-        await ctx.send("Command will be back soon™")
+    # @commands.command(hidden=True, aliases=['m'])
+    # async def mood(self, ctx):
+    #    """Will be back soonTM"""
+    #    await ctx.send("Command will be back soon™")
 
     @staticmethod
     def prepare_for_history(d):
