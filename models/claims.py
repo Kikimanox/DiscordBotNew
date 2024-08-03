@@ -201,8 +201,8 @@ class ClaimsManager:
                                 pics[char_key] = [[], []]
 
                             # Construct the URLs for the card images
-                            normal_url = f"https://storage.sekai.best/sekai-assets/character/member/{asset_name}_rip/card_normal.webp"
-                            trained_url = f"https://storage.sekai.best/sekai-assets/character/member/{asset_name}_rip/card_after_training.webp"
+                            normal_url = f"https://storage.sekai.best/sekai-jp-assets/character/member/{asset_name}_rip/card_normal.webp"
+                            trained_url = f"https://storage.sekai.best/sekai-jp-assets/character/member/{asset_name}_rip/card_after_training.webp"
 
                             # Add the URLs to the pics dictionary
                             pics[char_key][0].append([type('obj', (object,), {'url': normal_url}), False])
