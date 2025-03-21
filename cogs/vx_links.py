@@ -44,15 +44,15 @@ def convert_twitter_links_to_markdown(text):
 
     def replace_link(match):
         url = match.group(0)
-        url = url.replace("twitter.com", "vxtwitter.com")
-        url = url.replace("x.com", "vxtwitter.com")
+        url = url.replace("twitter.com", "fxtwitter.com")
+        url = url.replace("x.com", "fxtwitter.com")
         url = remove_query_params(url)
         return markdown_link_format.format(url)
 
     def replace_markdown_link(match):
         url = match.group(1)
-        url = url.replace("twitter.com", "vxtwitter.com")
-        url = url.replace("x.com", "vxtwitter.com")
+        url = url.replace("twitter.com", "fxtwitter.com")
+        url = url.replace("x.com", "fxtwitter.com")
         url = remove_query_params(url)
         return match.group(0).replace(match.group(1), url)
 
