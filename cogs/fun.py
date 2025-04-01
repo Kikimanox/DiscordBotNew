@@ -79,7 +79,6 @@ class Fun(commands.Cog):
             return
         # print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
 
-
     @commands.group(aliases=possible_for_bot)  # THESE TWO HAVE TO BE THE SAME (also update help desc when adding)
     async def claim(self, ctx, *, subcmd=""):
         """Get your daily claim for a certain theme
@@ -408,19 +407,18 @@ class Fun(commands.Cog):
                     got = random.choice(d[orig_key][0])  # attachments list on index 0
                     attachement = got[0]  # urls
                     is_nsfw = got[1]
-                    # print(f'{tmp_time} TMPPRINT 5 {got[0].url}')  # tmp print
-                    async with session.head(attachement.url) as response:
-                        if response.status == 200:
-                            if not u:
-                                break
-                            if u.nsfw == 'off' and not is_nsfw:
-                                break
-                            if u.nsfw == 'default':
-                                break
-                            if u.nsfw == 'off' and is_nsfw:
-                                continue
-                        else:
-                            continue
+                    # REMOVE THE URL VALIDATION TEMPORARILY - Just check the NSFW preferences
+                    #async with session.head(attachement.url) as response:
+                        # if response.status == 200:
+                    if not u:
+                        break  # No user preferences, so use any image
+                    if u.nsfw == 'off' and not is_nsfw:
+                        break  # User wants no NSFW and this image is safe
+                    if u.nsfw == 'default':
+                        break  # User has default preferences
+                    if u.nsfw == 'off' and is_nsfw:
+                        continue  # User wants no NSFW but this image is NSFW, try another
+                        # else: continue
 
             # print(f'{tmp_time} TMPPRINT 6 att: {attachement.url}')  # tmp print
             em = None
