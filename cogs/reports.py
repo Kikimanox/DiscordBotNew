@@ -789,7 +789,8 @@ class Reports(commands.Cog):
                 await message.add_reaction(emoji)
             except discord.errors.Forbidden:
                 auto_escalate = True
-            await message.remove_reaction(emoji, message.guild.get_member(reporter_id))
+            # get_member can miss uncached members, a plain Object is enough to remove the reaction
+            await message.remove_reaction(emoji, discord.Object(id=reporter_id))
             await self.report_message(message, reporter_id, auto_escalate=auto_escalate)
 
     async def handle_report_ack(
@@ -842,12 +843,26 @@ class Reports(commands.Cog):
             self, event: discord.RawReactionActionEvent, message: discord.Message
     ) -> None:
         if "Moderation" in self.bot.cogs and hasattr(self.bot.cogs["Moderation"], "cases"):
-            user = message.guild.get_member(
-                int(message.embeds[0].description.rsplit("User id:")[1].strip())
-            )
+            user_id = int(message.embeds[0].description.rsplit("User id:")[1].strip())
+            user = message.guild.get_member(user_id)
+            if user is None:
+                try:
+                    user = await message.guild.fetch_member(user_id)
+                except discord.HTTPException:
+                    user = None
             esc_ctx = await self.get_ctx_from_esc_report(event, message)
-            esc_ctx.author = message.guild.get_member(event.user_id)
+            esc_ctx.author = event.member or await self.resolve_member(message.guild, event.user_id)
             return await self.bot.cogs["Moderation"].cases(esc_ctx, user)
+
+    @staticmethod
+    async def resolve_member(guild: discord.Guild, user_id: int):
+        member = guild.get_member(user_id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(user_id)
+            except discord.HTTPException:
+                member = None
+        return member
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, event: discord.RawReactionActionEvent) -> None:
@@ -868,9 +883,8 @@ class Reports(commands.Cog):
                 message = await channel.fetch_message(event.message_id)
                 await self.handle_report(message, event.user_id, event.emoji)
             elif event.emoji.name in ["✅", "❌", "❓"]:
-                if not channel.permissions_for(
-                        channel.guild.get_member(event.user_id)
-                ).manage_messages:
+                member = event.member or await self.resolve_member(guild, event.user_id)
+                if member is None or not channel.permissions_for(member).manage_messages:
                     return
                 message = await channel.fetch_message(event.message_id)
                 if (
