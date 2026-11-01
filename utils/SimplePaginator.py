@@ -75,27 +75,44 @@ class SimplePaginator:
                 except discord.HTTPException:
                     return
 
-        def check(r, u):
-            if str(r) not in self.controls.keys():
-                return False
-            elif u.id == bot.user.id or r.message.id != self.base.id:
-                return False
-            elif u.id != author.id:
-                return False
-            return True
+        def norm(emoji):
+            return str(emoji).replace('\ufe0f', '')
+
+        controls = {norm(k): v for k, v in self.controls.items()}
+
+        # Use raw reaction events: the normal reaction_add event is only dispatched when the
+        # reacting user is in the bot's cache, which often isn't the case in DMs, so page
+        # switching silently did nothing there.
+        def check(payload):
+            return (payload.message_id == self.base.id
+                    and payload.user_id == author.id
+                    and payload.user_id != bot.user.id
+                    and norm(payload.emoji) in controls)
+
+        # In DMs (or when we lack Manage Messages) the bot can't remove the user's reaction,
+        # so we also listen for reaction removal to let the user just toggle the reaction.
+        listen_remove = self.base.guild is None
 
         while True:
+            events = ['raw_reaction_add'] + (['raw_reaction_remove'] if listen_remove else [])
+            waiters = [asyncio.ensure_future(bot.wait_for(e, check=check)) for e in events]
             try:
-                react, user = await bot.wait_for('reaction_add', check=check, timeout=self.timeout)
-            except asyncio.TimeoutError:
+                done, _ = await asyncio.wait(waiters, timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED)
+            finally:
+                for w in waiters:
+                    if not w.done():
+                        w.cancel()
+            if not done:
                 return ctx.bot.loop.create_task(self.stop_controller(self.base))
 
-            control = self.controls.get(str(react))
+            payload = done.pop().result()
+            control = controls.get(norm(payload.emoji))
 
-            try:
-                await self.base.remove_reaction(react, user)
-            except discord.HTTPException:
-                pass
+            if payload.event_type == 'REACTION_ADD' and not listen_remove:
+                try:
+                    await self.base.remove_reaction(payload.emoji, discord.Object(id=payload.user_id))
+                except discord.HTTPException:
+                    listen_remove = True
 
             self.previous = self.current
             await self.indexer(ctx, control)
@@ -104,8 +121,8 @@ class SimplePaginator:
                 continue
 
             try:
-                await self.base.edit(embed=self.pages[self.current])
-            except KeyError:
+                await self.base.edit(embed=self.pages[int(self.current)])
+            except (KeyError, IndexError, discord.HTTPException):
                 pass
 
     async def stop_controller(self, message):

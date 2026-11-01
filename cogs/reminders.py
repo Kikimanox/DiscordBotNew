@@ -73,6 +73,37 @@ class Reminders(commands.Cog):
             if not self.bot.from_serversetup:
                 self.bot.from_serversetup = await SSManager.get_setup_formatted(self.bot)
 
+    async def resolve_user(self, user_id):
+        """get_user only hits the cache, which can miss users (e.g. DM-only reminders),
+        so fall back to fetching from the API instead of silently dropping the reminder."""
+        if not user_id:
+            return None
+        user = self.bot.get_user(user_id)
+        if user:
+            return user
+        try:
+            return await self.bot.fetch_user(user_id)
+        except Exception as ex:
+            error_logger.error(f"Could not fetch user {user_id} for a reminder: {ex}")
+            return None
+
+    @staticmethod
+    def next_len_str(old_len_str, new_expires_utc):
+        """Rebuild the human readable 'Triggers on' string (keeps the user's utc offset)."""
+        offset = 0.0
+        suffix = ' UTC'
+        try:
+            if old_len_str and 'UTC' in old_len_str:
+                tz_part = old_len_str.split('UTC', 1)[1].strip()
+                if tz_part:
+                    offset = float(tz_part)
+                    suffix = f' UTC{"+" if offset >= 0.0 else ""}{offset}'
+        except Exception:
+            offset = 0.0
+            suffix = ' UTC'
+        local = new_expires_utc + datetime.timedelta(hours=offset)
+        return local.strftime('%Y/%m/%d %H:%M:%S') + suffix
+
     async def execute_reminder(self, timer: Timer):
         logger.info(f"Inside execute_reminder for timer {timer}")
         if timer.meta.startswith('mute'):
@@ -95,14 +126,16 @@ class Reminders(commands.Cog):
                                                       self.bot.user, "Auto")
             logger.info("finished unmuting logic")
         if timer.meta.startswith('reminder_'):
-            exec_user = self.bot.get_user(timer.executed_by)
+            exec_user = await self.resolve_user(timer.executed_by)
             guild = self.bot.get_guild(timer.guild)
             if timer.meta == 'reminder_me':
                 if exec_user:
                     try:
                         return await exec_user.send(timer.reason)
-                    except:
-                        pass  # oh well ... we tried
+                    except Exception as ex:
+                        error_logger.error(f"Failed to DM reminder {timer.id} to {timer.executed_by}: {ex}")
+                else:
+                    error_logger.error(f"Reminder {timer.id}: user {timer.executed_by} could not be resolved")
             elif timer.meta.startswith('reminder_rolePing_'):
                 if guild:
                     role: discord.Role = discord.utils.get(guild.roles, id=int(timer.meta.split('_')[-1]))
@@ -168,6 +201,12 @@ class Reminders(commands.Cog):
             if rm.periodic != 0:
                 logger.info(f"RM is periodic, time to increment it again: {rm}")
                 rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
+                # if the bot was offline for a while, skip straight to the next future occurrence
+                # instead of spamming every missed occurrence one after another
+                now_utc = datetime.datetime.now(datetime.timezone.utc)
+                while rm.expires_on <= now_utc:
+                    rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
+                rm.len_str = self.next_len_str(rm.len_str, rm.expires_on)
                 rm.save()
                 logger.info(f"Periodic RM incremented: {rm}")
             else:
@@ -211,6 +250,11 @@ class Reminders(commands.Cog):
         except(OSError, discord.ConnectionClosed):
             logger.info("In displatch timers: OSError, discord.ConnectionClosed")
             self._task.cancel()
+            self._task = self.bot.loop.create_task(self.dispatch_timers())
+        except Exception:
+            # never let the dispatcher die silently, otherwise no reminder fires until the next refresh
+            error_logger.error(f"Unexpected error in dispatch_timers, restarting it\n{traceback.format_exc()}")
+            await asyncio.sleep(5)
             self._task = self.bot.loop.create_task(self.dispatch_timers())
 
     @staticmethod
@@ -461,14 +505,18 @@ class Reminders(commands.Cog):
             role = None
             rolePing = False
             if g:
-                if reminder.executed_by == reminder.user_id: target = self.bot.get_user(reminder.executed_by)
+                if reminder.executed_by == reminder.user_id:
+                    target = ctx.author if reminder.executed_by == ctx.author.id else \
+                        await self.resolve_user(reminder.executed_by)
                 if not target: target = g.get_channel(reminder.user_id)
                 if 'rolePing_' in reminder.meta:
                     rolePing = True
                     roleId = reminder.meta.split('rolePing_')[-1]
                     role = discord.utils.get(g.roles, id=int(roleId))
             else:
-                target = self.bot.get_user(reminder.executed_by)
+                # DM reminders (guild 0) -> the target is the author themself
+                target = ctx.author if reminder.executed_by == ctx.author.id else \
+                    await self.resolve_user(reminder.executed_by)
             p = "" if target else "~~"
             if target:
                 target = target.mention

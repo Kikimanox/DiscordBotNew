@@ -138,8 +138,9 @@ async def on_ready():
     if os.path.isfile("restart.json"):
         restartData = dataIOa.load_json("restart.json")
         try:
-            guild = bot.get_guild(restartData["guild"])
-            channel = guild.get_channel(restartData["channel"])
+            channel = bot.get_channel(restartData["channel"])
+            if channel is None:
+                channel = await bot.fetch_channel(restartData["channel"])  # e.g. DM channels aren't cached
             await channel.send("Restarted.")
         except:
             print(f'---{datetime.datetime.utcnow().strftime("%c")}---')
@@ -563,7 +564,7 @@ async def restart(ctx, options: str = ""):
         if bot.config['NEW_BOT_LOOP']:
             os.rename('bot_loop3.py', bot.config['NEW_BOT_LOOP'])
     await ctx.send("Restarting...")
-    restarT = {"guild": ctx.guild.id, "channel": ctx.channel.id}
+    restarT = {"guild": ctx.guild.id if ctx.guild else None, "channel": ctx.channel.id}
     dataIOa.save_json("restart.json", restarT)
     exit_bot(0)
 
