@@ -54,9 +54,14 @@ class Timezones(BaseModel):
     user = IntegerField(unique=True)
     utc_offset = FloatField()
 
+
+class TimezoneNames(BaseModel):
+    user = IntegerField(unique=True)
+    tz_name = CharField()
+
 # db.drop_tables([Reminderstbl, Actions, Blacklist, Timezones])
 # db.drop_tables([Reminderstbl])
-db.create_tables([Reminderstbl, Actions, Blacklist, Timezones])
+db.create_tables([Reminderstbl, Actions, Blacklist, Timezones, TimezoneNames])
 
 
 class ModManager:

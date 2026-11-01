@@ -3,6 +3,7 @@ import re
 import string
 import arrow
 import datetime
+from zoneinfo import ZoneInfo, available_timezones
 from dateutil.relativedelta import relativedelta
 import utils.discordUtils as dutils
 
@@ -18,6 +19,33 @@ class plural:
         if abs(v) != 1:
             return f'{v} {plural}'
         return f'{v} {singular}'
+
+
+# Older IDs from the timezone list that the system's timezone data no longer has
+OLD_TIMEZONE_IDS = {
+    'america/buenos_aires': 'America/Argentina/Buenos_Aires',
+    'america/godthab': 'America/Nuuk',
+    'america/indianapolis': 'America/Indiana/Indianapolis',
+    'america/rosario': 'America/Argentina/Cordoba',
+    'asia/calcutta': 'Asia/Kolkata',
+    'asia/choibalsan': 'Asia/Ulaanbaatar',
+    'asia/rangoon': 'Asia/Yangon',
+    'australia/lhi': 'Australia/Lord_Howe',
+    'europe/kiev': 'Europe/Kyiv',
+    'europe/uzhgorod': 'Europe/Kyiv',
+    'europe/zaporozhye': 'Europe/Kyiv',
+    'pacific/enderbury': 'Pacific/Kanton',
+}
+_timezone_names = {}
+
+
+def find_timezone(name):
+    """Timezone by its ID, any letter case. None if there is no such timezone."""
+    if not _timezone_names:
+        _timezone_names.update({z.lower(): z for z in available_timezones() if z not in ('localtime', 'Factory')})
+    key = name.strip().lower()
+    real = _timezone_names.get(key) or OLD_TIMEZONE_IDS.get(key)
+    return ZoneInfo(real) if real else None
 
 
 def human_join(seq, delim=', ', final='or'):
@@ -186,7 +214,7 @@ def get_seconds_from_smhdw(smh_text):
 
 
 # noinspection PyComparisonWithNone
-async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstPart="", utc_offset=0.0):
+async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstPart="", utc_offset=0.0, zone=None):
     """
 
     :param ctx: The context
@@ -194,6 +222,7 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
     :param timestamp: Current timestamp
     :param firstPart: In case the text has some first part that has to be cut out
     :param utc_offset: The utc offset of the user
+    :param zone: The user's timezone, timestamp is local time in it (utc_offset isn't used then)
     :return: mid_part, remind_time, error
     """
     try:
@@ -317,6 +346,10 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
                 delta = datetime.timedelta(seconds=seconds)
             except OverflowError:
                 return None, None, "**Overflow.** Future time too long. Please input a shorter time."
+            if zone:  # real elapsed time, even when the clocks change in between
+                remind_time = (timestamp.replace(tzinfo=zone).astimezone(datetime.timezone.utc) +
+                               delta).astimezone(zone).replace(tzinfo=None)
+                return midPart, remind_time, None
             remind_time = timestamp + delta
 
         else:
@@ -405,12 +438,14 @@ async def try_get_time_from_text(ctx, text, timestamp: datetime.datetime, firstP
 
                 t1 = err if err else f"**{remind_time.strftime('on %Y/%m/%d at %H:%M:%S')}**"
                 if not err:
+                    if zone: t1 += f' {zone.key}'
                     if utc_offset != 0.0: t1 += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
                     if remind_time.date() == timestamp.date(): t1 += " ***(Today)***"
                     t1 += '\n'
 
                 t2 = err2 if err2 else f"**{remind_time2.strftime('on %Y/%m/%d at %H:%M:%S')}**"
                 if not err2:
+                    if zone: t2 += f' {zone.key}'
                     if utc_offset != 0.0: t2 += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
                     if remind_time2.date() == timestamp.date(): t2 += " ***(Today)***"
                     t2 += '\n'

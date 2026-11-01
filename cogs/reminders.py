@@ -10,12 +10,16 @@ from discord.ext import commands
 import utils.checks as checks
 import utils.discordUtils as dutils
 import utils.timeStuff as tutils
-from models.moderation import Reminderstbl, Timezones
+from models.moderation import Reminderstbl, Timezones, TimezoneNames
 from models.serversetup import SSManager
 from utils.SimplePaginator import SimplePaginator
 
 logger = logging.getLogger('info')
 error_logger = logging.getLogger('error')
+
+TIMEZONE_HELP = "Copy the text from the **ID** column of " \
+                "<https://docs.sentinel.thalesgroup.com/softwareandservices/ems/EMSdocs/WSG/Content/TimeZone.htm> " \
+                "and use it like this: `{p}mytimezone Europe/Ljubljana`"
 
 
 class Timer:
@@ -88,8 +92,28 @@ class Reminders(commands.Cog):
             return None
 
     @staticmethod
-    def next_len_str(old_len_str, new_expires_utc):
+    def get_user_zone(user_id):
+        """The timezone saved with [p]mytimezone, None if the user hasn't set one."""
+        row = TimezoneNames.select().where(TimezoneNames.user == user_id).first()
+        return tutils.find_timezone(row.tz_name) if row else None
+
+    @staticmethod
+    def zone_len_str(expires_utc, zone):
+        return expires_utc.astimezone(zone).strftime('%Y/%m/%d %H:%M:%S') + f' {zone.key}'
+
+    @staticmethod
+    def next_occurrence(expires_utc, periodic, zone):
+        """Repeats of whole days stay on the same local time when the clocks change, if the owner has a timezone."""
+        if zone and periodic % 86400 == 0:
+            local = expires_utc.astimezone(zone).replace(tzinfo=None) + datetime.timedelta(seconds=periodic)
+            return local.replace(tzinfo=zone).astimezone(datetime.timezone.utc)
+        return expires_utc + datetime.timedelta(seconds=periodic)
+
+    @staticmethod
+    def next_len_str(old_len_str, new_expires_utc, zone=None):
         """Rebuild the human readable 'Triggers on' string (keeps the user's utc offset)."""
+        if zone:
+            return Reminders.zone_len_str(new_expires_utc, zone)
         offset = 0.0
         suffix = ' UTC'
         try:
@@ -200,13 +224,14 @@ class Reminders(commands.Cog):
                 return
             if rm.periodic != 0:
                 logger.info(f"RM is periodic, time to increment it again: {rm}")
-                rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
+                zone = self.get_user_zone(rm.executed_by)
+                rm.expires_on = self.next_occurrence(rm.expires_on, rm.periodic, zone)
                 # if the bot was offline for a while, skip straight to the next future occurrence
                 # instead of spamming every missed occurrence one after another
                 now_utc = datetime.datetime.now(datetime.timezone.utc)
                 while rm.expires_on <= now_utc:
-                    rm.expires_on = rm.expires_on + datetime.timedelta(seconds=rm.periodic)
-                rm.len_str = self.next_len_str(rm.len_str, rm.expires_on)
+                    rm.expires_on = self.next_occurrence(rm.expires_on, rm.periodic, zone)
+                rm.len_str = self.next_len_str(rm.len_str, rm.expires_on, zone)
                 rm.save()
                 logger.info(f"Periodic RM incremented: {rm}")
             else:
@@ -385,39 +410,44 @@ class Reminders(commands.Cog):
 
     @commands.cooldown(1, 4, commands.BucketType.user)
     @commands.command(aliases=['mutc', 'setmyutc'])
-    async def myutc(self, ctx, new_utc: float):
-        """Set your utc, so you don't need to use UTC time for reminding
+    async def myutc(self, ctx, *, _ignored=None):
+        """Replaced by [p]mytimezone"""
+        await ctx.send(f"A new command exists now: `{ctx.clean_prefix}mytimezone`\n"
+                       f"{TIMEZONE_HELP.format(p=ctx.clean_prefix)}")
 
-        if your timezone is UTC+2 use:
-        `[p]setmyutc 2`
-        if your timezone is UTC+3.5 use:
-        `[p]setmyutc 3.5`
-        if your timezone is UTC+12.45 use:
-        `[p]setmyutc 12.45`
-        If your timezone is UTC-9 use:
-        `[p]setmyutc -9`
-        If your timezone is UTC or you want to reset use:
-        `[p]setmyutc 0`
+    @commands.cooldown(1, 4, commands.BucketType.user)
+    @commands.command(aliases=['mytz', 'settimezone'])
+    async def mytimezone(self, ctx, *, timezone_id=""):
+        """Set your timezone, so reminders use your local time
 
-        Why is this useful? Simple, when doing remind commands
-        you won't have to convert the time to uct anymore, but the
-        bot will do that for you. **And you can use your own time
-        for setting any reminder.** 🎉
+        Copy the text from the ID column of
+        https://docs.sentinel.thalesgroup.com/softwareandservices/ems/EMSdocs/WSG/Content/TimeZone.htm
+        `[p]mytimezone Europe/Ljubljana`
+
+        Summer and winter time are handled for you, so you never have to change it again.
+        Use it without anything after it to see your current timezone.
         """
-        new_utc = round(new_utc * 4) / 4
-        if new_utc < -12: return await ctx.send(embed=Embed(description='[Min offset is -12](https://en.wikipedia.org/w'
-                                                                        'iki/List_of_UTC_time_offsets)'))
-        if new_utc > 14: return await ctx.send(embed=Embed(description='[Max offset is 14](https://en.wikipedia.org/w'
-                                                                       'iki/List_of_UTC_time_offsets)'))
-
-        Timezones.insert(user=ctx.author.id, utc_offset=new_utc).on_conflict_replace().execute()
-        await ctx.send(f'When using remind commands your new utc offset will be **{new_utc}**'.replace('@', '@\u200b'))
+        how_to = TIMEZONE_HELP.format(p=ctx.clean_prefix)
+        if not timezone_id:
+            zone = self.get_user_zone(ctx.author.id)
+            if zone:
+                return await ctx.send(f"Your timezone is **{zone.key}**.\nTo change it: {how_to}")
+            return await ctx.send(f"You haven't set a timezone yet. {how_to}")
+        zone = tutils.find_timezone(timezone_id)
+        if not zone:
+            shown = timezone_id[:60].replace('@', '@\u200b').replace('`', '')
+            return await ctx.send(f"⚠ `{shown}` is not a timezone I know, nothing was changed. "
+                                  f"Please try again.\n{how_to}")
+        TimezoneNames.insert(user=ctx.author.id, tz_name=zone.key).on_conflict_replace().execute()
+        now = datetime.datetime.now(zone).strftime('%H:%M')
+        await ctx.send(f"✅ Timezone set to **{zone.key}** (it's {now} there right now). "
+                       f"Your reminders will now follow summer and winter time on their own.")
 
     @commands.cooldown(3, 3, commands.BucketType.user)
     @commands.command()
     async def remind(self, ctx, *, text):
-        """Set a reminder. (Please see `[p]myutc`)
-         [Times are in UTC] (unless user set their timezone with ℹ `[p]myutc` ℹ)
+        """Set a reminder. (Please see `[p]mytimezone`)
+         [Times are in UTC] (unless user set their timezone with ℹ `[p]mytimezone` ℹ)
         Structure: **[p]remind [me|channel] [the reminder's content] [when]**
 
         - Reminding youself, use **me** (you can use `[p]rm ...` instead of `[p]remind me ...`)
@@ -498,8 +528,18 @@ class Reminders(commands.Cog):
             return await ctx.send(f"{ctx.author.mention} you have no ongoing reminders right now.")
         cnt = f"⏰  |  {ctx.author.mention} these are your current reminders."
         rms = []
+        zone = self.get_user_zone(ctx.author.id)
         for r in reminders:
             reminder: Reminderstbl = r
+            triggers_on = reminder.len_str
+            if zone:
+                try:
+                    exp = reminder.expires_on
+                    if type(exp) == str:
+                        exp = dateutil.parser.parse(exp)
+                    triggers_on = self.zone_len_str(exp.replace(tzinfo=datetime.timezone.utc), zone)
+                except Exception:  # dates too far in the future can't be converted
+                    pass
             target = None
             g = self.bot.get_guild(reminder.guild)
             role = None
@@ -529,7 +569,7 @@ class Reminders(commands.Cog):
             rsn = reminder.reason.replace('@', '@\u200b')
             desc = f"\n{p}**Id:** {reminder.id}{p}\n" \
                    f"{p}**Target:** {target}{p}\n" \
-                   f"{p}**Triggers on:** {reminder.len_str}{p}\n" \
+                   f"{p}**Triggers on:** {triggers_on}{p}\n" \
                    f"{p}**Reminder content:**{p}\n" \
                    f"{p}```\n{rsn if not rolePing else f'@{rol} {rsn}'}```{p}"
             if reminder.periodic != 0:
@@ -644,15 +684,20 @@ class Reminders(commands.Cog):
 
     async def remindFunction(self, ctx, text, rolePing=None):
         utc_offset = 0.0
-        try:
-            tz = Timezones.get(Timezones.user == ctx.author.id)
-            utc_offset = tz.utc_offset
-        except:
-            pass
+        zone = self.get_user_zone(ctx.author.id)
+        if not zone:  # still on the fixed offset from the old myutc
+            try:
+                tz = Timezones.get(Timezones.user == ctx.author.id)
+                utc_offset = tz.utc_offset
+            except:
+                pass
         try:
             timestamp = datetime.datetime.utcnow()
             utcnow = timestamp
-            timestamp = timestamp + datetime.timedelta(hours=utc_offset)
+            if zone:
+                timestamp = utcnow.replace(tzinfo=datetime.timezone.utc).astimezone(zone).replace(tzinfo=None)
+            else:
+                timestamp = timestamp + datetime.timedelta(hours=utc_offset)
             remind_time = timestamp
             who = ctx.author
             by = who
@@ -670,17 +715,22 @@ class Reminders(commands.Cog):
                 who = ch
 
             mid_part, remind_time, error = await tutils.try_get_time_from_text(ctx, text, timestamp, firstPart,
-                                                                               utc_offset=utc_offset)
+                                                                               utc_offset=utc_offset, zone=zone)
             if error:
                 return await ctx.send(error)
 
-            diff = remind_time - timestamp
+            if zone:
+                expires_on = remind_time.replace(tzinfo=zone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
+            else:
+                expires_on = remind_time - datetime.timedelta(hours=utc_offset)
+
+            diff = expires_on - utcnow
             if (diff.seconds < 30 and diff.days <= 0) or diff.days < 0:
                 return await ctx.send("Reminder can't be less than 30 seconds in the future.")
 
-            if remind_time <= timestamp:
+            if expires_on <= utcnow:
                 return await ctx.send("Remind time can not be in the past.")
-            if remind_time - datetime.timedelta(seconds=10) <= timestamp:
+            if expires_on - datetime.timedelta(seconds=10) <= utcnow:
                 return await ctx.send("Reminder can't be less than 10 seconds from now!")
 
             meta = 'reminder_'
@@ -690,12 +740,14 @@ class Reminders(commands.Cog):
                 meta += f'rolePing_{rolePing.id}'
 
             len_str = remind_time.strftime('%Y/%m/%d %H:%M:%S')
-            if utc_offset != 0.0:
+            if zone:
+                len_str = self.zone_len_str(expires_on.replace(tzinfo=datetime.timezone.utc), zone)
+            elif utc_offset != 0.0:
                 len_str += f' UTC{"+" if utc_offset >= 0.0 else ""}{utc_offset}'
             else:
                 len_str += ' UTC'
             tim = await self.create_timer(
-                expires_on=remind_time - datetime.timedelta(hours=utc_offset),
+                expires_on=expires_on,
                 meta=meta,
                 gid=0 if not ctx.guild else ctx.guild.id,
                 reason=mid_part,
